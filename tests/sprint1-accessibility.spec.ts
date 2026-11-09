@@ -75,7 +75,7 @@ test("hero não mostra mais rodapé decorativo e acessibilidade tem hover roxo",
   if (!isMobile) {
     await trigger.hover();
     await expect(trigger).toHaveCSS("background-color", "rgb(107, 54, 157)");
-    await expect(trigger).toHaveCSS("transform", /matrix\\(/);
+    await expect(trigger).toHaveCSS("transform", /matrix/);
   }
 });
 
