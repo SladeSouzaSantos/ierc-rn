@@ -30,6 +30,7 @@
 - Usar imagens e depoimentos autorizados; escrever descrições acessíveis.
 
 ## Sprint 3 — CMS editorial
+**Sprint 3.1 em DEV (09/11/2026):** estrutura isolada de Strapi 5/PostgreSQL, sete coleções editoriais, RBAC nativo, Draft & Publish, campos de licenças de mídia e integração server-only de conteúdos aprovados, com fallback para o acervo anterior. O painel necessita da primeira inicialização real no Docker e homologação manual antes do merge. [Guia CMS](CMS-SPRINT3.md).
 **Acompanhamento:** [#8](https://github.com/SladeSouzaSantos/ierc-rn/issues/8) · [#2](https://github.com/SladeSouzaSantos/ierc-rn/issues/2)
 
 - CMS, editor/administrador, permissões, revisão, notícias, agenda, galerias, atletas, eventos.
