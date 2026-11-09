@@ -20,3 +20,6 @@ cms/.cache/
 cms/.strapi/
 cms/dist/
 cms/public/uploads/
+
+# Banco e midias locais: nunca versionar backups
+cms-backups/
