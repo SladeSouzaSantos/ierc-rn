@@ -17,7 +17,7 @@ Revisão inicial: **09/11/2026**. Este repositório ainda é um protótipo para 
 - `lib/editorial-data.ts` centraliza somente registros rastreáveis; `components/editorial-records.tsx` apresenta fontes por link externo acessível.
 - `/instituto`: linha do tempo documental e missão histórica atribuída ao acervo de 2010, sem afirmar que é a redação oficial vigente.
 - `/esportes`: lista da Série A feminina de 2026 referenciada à CBDV, **sem sugerir elenco atual**. Não adicionamos fotos.
-- `/historias`: pautas sem atribuir vínculo a pessoas. A lista inicial de nomes sugeridos fica somente na curadoria interna.
+- `/historias`: cinco biografias com vínculos historicamente documentados e referências; perfis sem comprovação permanecem somente na curadoria. Fotografias de terceiros são prévias em homologação e precisam de autorização antes da publicação oficial.
 - `/noticias`: clipping de notícias **publicadas por terceiros**, não publicações fictícias do IERC.
 - `/eventos`: arquivo de competições passadas. Não anunciar programação futura, horários ou inscrições sem confirmação.
 - `/visitas`: apenas endereço verificado; URL existente do sistema de agendamento ainda não foi fornecida.
