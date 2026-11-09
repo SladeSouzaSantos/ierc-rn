@@ -145,3 +145,41 @@ docker compose --env-file cms/.env -f compose.cms.yml up -d --no-deps --force-re
 ```
 
 Esse segundo comando recria só o contêiner do CMS, reutilizando os volumes existentes e a mesma imagem. Confirme `docker compose --env-file cms/.env -f compose.cms.yml ps`. Não instale plugins, não use `strapi develop` nem limpe diretórios temporários de uma instalação diferente para esse teste. Se liberar `unsafe-eval` não resolver, não mantenha o flag ativo: investigue redirecionamento, erros React e rede em vez de enfraquecer a política permanentemente.
+
+
+## Erro `invalidatesTags` após autenticação (09/11/2026)
+
+O operador identificou no painel uma exceção JavaScript `Cannot read properties of undefined (reading 'invalidatesTags')` enquanto o Content Manager permanecia no spinner. Essa propriedade pertence ao cache do **Redux Toolkit Query** utilizado pelo Strapi; indica que a aplicação tentou utilizar uma definição de endpoint ausente ou incompatível. Não é prova de lentidão do PostgreSQL e **não comprova que a CSP esteja causando o travamento**.
+
+Há um relato oficial com o mesmo texto da exceção ([strapi/strapi#25511](https://github.com/strapi/strapi/issues/25511)), resolvido pelo autor após atualização da versão. Isso **não garante** que o upgrade seja suficiente no nosso caso. O CMS estava fixado na versão `5.59.0`; o projeto passou a usar `5.61.0` em `@strapi/strapi`, `@strapi/plugin-users-permissions`, `@strapi/typescript-utils` e `overrides["@strapi/admin"]`, para impedir misturas no painel. Foi criado teste de consistência de versões.
+
+### Aplicação local com backup, após CI da DEV aprovado
+
+**Não execute `docker compose down -v` nem apague volumes.** A primeira conta do administrador está no PostgreSQL existente. No PowerShell:
+
+```powershell
+git switch dev
+git pull --ff-only origin dev
+
+# Copia de seguranca do banco existente (nao apaga ou muda o banco)
+New-Item -ItemType Directory -Force .\cms-backups | Out-Null
+docker compose --env-file cms/.env -f compose.cms.yml exec -T db pg_dump -U ierc_cms -d ierc_cms -Fc -f /tmp/ierc-cms-before-561.dump
+docker cp ierc-rn-cms-db-1:/tmp/ierc-cms-before-561.dump .\cms-backups\ierc-cms-before-561.dump
+# Se houver arquivos carregados no painel, salve tambem:
+docker cp ierc-rn-cms-cms-1:/opt/app/public/uploads .\cms-backups\
+
+# Desativa o experimento anterior de CSP; preserva CSP segura.
+Remove-Item Env:CMS_DIAGNOSTIC_UNSAFE_EVAL -ErrorAction SilentlyContinue
+
+# Atualiza apenas o CMS, preservando o PostgreSQL e os volumes
+docker compose --env-file cms/.env -f compose.cms.yml up -d --build --no-deps cms
+docker compose --env-file cms/.env -f compose.cms.yml ps
+```
+
+O build local pode exigir recursos de CPU/disco. Só avance para a etapa de navegador quando `cms` aparecer **healthy**. Abra `http://localhost:1337/admin` e verifique o Content Manager (primeiro a rota base, depois a coleção Notícias direta). Se persistir a exceção, registre o primeiro stack trace completo em **DevTools → Console** e verifique `npm ls @reduxjs/toolkit` dentro do contêiner:
+
+```powershell
+docker compose --env-file cms/.env -f compose.cms.yml exec cms npm ls @reduxjs/toolkit @strapi/admin @strapi/content-manager
+```
+
+A investigação permanece em DEV e o PR #12 em Draft até a confirmação de navegação, criação/edição de notícia, revisão de permissões e testes acessíveis. Nunca publique o admin do CMS externamente apenas para reproduzir esse bug.
