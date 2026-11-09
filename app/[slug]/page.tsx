@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowUpRight, CalendarDays, HeartHandshake, Instagram, MapPin, ShoppingBag, Trophy, Users } from "lucide-react";
 import { PageHero } from "@/components/page-hero";
-import { activities } from "@/lib/site-data";
+import { getDisplayActivities, getCmsNews, getCmsEvents, getCmsAthletes } from "@/lib/cms";
+import { CmsNewsList, CmsEventsList, CmsAthletesList } from "@/components/cms-public";
 import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
 import { AthleteStories } from "@/components/athlete-stories";
 
@@ -42,6 +43,10 @@ export default async function ContentPage({ params }: RouteProps) {
   const { slug } = await params;
   if (!(slug in pages)) notFound();
   const entry = pages[slug as Slug];
+  const displayActivities = slug === "atividades" ? await getDisplayActivities() : [];
+  const cmsNews = slug === "noticias" ? await getCmsNews() : [];
+  const cmsEvents = slug === "eventos" ? await getCmsEvents() : [];
+  const cmsAthletes = slug === "historias" ? await getCmsAthletes() : [];
 
   return (
     <>
@@ -62,7 +67,7 @@ export default async function ContentPage({ params }: RouteProps) {
         {slug === "atividades" && <>
           <div className="detail-intro"><p className="eyebrow">Oito frentes de atuação</p><h2>Aprendizado em diferentes formas.</h2><p>Cada atividade é uma oportunidade para desenvolver habilidades, ampliar repertórios e criar novas conexões. Informações sobre vagas e horários serão acrescentadas após confirmação institucional.</p></div>
           <div className="detail-grid detail-grid-activities">
-            {activities.map((activity, index) => <article className="detail-card" id={activity.id} key={activity.id}><span>{String(index + 1).padStart(2, "0")} / {activity.category}</span><h3>{activity.title}</h3><p>{activity.description}</p></article>)}
+            {displayActivities.map((activity, index) => <article className="detail-card" id={activity.id} key={activity.id}><span>{String(index + 1).padStart(2, "0")} / {activity.category}</span><h3>{activity.title}</h3><p>{activity.description}</p></article>)}
           </div>
           <Callout title="Quer saber como participar?" href="/contato" label="Canais de contato">As orientações para atendimento e inscrição estão sendo organizadas com a instituição.</Callout>
         </>}
@@ -86,19 +91,22 @@ export default async function ContentPage({ params }: RouteProps) {
             <p>O IERC-RN faz parte de diferentes trajetórias de atletas potiguares. Esta seleção reúne pessoas com passagem pela instituição explicitamente documentada em fontes públicas. Conquistas posteriores são atribuídas a cada atleta, sem afirmar que representavam o IERC quando conquistaram suas medalhas.</p>
           </div>
           <AthleteStories />
+          <CmsAthletesList items={cmsAthletes} />
           <Note>A pesquisa biográfica continua em desenvolvimento. Histórias de outros atletas potiguares, incluindo Rosicleide Andrade, Romário Marques e Halyson Boto, seguem em análise porque o vínculo pessoal com o IERC ainda precisa ser documentado de forma inequívoca.</Note>
         </>}
 
         {slug === "noticias" && <>
-          <div className="detail-intro"><p className="eyebrow">Acontece e aconteceu</p><h2>Fontes confiáveis para acompanhar o IERC.</h2><p>Reunimos referências verificáveis sobre a instituição e sua participação esportiva e comunitária. O conteúdo editorial próprio será incorporado quando houver equipe autorizada e CMS.</p></div>
+          <div className="detail-intro"><p className="eyebrow">Acontece e aconteceu</p><h2>Fontes confiáveis para acompanhar o IERC.</h2><p>Reunimos referências verificáveis sobre a instituição e sua participação esportiva e comunitária. Notícias aprovadas no painel editorial serão exibidas nesta página; os registros externos permanecem disponíveis para consulta.</p></div>
+          <CmsNewsList items={cmsNews} />
           <ExternalClippings />
           <Note>Não foram criadas notícias fictícias. Para comunicados atuais, consulte o <a href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer">Instagram informado do IERC<span className="sr-only"> (abre em nova aba)</span></a>.</Note>
         </>}
 
         {slug === "eventos" && <>
           <div className="detail-intro"><p className="eyebrow">Agenda e memória</p><h2>Eventos com informação verificável.</h2><p>Enquanto a instituição não envia sua programação futura, reunimos registros históricos de competições esportivas com participação do IERC-RN.</p></div>
+          <CmsEventsList items={cmsEvents} />
           <PastEvents />
-          <div className="detail-card solo-card"><CalendarDays size={40} aria-hidden="true" /><h3>Próximos eventos</h3><p>A agenda ainda aguarda confirmação institucional. Não há inscrições, ingressos ou datas futuras anunciadas por este portal.</p></div>
+          {cmsEvents.length === 0 && <div className="detail-card solo-card"><CalendarDays size={40} aria-hidden="true" /><h3>Próximos eventos</h3><p>A agenda ainda aguarda confirmação institucional. Não há inscrições, ingressos ou datas futuras anunciadas por este portal.</p></div>}
         </>}
 
         {slug === "galeria" && <><div className="detail-intro"><p className="eyebrow">Acervo em organização</p><h2>Memórias para ver, ouvir e compartilhar.</h2><p>As galerias poderão reunir atividades, apresentações, competições e momentos da comunidade. Fotografias terão descrições alternativas; vídeos terão legendas e recursos adicionais conforme o conteúdo.</p></div><div className="detail-card solo-card"><h3>Imagens oficiais em preparação</h3><p>Aguardamos seleção de materiais e autorizações. Não utilizamos fotografias de terceiros como se fossem registros do IERC.</p></div></>}
