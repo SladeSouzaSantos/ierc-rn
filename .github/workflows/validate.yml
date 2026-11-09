@@ -70,6 +70,7 @@ jobs:
           APP_KEYS: ci-key-1,ci-key-2,ci-key-3,ci-key-4
           ADMIN_JWT_SECRET: ci-admin-jwt-only
           API_TOKEN_SALT: ci-api-token-salt-only
+          ENCRYPTION_KEY: 2f8a4b63eb7f4bbfa0674f63582d761b9b21292f4f38776fc7b8284939aedd85
           TRANSFER_TOKEN_SALT: ci-transfer-only
           JWT_SECRET: ci-jwt-only
           DATABASE_HOST: 127.0.0.1
@@ -85,6 +86,7 @@ jobs:
           APP_KEYS: ci-key-1,ci-key-2,ci-key-3,ci-key-4
           ADMIN_JWT_SECRET: ci-admin-jwt-only
           API_TOKEN_SALT: ci-api-token-salt-only
+          ENCRYPTION_KEY: 2f8a4b63eb7f4bbfa0674f63582d761b9b21292f4f38776fc7b8284939aedd85
           TRANSFER_TOKEN_SALT: ci-transfer-only
           JWT_SECRET: ci-jwt-only
           DATABASE_HOST: 127.0.0.1
