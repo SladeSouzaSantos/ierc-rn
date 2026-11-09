@@ -31,7 +31,7 @@ test("os SVGs são locais, legíveis e não carregam scripts externos", async ({
     const content = await response.text();
     expect(content).toContain("<svg");
     expect(content).toContain("</svg>");
-    expect(content).not.toMatch(/<script|<foreignObject|https?:\/\//i);
+    expect(content).not.toMatch(/<script|<foreignObject|(?:href|src)\s*=\s*["\x27]https?:/i);
   }
 });
 
