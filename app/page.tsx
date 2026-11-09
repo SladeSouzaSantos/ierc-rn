@@ -87,7 +87,7 @@ export default function Home() {
         <div className="container community-layout">
           <div className="bazar-card">
             <div className="bazar-icon" aria-hidden="true"><ShoppingBag size={35} strokeWidth={1.5}/></div>
-            <p className="eyebrow">Toda terça-feira</p><h2>Um bazar.<br/>Muitas formas de <em>ajudar.</em></h2><p>O Bazar Solidário do IERC-RN arrecada recursos para a instituição. Você pode contribuir doando itens ou visitando o bazar para comprar.</p><Link className="button button-dark" href="/apoie">Conheça o bazar <ArrowUpRight size={18} aria-hidden="true" /></Link><span className="bazar-accent" aria-hidden="true">TER</span>
+            <p className="eyebrow">Toda terça-feira</p><h2>Um bazar.<br/>Muitas formas de <em>ajudar.</em></h2><p>O Bazar Solidário do IERC-RN arrecada recursos para a instituição. Você pode contribuir doando itens ou visitando o bazar para comprar.</p><Link className="button button-dark" href="/apoie">Conheça o bazar <ArrowUpRight size={18} aria-hidden="true" /></Link><span className="bazar-accent" aria-hidden="true" />
           </div>
           <div className="visit-card">
             <div className="visit-icon" aria-hidden="true"><Users size={35} strokeWidth={1.5}/></div>
