@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { models } from '../schemas.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// Strapi local upload provider requires this directory even before first upload.
+mkdirSync(resolve(root, 'public/uploads'), { recursive: true });
 function put(path, contents) {
   const target = resolve(root, path);
   mkdirSync(dirname(target), { recursive: true });
