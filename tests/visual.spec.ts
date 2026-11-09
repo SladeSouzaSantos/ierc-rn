@@ -12,7 +12,7 @@ test("gerar prévias visuais da homepage e do esporte", async ({ page }, testInf
 
 test("gerar prévia visual dos perfis de atletas com créditos fotográficos", async ({ page }, testInfo) => {
   await page.goto("/historias");
-  await expect(page.locator(".athlete-story")).toHaveCount(5);
+  await expect(page.locator(".athlete-story")).toHaveCount(9);
   // Ativa carregamento lazy das imagens externas antes de capturar toda a página.
   for (const card of await page.locator(".athlete-story").all()) {
     await card.scrollIntoViewIfNeeded();
