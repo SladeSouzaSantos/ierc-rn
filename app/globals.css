@@ -809,3 +809,12 @@ html[data-high-contrast="true"] .athlete-story-sources li a { color: #300954; }
   .athlete-story-content { padding: 26px 23px 32px; }
   .athlete-story-list { gap: 25px; }
 }
+
+/* Sprint 3.1 — notícia publicada pelo CMS; exibição simples, sem HTML arbitrário */
+.cms-detail { padding-top: clamp(48px, 6vw, 92px); padding-bottom: clamp(90px, 10vw, 150px); }
+.cms-detail > nav { margin-bottom: 30px; }
+.cms-detail .detail-intro h1 { max-width: 1020px; overflow-wrap: break-word; font-size: clamp(2.2rem, 4.8vw, 4.6rem); }
+.cms-detail .detail-intro > p { max-width: 840px; }
+.cms-detail time { display: inline-block; color: var(--muted); margin-top: 12px; font-size: .95rem; }
+.cms-article-body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.9; max-width: 900px; font-size: 1.09rem; margin-top: 42px; }
+.cms-source { margin-top: 44px; }
