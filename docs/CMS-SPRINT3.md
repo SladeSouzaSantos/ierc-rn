@@ -93,3 +93,17 @@ Isso desliga os serviços **preservando** os dados dos volumes. Para não perder
 6. Só então considerar infraestrutura, backups, fotografia licenciada e URL pública de administração.
 
 Referências: [Strapi instalação Docker](https://docs.strapi.io/cms/installation/docker), [Draft & Publish](https://docs.strapi.io/cms/features/draft-and-publish), [RBAC](https://docs.strapi.io/cms/features/rbac), [REST API](https://docs.strapi.io/cms/api/rest).
+
+## Endereço correto do painel e correção de favicon (09/11/2026)
+
+A URL local é exatamente `http://localhost:1337/admin` (sem asteriscos, barras extras ou parâmetros como `utm_source`). Um link copiado com `/admin**?utm_source=chatgpt.com` gera HTTP 404 mesmo com o Strapi saudável.
+
+O primeiro boot do Docker em Windows confirmou Strapi 5.59, PostgreSQL saudável e `/_health` HTTP 204. A imagem inicial registrava `ENOENT: /opt/app/favicon.png` em chamadas a `/favicon.ico`, um problema independente do login. O gerador agora inclui um favicon PNG provisório; o CI verifica sua existência, a rota exata `/admin` e o retorno HTTP 200 de `/favicon.ico`. O arquivo provisório deverá ser substituído pela marca oficial após validação institucional.
+
+A correção do favicon **não é necessária para criar o administrador** nem justifica um rebuild imediato da imagem Docker se o painel `/admin` já abre. Na próxima reconstrução, execute no PowerShell em uma única linha:
+
+```powershell
+docker compose --env-file cms/.env -f compose.cms.yml up -d --build
+```
+
+Para observar o status sem expor credenciais: `docker compose --env-file cms/.env -f compose.cms.yml ps`.
