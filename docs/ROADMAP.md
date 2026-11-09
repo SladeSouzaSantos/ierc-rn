@@ -3,6 +3,7 @@
 > As issues de **marco** representam o planejamento por sprint. O conector atual não permite criar objetos nativos de Milestone; portanto, estes ainda dependem da configuração pelo GitHub. Não confundir *issues de marco* com Milestones nativos.
 
 ## Sprint 1 — Identidade e acessibilidade
+**Código e visual aprovados pelo responsável e integrados à `main` (PR #5).** Testes manuais com tecnologias assistivas seguem exigidos para o lançamento público.
 **Acompanhamento:** [#6](https://github.com/SladeSouzaSantos/ierc-rn/issues/6) · [#1](https://github.com/SladeSouzaSantos/ierc-rn/issues/1)
 
 - Integrar logo original sem fundo branco, mantendo proporções.
@@ -21,6 +22,7 @@
 - Validar desktop/mobile, movimento reduzido e leitores de tela.
 
 ## Sprint 2 — Conteúdo e acervo
+**Situação em 09/11/2026:** implementação inicial em `dev`, com fontes verificadas, histórico, clipping e registro esportivo 2026. Aprovação institucional e acervo autorizado pendentes. Ver [fontes da Sprint 2](SOURCES-SPRINT2.md).
 **Acompanhamento:** [#7](https://github.com/SladeSouzaSantos/ierc-rn/issues/7) · [#1](https://github.com/SladeSouzaSantos/ierc-rn/issues/1) · [#3](https://github.com/SladeSouzaSantos/ierc-rn/issues/3)
 
 - Confirmar textos, canais, atividades e horários, bazar e excursões.
