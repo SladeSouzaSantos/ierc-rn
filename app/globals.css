@@ -443,3 +443,122 @@ html[data-high-contrast="true"] :where(.hero,.sport-section,.site-footer,.interi
 @media print {
   .accessibility-root, .menu-trigger, .hero-art { display:none!important; }
 }
+
+
+/* Sprint 1.1.1 — proporção e composição conforme modelo institucional aprovado */
+.hero {
+  background: linear-gradient(105deg, #0e3958 0%, #154366 54%, #263b70 100%);
+}
+.hero-layout {
+  grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+  gap: clamp(4px, 1.25vw, 20px);
+  min-height: 625px;
+  padding-top: 22px;
+  padding-bottom: 0;
+}
+.hero-copy {
+  padding-top: 18px;
+  padding-bottom: 35px;
+}
+.hero h1 {
+  max-width: 590px;
+  font-size: clamp(3.5rem, 5.8vw, 6.4rem);
+  line-height: 1.04;
+  margin-top: 26px;
+}
+.hero-art {
+  width: 100%;
+  min-height: 580px;
+  height: 100%;
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: none;
+  align-self: stretch;
+  margin-right: -50px;
+}
+.hero-art-visual {
+  position: absolute;
+  inset: -3% -7% -2% -4%;
+  z-index: 1;
+}
+.hero-art-illustration {
+  object-fit: contain;
+  object-position: center bottom;
+}
+.hero-mini {
+  margin-top: 44px;
+}
+.hero-bottom { position: relative; z-index: 2; }
+.primary-nav .nav-cta {
+  background: var(--warm);
+  color: var(--deepest);
+}
+.primary-nav .nav-cta:hover {
+  background: #ffdc86;
+}
+.principle-card, .activity-card, .update-card {
+  box-shadow: 0 7px 22px rgba(19, 45, 75, .055);
+}
+.principle-card { min-height: 270px; }
+.intro-section { background: #fefefd; }
+.activities-section {
+  background: radial-gradient(circle at 48% 28%, #f6edfc, #f0e4f7 85%);
+}
+.sport-layout {
+  grid-template-columns: minmax(0,.92fr) minmax(0,1.08fr);
+  gap: clamp(18px,3vw,50px);
+  min-height: 565px;
+  padding-block: 64px;
+}
+.sport-art {
+  min-height: 0;
+  height: auto;
+  aspect-ratio: 740 / 480;
+  border: 0;
+  border-radius: 42% 42% 18px 18px;
+  background: transparent;
+  overflow: hidden;
+}
+.sport-art-visual { inset: 0; }
+.sport-art-illustration { object-fit: cover; object-position: center; }
+.sport-art-label, .sport-art-number { display: none; }
+.sport-section {
+  background: linear-gradient(108deg, #0b334e 0%, #103953 55%, #112d4c 100%);
+}
+.stories-section { background: #fffefd; }
+.stories-symbol { background: #f0e6f9; }
+.bazar-card { background: linear-gradient(130deg,#ffdb79,#f3bf50); }
+.visit-card { background: linear-gradient(125deg,#f4eafa,#e9d8f4); }
+.visit-card .eyebrow { color: #592981; }
+.social-strip { background: #eee2f6; }
+.site-footer { background: linear-gradient(110deg,#103c5a,#0a304d); }
+@media (max-width: 1020px) {
+  .hero-layout { min-height: 575px; }
+  .hero h1 { font-size: clamp(3.2rem,6vw,5.3rem); }
+  .hero-art { min-height: 500px; margin-right: -26px; }
+}
+@media (max-width: 760px) {
+  .hero-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding-top: 40px;
+    padding-bottom: 16px;
+  }
+  .hero-copy { padding-bottom: 0; }
+  .hero-art {
+    min-height: 0; height: clamp(310px,95vw,510px);
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  .hero-art-visual { inset: 0 -5% -1% -5%; }
+  .hero h1 { font-size: clamp(3.1rem, 10.2vw, 5.2rem); }
+  .sport-layout { grid-template-columns:1fr; gap:22px; padding-block:70px; }
+  .sport-art { min-height:0; max-width:620px; height:auto; aspect-ratio:740 / 480; }
+}
+@media (max-width: 520px) {
+  .hero-art { height: clamp(300px, 90vw, 430px); }
+  .hero-mini { margin-top: 34px; }
+  .sport-art { min-height:0; height:auto; }
+}

@@ -64,7 +64,7 @@ export default function Home() {
           <div className="sport-copy">
             <p className="eyebrow light">Esporte que faz história</p>
             <h2 id="goalball-title">O som da bola.<br/><em>A força de uma equipe.</em></h2>
-            <p>O goalball faz parte da vida esportiva do IERC-RN. A instituição participa de competições regionais e esteve entre as equipes da Série A feminina nacional em 2026.</p>
+            <p>O goalball faz parte da vida esportiva do IERC-RN. A instituição participa de competições, forma atletas e revela talentos que representam o Rio Grande do Norte e o Brasil.</p>
             <Link className="button button-yellow" href="/esportes">Conheça o goalball <ArrowUpRight size={18} aria-hidden="true"/></Link>
             <a className="sport-source" href="https://www.cbdv.org.br/regional-nordeste-de-goalball-comeca-no-dia-26-de-abril-em-campina-grande" target="_blank" rel="noopener noreferrer">Fonte: CBDV, 2026 <span className="sr-only">(abre em nova aba)</span></a>
           </div>
