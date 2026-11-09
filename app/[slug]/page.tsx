@@ -5,12 +5,13 @@ import { ArrowUpRight, CalendarDays, HeartHandshake, Instagram, MapPin, Shopping
 import { PageHero } from "@/components/page-hero";
 import { activities } from "@/lib/site-data";
 import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
+import { AthleteStories } from "@/components/athlete-stories";
 
 const pages = {
   instituto: { eyebrow: "Nossa história", title: "O Instituto", description: "Uma história construída com educação, reabilitação, participação e compromisso com a autonomia." },
   atividades: { eyebrow: "Nossa atuação", title: "Atividades que ampliam caminhos", description: "Conheça as experiências de aprendizagem, cultura, movimento e autonomia oferecidas pelo Instituto." },
   esportes: { eyebrow: "Esporte", title: "Goalball e possibilidades em movimento", description: "A força do esporte coletivo, a participação em competições e o protagonismo dos atletas." },
-  historias: { eyebrow: "Nossa comunidade", title: "Histórias que merecem ser contadas", description: "Trajetórias de pessoas que passaram pelo IERC e construíram seus próprios caminhos." },
+  historias: { eyebrow: "Trajetórias", title: "Histórias que atravessam o esporte", description: "Atletas com passagens documentadas pelo IERC-RN e conquistas em diferentes modalidades paralímpicas." },
   noticias: { eyebrow: "Acontece no IERC", title: "Notícias", description: "Um espaço para acompanhar iniciativas, acontecimentos e novidades da instituição." },
   eventos: { eyebrow: "Agenda institucional", title: "Eventos", description: "Apresentações, competições, atividades abertas à comunidade e outras ações do Instituto." },
   galeria: { eyebrow: "Memórias e encontros", title: "Galeria", description: "Registros em fotografia e vídeo, acompanhados de descrições acessíveis." },
@@ -79,14 +80,13 @@ export default async function ContentPage({ params }: RouteProps) {
         </>}
 
         {slug === "historias" && <>
-          <div className="detail-intro"><p className="eyebrow">Curadoria responsável</p><h2>Uma comunidade feita de muitas histórias.</h2><p>Queremos reunir depoimentos de alunos, ex-alunos e pessoas ligadas ao IERC. Cada publicação dependerá de pesquisa, confirmação do vínculo e autorização de imagem e relato.</p></div>
-          <h2 className="interior-subtitle">Pautas em preparação</h2>
-          <div className="detail-grid">
-            <article className="detail-card story-preview"><span>Educação e autonomia</span><h3>Aprender e descobrir caminhos</h3><p>Vivências relacionadas à educação, mobilidade e acesso à informação.</p></article>
-            <article className="detail-card story-preview"><span>Esporte e participação</span><h3>Protagonismo no esporte</h3><p>Trajetórias no goalball e em outras modalidades.</p></article>
-            <article className="detail-card story-preview"><span>Cultura e comunidade</span><h3>Experiências de convivência</h3><p>Histórias ligadas à cultura, ao aprendizado e à vida coletiva.</p></article>
+          <div className="detail-intro">
+            <p className="eyebrow">Acervo biográfico · fontes públicas</p>
+            <h2>Histórias reais de dedicação, esporte e autonomia.</h2>
+            <p>O IERC-RN faz parte de diferentes trajetórias de atletas potiguares. Esta seleção reúne pessoas com passagem pela instituição explicitamente documentada em fontes públicas. Conquistas posteriores são atribuídas a cada atleta, sem afirmar que representavam o IERC quando conquistaram suas medalhas.</p>
           </div>
-          <Note>Os nomes sugeridos como pautas permanecem apenas na documentação de curadoria: não são apresentados ao público como alunos ou ex-alunos confirmados.</Note>
+          <AthleteStories />
+          <Note>A pesquisa biográfica continua em desenvolvimento. Histórias de outros atletas potiguares, incluindo Rosicleide Andrade, Romário Marques e Halyson Boto, seguem em análise porque o vínculo pessoal com o IERC ainda precisa ser documentado de forma inequívoca.</Note>
         </>}
 
         {slug === "noticias" && <>
