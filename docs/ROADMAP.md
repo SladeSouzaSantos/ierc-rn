@@ -1,0 +1,44 @@
+# IERC-RN · Roadmap e sprints
+
+> As issues de **marco** representam o planejamento por sprint. O conector atual não permite criar objetos nativos de Milestone; portanto, estes ainda dependem da configuração pelo GitHub. Não confundir *issues de marco* com Milestones nativos.
+
+## Sprint 1 — Identidade e acessibilidade
+**Acompanhamento:** [#6](https://github.com/SladeSouzaSantos/ierc-rn/issues/6) · [#1](https://github.com/SladeSouzaSantos/ierc-rn/issues/1)
+
+- Integrar logo original sem fundo branco, mantendo proporções.
+- Ajustar azul + amarelo + roxo como paleta com contraste.
+- Levar botão de acessibilidade ao canto inferior direito, garantir navegação por teclado.
+- Esconder "N" de desenvolvimento.
+- Testar lint/typecheck/build, axe-core, zoom/reflow, desktop/mobile e movimento reduzido.
+- **Gate de aprovação manual obrigatório:** NVDA, VoiceOver ou TalkBack, leitura linear, links, botões, modo alto contraste e revisão com usuários.
+
+## Sprint 1.1 — Ilustrações institucionais
+**Acompanhamento:** [#10](https://github.com/SladeSouzaSantos/ierc-rn/issues/10)
+
+- Trocar capa abstrata por mãos, leitura tátil e percurso de autonomia.
+- Redesenhar goalball com quadra, meta e bola com aberturas sonoras.
+- Usar SVG autoral e conteúdo equivalente em textos adjacentes, sem depender de imagem.
+- Validar desktop/mobile, movimento reduzido e leitores de tela.
+
+## Sprint 2 — Conteúdo e acervo
+**Acompanhamento:** [#7](https://github.com/SladeSouzaSantos/ierc-rn/issues/7) · [#1](https://github.com/SladeSouzaSantos/ierc-rn/issues/1) · [#3](https://github.com/SladeSouzaSantos/ierc-rn/issues/3)
+
+- Confirmar textos, canais, atividades e horários, bazar e excursões.
+- Pesquisar e validar atletas e ex-alunos.
+- Usar imagens e depoimentos autorizados; escrever descrições acessíveis.
+
+## Sprint 3 — CMS editorial
+**Acompanhamento:** [#8](https://github.com/SladeSouzaSantos/ierc-rn/issues/8) · [#2](https://github.com/SladeSouzaSantos/ierc-rn/issues/2)
+
+- CMS, editor/administrador, permissões, revisão, notícias, agenda, galerias, atletas, eventos.
+- Acessibilidade também no painel e nos formulários.
+
+## Sprint 4 — Participação e sustentabilidade
+**Acompanhamento:** [#9](https://github.com/SladeSouzaSantos/ierc-rn/issues/9) · [#3](https://github.com/SladeSouzaSantos/ierc-rn/issues/3) · [#4](https://github.com/SladeSouzaSantos/ierc-rn/issues/4)
+
+- Link oficial de visitas (sem duplicar plataforma).
+- Doações via Pix/cartão/recorrência com provedor autorizado.
+- Política de privacidade, prestação de contas e jornada acessível.
+
+## Critério geral de entrega
+Código entra por `dev` e PR para `main` após CI verde e homologação com o IERC. Resultados automatizados e revisão manual são evidências distintas.

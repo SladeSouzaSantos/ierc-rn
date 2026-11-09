@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 480" fill="none">
+<defs>
+<linearGradient id="violet" x1="168" y1="60" x2="563" y2="440" gradientUnits="userSpaceOnUse"><stop stop-color="#664496"/><stop offset="1" stop-color="#322064"/></linearGradient>
+<linearGradient id="court" x1="360" y1="255" x2="365" y2="480" gradientUnits="userSpaceOnUse"><stop stop-color="#37669E"/><stop offset="1" stop-color="#194375"/></linearGradient>
+</defs>
+<!-- Fundo com topo arqueado, compatível com o design de referência -->
+<path d="M48 244C48 106 178 27 350 27H393C574 27 691 111 691 248V461H48Z" fill="url(#violet)"/>
+<path d="M48 267L692 267V462H48Z" fill="url(#court)"/>
+<!-- Gol e rede de goalball -->
+<path d="M145 279V154C258 122 467 122 585 154V279" stroke="#FAF8F0" stroke-width="12" stroke-linejoin="round"/>
+<path d="M150 161H579V272H150Z" fill="#C7BAE5" fill-opacity=".10"/>
+<g stroke="#D0C4EB" stroke-width="1.9" opacity=".82"><path d="M145 157V274"/><path d="M165 157V274"/><path d="M185 157V274"/><path d="M205 157V274"/><path d="M225 157V274"/><path d="M245 157V274"/><path d="M265 157V274"/><path d="M285 157V274"/><path d="M305 157V274"/><path d="M325 157V274"/><path d="M345 157V274"/><path d="M365 157V274"/><path d="M385 157V274"/><path d="M405 157V274"/><path d="M425 157V274"/><path d="M445 157V274"/><path d="M465 157V274"/><path d="M485 157V274"/><path d="M505 157V274"/><path d="M525 157V274"/><path d="M545 157V274"/><path d="M565 157V274"/><path d="M585 157V274"/><path d="M144 158H585"/><path d="M144 172.5H585"/><path d="M144 187H585"/><path d="M144 201.5H585"/><path d="M144 216H585"/><path d="M144 230.5H585"/><path d="M144 245H585"/><path d="M144 259.5H585"/><path d="M144 274H585"/></g>
+<path d="M155 264H578" stroke="#D3C4E7" stroke-width="3"/>
+<!-- Quadra com linhas em perspectiva -->
+<path d="M48 279H692V461H48Z" fill="#285285" fill-opacity=".27"/>
+<g stroke="#DCEAF3" stroke-width="5" opacity=".94">
+<path d="M145 274L48 386M585 274L692 386"/>
+<path d="M49 455H691"/>
+<path d="M48 350H692"/>
+</g>
+<g stroke="#B9D6F1" stroke-width="3" opacity=".43"><path d="M263 278L194 460M466 278L535 460"/></g>
+</svg>
