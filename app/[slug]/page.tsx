@@ -56,7 +56,7 @@ export default async function ContentPage({ params }: RouteProps) {
           <Timeline />
           <Note>Missão e finalidade citadas no acervo histórico do IERC, publicado em 2010. O texto institucional vigente, a equipe e os horários ainda aguardam revisão da instituição.</Note>
           <Callout title="Conheça nossas atividades" href="/atividades" label="Explorar atividades">Música, informática, Braille, orientação e mobilidade, estimulação precoce e outras iniciativas em curadoria.</Callout>
-        </>
+        </>}
 
         {slug === "atividades" && <>
           <div className="detail-intro"><p className="eyebrow">Oito frentes de atuação</p><h2>Aprendizado em diferentes formas.</h2><p>Cada atividade é uma oportunidade para desenvolver habilidades, ampliar repertórios e criar novas conexões. Informações sobre vagas e horários serão acrescentadas após confirmação institucional.</p></div>
@@ -76,7 +76,7 @@ export default async function ContentPage({ params }: RouteProps) {
           <SportRecords />
           <Note>Os nomes de atletas são transcritos de uma lista pública da CBDV de 2026, sem implicar vínculo atual. Fotografias e biografias individuais dependem de autorização.</Note>
           <Callout title="Histórias que atravessam gerações" href="/historias" label="Explorar histórias">Perfis de alunos e ex-alunos serão preparados mediante verificação de vínculo e consentimento.</Callout>
-        </>
+        </>}
 
         {slug === "historias" && <>
           <div className="detail-intro"><p className="eyebrow">Curadoria responsável</p><h2>Uma comunidade feita de muitas histórias.</h2><p>Queremos reunir depoimentos de alunos, ex-alunos e pessoas ligadas ao IERC. Cada publicação dependerá de pesquisa, confirmação do vínculo e autorização de imagem e relato.</p></div>
@@ -87,19 +87,19 @@ export default async function ContentPage({ params }: RouteProps) {
             <article className="detail-card story-preview"><span>Cultura e comunidade</span><h3>Experiências de convivência</h3><p>Histórias ligadas à cultura, ao aprendizado e à vida coletiva.</p></article>
           </div>
           <Note>Os nomes sugeridos como pautas permanecem apenas na documentação de curadoria: não são apresentados ao público como alunos ou ex-alunos confirmados.</Note>
-        </>
+        </>}
 
         {slug === "noticias" && <>
           <div className="detail-intro"><p className="eyebrow">Acontece e aconteceu</p><h2>Fontes confiáveis para acompanhar o IERC.</h2><p>Reunimos referências verificáveis sobre a instituição e sua participação esportiva e comunitária. O conteúdo editorial próprio será incorporado quando houver equipe autorizada e CMS.</p></div>
           <ExternalClippings />
           <Note>Não foram criadas notícias fictícias. Para comunicados atuais, consulte o <a href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer">Instagram informado do IERC<span className="sr-only"> (abre em nova aba)</span></a>.</Note>
-        </>
+        </>}
 
         {slug === "eventos" && <>
           <div className="detail-intro"><p className="eyebrow">Agenda e memória</p><h2>Eventos com informação verificável.</h2><p>Enquanto a instituição não envia sua programação futura, reunimos registros históricos de competições esportivas com participação do IERC-RN.</p></div>
           <PastEvents />
           <div className="detail-card solo-card"><CalendarDays size={40} aria-hidden="true" /><h3>Próximos eventos</h3><p>A agenda ainda aguarda confirmação institucional. Não há inscrições, ingressos ou datas futuras anunciadas por este portal.</p></div>
-        </>
+        </>}
 
         {slug === "galeria" && <><div className="detail-intro"><p className="eyebrow">Acervo em organização</p><h2>Memórias para ver, ouvir e compartilhar.</h2><p>As galerias poderão reunir atividades, apresentações, competições e momentos da comunidade. Fotografias terão descrições alternativas; vídeos terão legendas e recursos adicionais conforme o conteúdo.</p></div><div className="detail-card solo-card"><h3>Imagens oficiais em preparação</h3><p>Aguardamos seleção de materiais e autorizações. Não utilizamos fotografias de terceiros como se fossem registros do IERC.</p></div></>}
 
@@ -111,7 +111,7 @@ export default async function ContentPage({ params }: RouteProps) {
             <article className="detail-card"><CalendarDays size={32} aria-hidden="true" /><h3>Agendamento oficial</h3><p>O link de agendamento já utilizado pela instituição não foi fornecido. A futura integração não criará uma agenda paralela.</p></article>
           </div>
           <Note>Não há reserva ativa por este portal. Antes de visitar, confirme com o IERC as orientações e a disponibilidade da equipe.</Note>
-        </>
+        </>}
 
         {slug === "apoie" && <><div className="detail-intro"><p className="eyebrow">Solidariedade que movimenta</p><h2>Pequenos gestos também abrem caminhos.</h2><p>Há diferentes formas de participar do cotidiano do IERC-RN. Uma delas é o Bazar Solidário, uma ação arrecadatória da instituição.</p></div><div className="bazar-detail"><div><ShoppingBag size={36} aria-hidden="true"/><p className="eyebrow">Toda terça-feira</p><h2>Bazar Solidário</h2><p>Você pode doar itens para o bazar ou visitar o espaço para comprar. A arrecadação contribui com as atividades do Instituto.</p></div><div className="bazar-detail-secondary"><h3>Antes de visitar</h3><p>Horário de funcionamento, itens aceitos, local de entrega e orientações ainda serão confirmados com a equipe.</p></div></div><div className="detail-grid"><article className="detail-card"><HeartHandshake size={32} aria-hidden="true"/><h3>Doe itens</h3><p>Ajude a manter o bazar por meio de doações, seguindo os critérios que serão divulgados.</p></article><article className="detail-card"><ShoppingBag size={32} aria-hidden="true"/><h3>Compre no bazar</h3><p>Visite o espaço às terças-feiras, depois de confirmar horário e endereço com o Instituto.</p></article></div><Note>Doações financeiras e pagamentos não estão disponíveis neste protótipo. A integração será realizada apenas após definição do recebedor e das regras institucionais.</Note></>}
 
@@ -123,7 +123,7 @@ export default async function ContentPage({ params }: RouteProps) {
             <article className="detail-card"><Users size={32} aria-hidden="true" /><h3>Atendimento</h3><p>Contatos telefônicos publicados em fontes externas divergem. Não apresentamos telefone ou e-mail sem validação institucional.</p></article>
           </div>
           <Note>Dados de atendimento não confirmados não são exibidos como canais oficiais.</Note>
-        </>
+        </>}
 
 
       </div>
