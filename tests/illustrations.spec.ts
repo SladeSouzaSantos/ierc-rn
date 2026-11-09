@@ -19,6 +19,8 @@ test("bloco de goalball inclui imagem de quadra e bola sonora meramente decorati
   await expect(illustration).toHaveAttribute("aria-hidden", "true");
   await expect(illustration).toContainText("GOALBALL · BOLA SONORA");
   const image = illustration.locator(".sport-art-illustration");
+  // Next/Image carrega imagens abaixo da dobra sob demanda: simular rolagem real.
+  await image.scrollIntoViewIfNeeded();
   await expect(image).toHaveAttribute("alt", "");
   await expect(image).toHaveAttribute("src", "/illustrations/goalball-quadra.svg");
   await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
