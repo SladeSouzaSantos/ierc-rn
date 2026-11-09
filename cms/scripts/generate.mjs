@@ -6,6 +6,13 @@ import { models } from '../schemas.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // Strapi local upload provider requires this directory even before first upload.
 mkdirSync(resolve(root, 'public/uploads'), { recursive: true });
+// A neutral provisional 1px PNG avoids a 500 on /favicon.ico.
+// Replace with the institution's licensed identity during branding approval.
+writeFileSync(resolve(root, 'favicon.png'), Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9BZD72wAAAABJRU5ErkJggg==',
+  'base64',
+));
+
 function put(path, contents) {
   const target = resolve(root, path);
   mkdirSync(dirname(target), { recursive: true });
