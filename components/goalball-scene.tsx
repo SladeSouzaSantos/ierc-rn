@@ -45,25 +45,27 @@ export function GoalballScene() {
 
       const rise = Math.max(24, Math.min(root.clientHeight * 0.16, 78));
       // O impacto coincide com o início das ondas, sem reprodução sonora.
+      // Trajetória exclusivamente vertical: desacelera na subida,
+      // acelera na queda e perde energia no segundo quique.
       const animation = gsap.timeline({
         repeat: -1,
-        repeatDelay: 0.85,
+        repeatDelay: 0.55,
         paused: true,
       });
       animation
-        .to(ball, { y: -rise, x: -7, rotation: -10, duration: 0.55, ease: "power2.out" })
-        .to(shadow, { scale: 0.76, opacity: 0.16, duration: 0.55, ease: "power2.out" }, "<")
-        .to(ball, { y: 0, x: 0, rotation: 0, duration: 0.48, ease: "power2.in" })
-        .to(shadow, { scale: 1, opacity: 0.35, duration: 0.48, ease: "power2.in" }, "<")
+        .to(ball, { y: -rise, duration: 0.53, ease: "power2.out" })
+        .to(shadow, { scale: 0.78, opacity: 0.16, duration: 0.53, ease: "power2.out" }, "<")
+        .to(ball, { y: 0, duration: 0.43, ease: "power2.in" })
+        .to(shadow, { scale: 1, opacity: 0.35, duration: 0.43, ease: "power2.in" }, "<")
         .addLabel("impacto")
-        .to(ball, { scaleX: 1.12, scaleY: 0.86, duration: 0.085, ease: "power1.out" }, "impacto")
-        .fromTo(echoes[0], { scale: 0.56, opacity: 0.82 }, { scale: 1.8, opacity: 0, duration: 0.7, ease: "power2.out" }, "impacto")
-        .fromTo(echoes[1], { scale: 0.56, opacity: 0.65 }, { scale: 2.3, opacity: 0, duration: 0.83, ease: "power2.out" }, "impacto+=0.11")
-        .to(ball, { scaleX: 1, scaleY: 1, duration: 0.2, ease: "back.out(2)" }, "impacto+=0.085")
-        .to(ball, { y: -rise * 0.28, duration: 0.25, ease: "power2.out" }, "impacto+=0.16")
-        .to(ball, { y: 0, duration: 0.29, ease: "power2.in" }, ">")
-        .to(ball, { scaleX: 1.035, scaleY: 0.96, duration: 0.07 }, ">")
-        .to(ball, { scaleX: 1, scaleY: 1, duration: 0.18, ease: "power2.out" }, ">");
+        .to(ball, { scaleX: 1.12, scaleY: 0.86, duration: 0.09, ease: "power1.out" }, "impacto")
+        .fromTo(echoes[0], { scale: 0.56, opacity: 0.82 }, { scale: 1.8, opacity: 0, duration: 0.68, ease: "power2.out" }, "impacto")
+        .fromTo(echoes[1], { scale: 0.56, opacity: 0.65 }, { scale: 2.25, opacity: 0, duration: 0.81, ease: "power2.out" }, "impacto+=0.1")
+        .to(ball, { scaleX: 1, scaleY: 1, duration: 0.17, ease: "power2.out" }, "impacto+=0.09")
+        .to(ball, { y: -rise * 0.22, duration: 0.23, ease: "power2.out" }, "impacto+=0.18")
+        .to(ball, { y: 0, duration: 0.24, ease: "power2.in" }, ">")
+        .to(ball, { scaleX: 1.035, scaleY: 0.965, duration: 0.07 }, ">")
+        .to(ball, { scaleX: 1, scaleY: 1, duration: 0.16, ease: "power2.out" }, ">");
 
       timeline = animation;
       if (sceneVisible && !document.hidden) animation.play();

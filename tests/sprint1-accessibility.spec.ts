@@ -64,3 +64,26 @@ test("páginas-chave sem violações automáticas axe-core WCAG A/AA", async ({ 
     expect(audit.violations, "Axe: " + url).toEqual([]);
   }
 });
+
+test("hero não mostra mais rodapé decorativo e acessibilidade tem hover roxo", async ({ page, isMobile }) => {
+  await page.goto("/");
+  await expect(page.locator(".hero-bottom")).toHaveCount(0);
+  await expect(page.getByText("01 — Um instituto, muitas possibilidades")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Conheça nossa atuação" })).toHaveCount(0);
+  const trigger = page.getByRole("button", { name: "Acessibilidade", exact: true });
+  await expect(trigger).toHaveCSS("background-color", "rgb(90, 44, 134)");
+  if (!isMobile) {
+    await trigger.hover();
+    await expect(trigger).toHaveCSS("background-color", "rgb(107, 54, 157)");
+    await expect(trigger).toHaveCSS("transform", /matrix\\(/);
+  }
+});
+
+test("hover do botão não se move com redução de movimento", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Hover com ponteiro fino é aplicado no desktop");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const trigger = page.getByRole("button", { name: "Acessibilidade", exact: true });
+  await trigger.hover();
+  await expect(trigger).toHaveCSS("transform", "none");
+});

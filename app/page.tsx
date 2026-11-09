@@ -27,7 +27,6 @@ export default function Home() {
           </div>
           <HeroArt />
         </div>
-        <div className="container hero-bottom"><span>01 — Um instituto, muitas possibilidades</span><a href="#atuacao">Conheça nossa atuação <span aria-hidden="true">↓</span></a></div>
       </section>
 
       <section className="intro-section section-pad" id="atuacao">

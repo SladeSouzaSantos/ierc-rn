@@ -70,3 +70,25 @@ test("as ondas de eco ficam visíveis durante o impacto com animação permitida
     { timeout: 12000, intervals: [120, 120, 120, 120, 120, 120] },
   ).toBeGreaterThan(0.06);
 });
+
+test("bola quica verticalmente sem desvio horizontal ou rotação", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  const scene = page.locator(".goalball-scene");
+  await scene.scrollIntoViewIfNeeded();
+  await expect(scene).toHaveAttribute("data-motion", "active");
+  const ball = scene.locator(".goalball-ball");
+  const samples: Array<{ centerX: number; y: number; rotation: number }> = [];
+  for (let index = 0; index < 13; index += 1) {
+    samples.push(await ball.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      const transform = new DOMMatrixReadOnly(getComputedStyle(element).transform);
+      return { centerX: bounds.left + bounds.width / 2, y: transform.m42, rotation: transform.m12 };
+    }));
+    await page.waitForTimeout(140);
+  }
+  const firstX = samples[0].centerX;
+  expect(Math.max(...samples.map((s) => Math.abs(s.centerX - firstX)))).toBeLessThan(2);
+  expect(Math.max(...samples.map((s) => Math.abs(s.rotation)))).toBeLessThan(0.02);
+  expect(Math.max(...samples.map((s) => s.y)) - Math.min(...samples.map((s) => s.y))).toBeGreaterThan(12);
+});
