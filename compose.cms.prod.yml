@@ -1,0 +1,46 @@
+# IERC-RN / Sprint 3.2 - instancia de producao isolada.
+# Nao substitui compose.cms.yml: o projeto local existente e seus volumes permanecem intactos.
+# Somente executar depois de definir infraestrutura, dominio, HTTPS, backup e homologacao.
+name: ierc-rn-cms-prod
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:?Create cms/.env.prod using node cms/scripts/init-env.mjs --prod}
+      POSTGRES_USER: ${DATABASE_USERNAME:?Create cms/.env.prod using node cms/scripts/init-env.mjs --prod}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Create cms/.env.prod using node cms/scripts/init-env.mjs --prod}
+    volumes:
+      - ierc_cms_pg_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [cms_prod_private]
+  cms:
+    build: { context: ./cms, dockerfile: Dockerfile }
+    restart: unless-stopped
+    env_file: ./cms/.env.prod
+    environment:
+      NODE_ENV: production
+    depends_on:
+      db: { condition: service_healthy }
+    # Em host compartilhado, 1338 nao concorre com DEV (1337).
+    # Nunca expor o painel diretamente na internet.
+    ports:
+      - "127.0.0.1:1338:1337"
+    volumes:
+      - ierc_cms_uploads_prod:/opt/app/public/uploads
+    networks: [cms_prod_private]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:1337/_health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      start_period: 90s
+      retries: 8
+networks:
+  cms_prod_private: {}
+volumes:
+  ierc_cms_pg_prod: {}
+  ierc_cms_uploads_prod: {}
