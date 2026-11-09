@@ -619,3 +619,60 @@ html[data-high-contrast="true"] .visit-card { background: #ffda55; }
   .stories-symbol { min-height: 300px; }
   .footer-grid { padding-bottom: 35px; }
 }
+
+/* Goalball: fundo estático, bola em camada independente e vibração visual sem áudio. */
+.goalball-scene { isolation: isolate; }
+.goalball-scene .sport-art-visual { z-index: 0; }
+.goalball-ball-position {
+  position: absolute;
+  left: 49.7%;
+  top: 74%;
+  width: 31.9%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  pointer-events: none;
+}
+.goalball-ball {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 10px 11px rgb(8 20 42 / .34));
+  will-change: transform;
+}
+.goalball-ball img { object-fit: contain; }
+.goalball-shadow {
+  position: absolute;
+  z-index: 1;
+  width: 27%;
+  height: 6%;
+  left: 50%;
+  top: 94%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: rgb(6 20 40 / .48);
+  filter: blur(9px);
+  pointer-events: none;
+}
+.goalball-echo {
+  position: absolute;
+  z-index: 2;
+  left: 49.7%;
+  top: 74%;
+  width: 31.9%;
+  aspect-ratio: 1;
+  border: 3px solid rgb(240 216 255 / .92);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(.55);
+  transform-origin: center;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.goalball-echo-second { border-color: rgb(255 225 129 / .85); border-width: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .goalball-ball, .goalball-echo { will-change: auto; }
+}
+html[data-reduce-motion="true"] .goalball-ball,
+html[data-reduce-motion="true"] .goalball-echo { will-change: auto; }

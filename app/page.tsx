@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight, ArrowUpRight, AudioLines, BookOpenText, CalendarDays, CircleHelp,
@@ -6,6 +5,7 @@ import {
   PersonStanding, ShoppingBag, Sparkles, Trophy, Users, Volleyball
 } from "lucide-react";
 import { HeroArt } from "@/components/hero-art";
+import { GoalballScene } from "@/components/goalball-scene";
 import { activities } from "@/lib/site-data";
 
 const icons = [Music2, Laptop2, Compass, BookOpenText, BookOpenText, PersonStanding, Sparkles, Volleyball];
@@ -68,20 +68,7 @@ export default function Home() {
             <Link className="button button-yellow" href="/esportes">Conheça o goalball <ArrowUpRight size={18} aria-hidden="true"/></Link>
             <a className="sport-source" href="https://www.cbdv.org.br/regional-nordeste-de-goalball-comeca-no-dia-26-de-abril-em-campina-grande" target="_blank" rel="noopener noreferrer">Fonte: CBDV, 2026 <span className="sr-only">(abre em nova aba)</span></a>
           </div>
-          <div className="sport-art" aria-hidden="true">
-            <div className="sport-art-visual decorative-orbit">
-              <Image
-                src="/illustrations/goalball-quadra.svg"
-                alt=""
-                fill
-                unoptimized
-                sizes="(max-width: 760px) 90vw, (max-width: 1200px) 45vw, 560px"
-                className="sport-art-illustration"
-              />
-            </div>
-            <span className="sport-art-label">GOALBALL · BOLA SONORA</span>
-            <span className="sport-art-number">02 / 08</span>
-          </div>
+          <GoalballScene />
         </div>
       </section>
 

@@ -2,8 +2,6 @@
 <defs>
 <linearGradient id="violet" x1="168" y1="60" x2="563" y2="440" gradientUnits="userSpaceOnUse"><stop stop-color="#664496"/><stop offset="1" stop-color="#322064"/></linearGradient>
 <linearGradient id="court" x1="360" y1="255" x2="365" y2="480" gradientUnits="userSpaceOnUse"><stop stop-color="#37669E"/><stop offset="1" stop-color="#194375"/></linearGradient>
-<radialGradient id="ball" cx="0" cy="0" r="1" gradientTransform="translate(322 314) rotate(58) scale(198)" gradientUnits="userSpaceOnUse"><stop stop-color="#FFE8A5"/><stop offset=".52" stop-color="#FFD05B"/><stop offset="1" stop-color="#DA951F"/></radialGradient>
-<filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="17" stdDeviation="14" flood-color="#061A33" flood-opacity=".55"/></filter>
 </defs>
 <!-- Fundo com topo arqueado, compatível com o design de referência -->
 <path d="M48 244C48 106 178 27 350 27H393C574 27 691 111 691 248V461H48Z" fill="url(#violet)"/>
@@ -21,19 +19,4 @@
 <path d="M48 350H692"/>
 </g>
 <g stroke="#B9D6F1" stroke-width="3" opacity=".43"><path d="M263 278L194 460M466 278L535 460"/></g>
-<!-- Bola sonora, com orifícios de guizos -->
-<g filter="url(#shadow)">
-<circle cx="368" cy="356" r="118" fill="url(#ball)" stroke="#FBE09B" stroke-width="3"/>
-<path d="M273 303C336 325 416 378 457 420" stroke="#D49A2C" stroke-width="2.5" opacity=".53"/>
-<path d="M288 408C351 369 409 333 439 310" stroke="#D49A2C" stroke-width="2.5" opacity=".45"/>
-<circle cx="256" cy="355" r="23" fill="#143B59" stroke="#C98926" stroke-width="7"/>
-<circle cx="481" cy="355" r="23" fill="#143B59" stroke="#C98926" stroke-width="7"/>
-</g>
-<!-- Ondas sonoras decorativas -->
-<g stroke="#F1E2FF" stroke-width="6" stroke-linecap="round" opacity=".86">
-<path d="M222 301C191 331 191 393 222 421"/>
-<path d="M198 285C157 328 157 403 198 441"/>
-<path d="M514 301C545 331 545 393 514 421"/>
-<path d="M538 285C579 328 579 403 538 441"/>
-</g>
 </svg>
