@@ -76,7 +76,7 @@ export default async function ContentPage({ params }: RouteProps) {
           </div>
           <SportRecords />
           <Note>Os nomes de atletas são transcritos de uma lista pública da CBDV de 2026, sem implicar vínculo atual. Fotografias e biografias individuais dependem de autorização.</Note>
-          <Callout title="Histórias que atravessam gerações" href="/historias" label="Explorar histórias">Conheça cinco trajetórias com vínculos documentados ao IERC-RN, fontes de carreira e fotografias de referência em homologação.</Callout>
+          <Callout title="Histórias que atravessam gerações" href="/historias" label="Explorar histórias">Conheça nove trajetórias com vínculos documentados ao IERC-RN, fontes de carreira e fotografias de referência em homologação.</Callout>
         </>}
 
         {slug === "historias" && <>

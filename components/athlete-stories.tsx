@@ -48,6 +48,6 @@ export function AthleteStories() {
         </div>
       </article>)}
     </div>
-    <p className="athlete-stories-note">As fotografias externas são prévias de homologação com crédito e link para a publicação original. Sua licença de reprodução no portal ainda precisa ser autorizada. Nenhuma imagem foi copiada para este repositório. O caso de Maria Clara aguarda identificação inequívoca de retrato e liberação de uso.</p>
+    <p className="athlete-stories-note">As fotografias externas são prévias de homologação com crédito e link para a publicação original. Sua licença de reprodução no portal ainda precisa ser autorizada. Nenhuma imagem foi copiada para este repositório. Os retratos individuais de Maria Clara e dos quatro novos perfis ainda aguardam identificação inequívoca e liberação de uso.</p>
   </section>;
 }

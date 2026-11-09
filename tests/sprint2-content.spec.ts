@@ -21,7 +21,7 @@ test("esporte diferencia registro público de elenco atual", async ({ page }) =>
 test("histórias apresentam trajetórias documentadas e não atribuem vínculo sem fonte", async ({ page }) => {
   await page.goto("/historias");
   await expect(page.getByRole("heading", { name: "Pessoas, caminhos e conquistas" })).toBeVisible();
-  await expect(page.locator(".athlete-story")).toHaveCount(5);
+  await expect(page.locator(".athlete-story")).toHaveCount(9);
   for (const name of ["Rosicleide Andrade", "Romário Marques", "Halyson Boto"]) {
     await expect(page.getByRole("heading", { name, exact: true })).toHaveCount(0);
   }

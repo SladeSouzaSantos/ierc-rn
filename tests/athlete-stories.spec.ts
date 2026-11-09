@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-test("cinco trajetórias verificadas aparecem com fontes oficiais e vínculo contextual", async ({ page }) => {
+test("nove trajetórias verificadas aparecem com fontes oficiais e vínculo contextual", async ({ page }) => {
   await page.goto("/historias");
   const expected = [
     "Thalita Vitória Simplício",
@@ -9,6 +9,10 @@ test("cinco trajetórias verificadas aparecem com fontes oficiais e vínculo con
     "Sharlley Anthony do Nascimento Silva",
     "Geovana Clara Costa de Moura",
     "Maria Clara Nascimento",
+    "Amanda Emilly Fernandes de Santana",
+    "Israele Letícia Pereira Gomes",
+    "Luciana Ferreira da Silva",
+    "Lucas Araken Silva de Araújo",
   ];
   const profiles = page.locator(".athlete-story");
   await expect(profiles).toHaveCount(expected.length);
@@ -32,9 +36,10 @@ test("fotografias identificadas têm descrição, crédito e status editorial tr
     await expect(img).toHaveAttribute("src", /^https:\/\//);
   }
   await expect(page.locator(".athlete-photo-credit")).toHaveCount(4);
-  await expect(page.getByText("Retrato individual em verificação")).toBeVisible();
+  await expect(page.getByText("Retrato individual em verificação")).toHaveCount(5);
   await expect(page.getByText(/licença de reprodução no portal ainda precisa ser autorizada/)).toBeVisible();
   await expect(page.locator('.athlete-photo-credit a[target="_blank"]')).toHaveCount(4);
+  await expect(page.locator(".athlete-photo-pending")).toHaveCount(5);
 });
 
 test("não há representação não comprovada de outros atletas como ex-alunos do IERC", async ({ page }) => {
@@ -44,6 +49,10 @@ test("não há representação não comprovada de outros atletas como ex-alunos 
   }
   await expect(page.locator("#geovana-moura")).toContainText("2016");
   await expect(page.locator("#sharlley-anthony")).toContainText("2018");
+  await expect(page.locator("#amanda-emilly-santana")).toContainText("2017");
+  await expect(page.locator("#israele-leticia")).toContainText("2019");
+  await expect(page.locator("#luciana-ferreira")).toContainText("2026");
+  await expect(page.locator("#lucas-araken")).toContainText("11 anos");
 });
 
 test("cartões de atletas não produzem overflow horizontal em telas estreitas", async ({ page }) => {

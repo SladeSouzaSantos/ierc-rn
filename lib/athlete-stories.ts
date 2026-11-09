@@ -130,4 +130,71 @@ export const athleteProfiles: readonly AthleteProfile[] = [
       { label: "Entrevista com Maria Clara — Tribuna do Norte, julho de 2026", url: "https://tribunadonorte.com.br/rio-grande-do-norte/cegos-transformam-desafios-e-conquistam-mais-autonomia/" },
     ],
   },
+  {
+    id: "amanda-emilly-santana",
+    name: "Amanda Emilly Fernandes de Santana",
+    discipline: "Goalball · seleção feminina",
+    relation: "Atleta do IERC-RN em convocações de 2017 e 2018",
+    summary: "Amanda Emilly representava o IERC-RN nas convocações de goalball divulgadas pelo Comitê Paralímpico Brasileiro em 2017 e 2018. A TV Brasil relata que ela integrou a Seleção Brasileira a partir de 2017, conquistou o título dos Jogos Parapan-Americanos de Jovens naquele ano e, posteriormente, se transferiu de Natal para defender o Santos.",
+    milestones: [
+      "Em 2017, foi convocada à Seleção Brasileira de jovens representando o IERC-RN, segundo o CPB.",
+      "Foi campeã dos Jogos Parapan-Americanos de Jovens de São Paulo em 2017, de acordo com a TV Brasil.",
+      "Em 2018, ainda apareceu vinculada ao IERC-RN em uma convocação; em reportagem de 2023, já defendia o Santos-SP.",
+    ],
+    sources: [
+      { label: "Convocação de 2017 — CPB (IERC-RN)", url: "https://cpb.org.br/noticias/tecnicos-convocam-atletas-para-o-mundial-de-jovens-de-goalball/" },
+      { label: "Convocação de 2018 — CPB (IERC-RN)", url: "https://cpb.org.br/noticias/selecoes-brasileiras-conhecem-grupos-do-mundial-de-goalball-da-suecia/" },
+      { label: "Trajetória e Parapan de Jovens — TV Brasil, 2023", url: "https://tvbrasil.ebc.com.br/stadium/2023/04/amanda-emilly-e-uma-das-novatas-na-selecao-de-goalball?page=7" },
+    ],
+  },
+  {
+    id: "israele-leticia",
+    name: "Israele Letícia Pereira Gomes",
+    discipline: "Goalball · ala",
+    relation: "Atleta do IERC-RN em convocação da CBDV de 2019",
+    summary: "Em novembro de 2019, a Confederação Brasileira de Desportos de Deficientes Visuais relacionou Israele como ala da Seleção Brasileira feminina, identificando o IERC-RN como sua equipe. Sua trajetória continuou em outras associações: em 2024, a CBDV registrou a AMC-MT, e em convocação de 2025 o CPB apresentou o Instituto Athlon-SP.",
+    milestones: [
+      "Foi convocada para a fase de treinamentos da Seleção Brasileira de dezembro de 2019, representando o IERC-RN.",
+      "Na preparação de 2024, a CBDV a identificou como atleta da AMC-MT.",
+      "Em convocação divulgada em 2025, o CPB registrou sua representação pelo Instituto Athlon-SP; não se afirma vínculo atual com o IERC.",
+    ],
+    sources: [
+      { label: "Convocação de 2019 — CBDV (IERC-RN)", url: "https://www.cbdv.org.br/imprensa/noticias/convocadas-as-selecoes-da-cbdv-para-ultima-fase-de-treinamentos" },
+      { label: "Convocação de 2024 — CBDV (AMC-MT)", url: "https://www.cbdv.org.br/imprensa/noticias/com-objetivos-diferentes-selecoes-de-goalball-do-brasil-voltam-aos-trabalhos" },
+      { label: "Convocação de 2025 — CPB (Instituto Athlon)", url: "https://cpb.org.br/noticias/confira-a-primeira-convocacao-do-ano-das-selecoes-de-futebol-de-cegos-e-goalball/" },
+    ],
+  },
+  {
+    id: "luciana-ferreira",
+    name: "Luciana Ferreira da Silva",
+    discipline: "Goalball · pivô em 2019",
+    relation: "Atleta do IERC-RN em registros de 2019, 2022 e 2026",
+    summary: "Luciana aparece como pivô vinculada ao IERC-RN em uma convocação para a Seleção Brasileira de goalball em novembro de 2019. A CBDV também a identifica nas equipes femininas do Instituto no Regional Nordeste de 2022 e novamente em abril de 2026. São registros de temporadas específicas, sem presumir vínculo ininterrupto.",
+    milestones: [
+      "Foi convocada como pivô da Seleção Brasileira para treinamentos em dezembro de 2019, segundo a CBDV.",
+      "Integrou a equipe feminina do IERC-RN listada para o Regional Nordeste de Goalball de 2022.",
+      "Voltou a figurar na relação feminina do IERC-RN no Regional Nordeste de abril de 2026.",
+    ],
+    sources: [
+      { label: "Seleção de 2019 — CBDV (IERC-RN)", url: "https://www.cbdv.org.br/imprensa/noticias/convocadas-as-selecoes-da-cbdv-para-ultima-fase-de-treinamentos" },
+      { label: "Regional Nordeste de 2022 — CBDV", url: "https://www.cbdv.org.br/imprensa/noticias/apace-e-adevirn-colocam-titulos-a-prova-no-regional-de-goalball" },
+      { label: "Regional Nordeste de 2026 — CBDV", url: "https://www.cbdv.org.br/regional-nordeste-de-goalball-comeca-no-dia-26-de-abril-em-campina-grande" },
+    ],
+  },
+  {
+    id: "lucas-araken",
+    name: "Lucas Araken Silva de Araújo",
+    discipline: "Goalball · seleção de base",
+    relation: "Conheceu o goalball no IERC aos 11 anos; atleta do IERC em 2019",
+    summary: "Em entrevista publicada pelo CPB em março de 2023, Lucas Araken relatou que conheceu o goalball aos 11 anos no Instituto de Cegos do Rio Grande do Norte. O Comitê também o relacionou como atleta do IERC-RN entre os convocados ao Mundial de Jovens de 2019, na Austrália. Em 2023, já treinava em Brasília e aparecia vinculado ao Capital/Cetefe-DF.",
+    milestones: [
+      "Começou no goalball aos 11 anos no IERC-RN, segundo perfil publicado pelo CPB em 2023.",
+      "Foi convocado ao Mundial de Jovens de Goalball de 2019 representando o IERC-RN.",
+      "Em 2023, participou de treinamentos da Seleção Brasileira de base como atleta do Capital/Cetefe-DF.",
+    ],
+    sources: [
+      { label: "Primeiro contato com goalball no IERC — CPB, 2023", url: "https://cpb.org.br/noticias/sete-alunos-dos-centros-de-referencia-do-cpb-integram-selecoes-de-base-do-goalball/" },
+      { label: "Mundial de Jovens de 2019 — CPB (IERC-RN)", url: "https://cpb.org.br/noticias/lista-de-convocados-para-mundial-de-jovens-de-goalball-da-ibsa-e-divulgada/" },
+    ],
+  },
 ] as const;
