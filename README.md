@@ -4,9 +4,12 @@ Primeira versão de homologação do portal do **Instituto de Educação e Reabi
 
 O site apresenta as frentes de educação, reabilitação, cultura e esporte, com espaço para goalball, histórias, notícias, eventos, galerias, bazar solidário, visitas e apoio à instituição.
 
-> **Status:** Sprints 1 e 1.1 integradas à `main` pelo PR #5; Sprint 2 (conteúdo e nove perfis esportivos) integrada à `main` pelo PR #11. As branches `dev` e `main` estão alinhadas. Este portal ainda não foi homologado para lançamento institucional público: faltam testes manuais com tecnologias assistivas e validação dos conteúdos e acervo. A logo integrada tem baixa resolução e poderá ser substituída por original de maior qualidade.
+> **Status:** Sprints 1 e 1.1 integradas à `main` pelo PR #5; Sprint 2 (conteúdo e nove perfis esportivos) integrada à `main` pelo PR #11. Sprint 3.1 (CMS editorial) em desenvolvimento e homologação na `dev`; a `main` permanece com a baseline da Sprint 2. Este portal ainda não foi homologado para lançamento institucional público: faltam testes manuais com tecnologias assistivas e validação dos conteúdos e acervo. A logo integrada tem baixa resolução e poderá ser substituída por original de maior qualidade.
 
 ## Tecnologia
+
+A partir da Sprint 3.1, a `dev` inclui o **Strapi 5 isolado em Docker/PostgreSQL**, com painel administrativo e integração opcional de publicações aprovadas (notícias, eventos, atividades e novas trajetórias), sem migrar a interface existente. Consulte [Guia do CMS](docs/CMS-SPRINT3.md) para criar credenciais locais e configurar o acesso à API no servidor Next.js. O CMS não é ativado automaticamente no portal.
+
 
 Next.js (App Router), React, TypeScript, CSS próprio, Motion, GSAP + ScrollTrigger, Lenis opcional, ícones Lucide. Testes de navegação, teclado e acessibilidade com Playwright + axe-core.
 
@@ -43,7 +46,7 @@ Para rodar os testes e2e, a aplicação deve estar compilada (`npm run build`); 
 
 ## Marcos de desenvolvimento
 
-Veja [docs/ROADMAP.md](docs/ROADMAP.md) para as quatro sprints, [docs/SOURCES-SPRINT2.md](docs/SOURCES-SPRINT2.md) para evidências de conteúdo e [docs/ACESSIBILIDADE-VALIDACAO.md](docs/ACESSIBILIDADE-VALIDACAO.md) para testes manuais.
+Veja [docs/ROADMAP.md](docs/ROADMAP.md) para as quatro sprints, [docs/CMS-SPRINT3.md](docs/CMS-SPRINT3.md) para o CMS, [docs/SOURCES-SPRINT2.md](docs/SOURCES-SPRINT2.md) para evidências de conteúdo e [docs/ACESSIBILIDADE-VALIDACAO.md](docs/ACESSIBILIDADE-VALIDACAO.md) para testes manuais.
 
 ## Acessibilidade
 
