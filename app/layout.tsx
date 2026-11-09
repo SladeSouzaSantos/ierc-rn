@@ -17,7 +17,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
-      <body>
+      {/* Extensões como ColorZilla podem injetar atributos no body antes da hidratação.
+          Suprimimos apenas diferenças de atributos nesse elemento raiz, sem ocultar
+          problemas de hidratação nos componentes internos. */}
+      <body suppressHydrationWarning>
         <a className="skip-link" href="#conteudo">Pular para o conteúdo principal</a>
         <SiteHeader />
         <main id="conteudo" tabIndex={-1}>{children}</main>
