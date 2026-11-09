@@ -562,3 +562,60 @@ html[data-high-contrast="true"] :where(.hero,.sport-section,.site-footer,.interi
   .hero-mini { margin-top: 34px; }
   .sport-art { min-height:0; height:auto; }
 }
+
+
+/* Sprint 1.1.2 — refinamento de proporções, espaçamentos e correspondência visual */
+@media (min-width: 1021px) {
+  .hero-art-illustration {
+    transform: translateY(-7%) scale(1.18);
+    transform-origin: 52% 62%;
+  }
+  .sport-art { transform: scale(1.055); transform-origin: center; }
+}
+.section-pad { padding-block: clamp(66px, 7vw, 105px); }
+.intro-section { padding-block: 95px 88px; }
+.activities-section { padding-block: 90px 96px; }
+.stories-section { padding-block: 85px; }
+.updates-section { padding-block: 84px 92px; }
+.community-section { padding-block: 0 74px; }
+.principle-card { padding: 28px; min-height: 235px; }
+.principle-card > svg { margin: 16px 0 15px; }
+.activity-card { min-height: 230px; padding: 22px 22px 26px; }
+.activity-type { margin-top: 17px; }
+.stories-symbol { min-height: 370px; }
+.bazar-card, .visit-card { min-height: 470px; padding: clamp(32px, 4vw, 54px); }
+.update-card { min-height: 292px; padding: 27px; }
+.update-glyph { width: 65px; height: 65px; margin-bottom: 21px; }
+.sport-layout { min-height: 495px; padding-block: 55px; }
+.footer-grid { padding-top: 72px; padding-bottom: 56px; }
+.footer-identity h2 { max-width: 565px; font-size: clamp(2.2rem, 3.4vw, 3.8rem); }
+.footer-base { padding-block: 19px; }
+/* Paleta de alto contraste continua funcional independentemente de gradientes editoriais. */
+html[data-high-contrast="true"] .hero,
+html[data-high-contrast="true"] .sport-section,
+html[data-high-contrast="true"] .site-footer { background: #000; }
+html[data-high-contrast="true"] .activities-section,
+html[data-high-contrast="true"] .stories-section,
+html[data-high-contrast="true"] .updates-section,
+html[data-high-contrast="true"] .intro-section,
+html[data-high-contrast="true"] .community-section { background: #fff; }
+html[data-high-contrast="true"] .bazar-card,
+html[data-high-contrast="true"] .visit-card { background: #ffda55; }
+@media (max-width: 760px) {
+  .hero-art-illustration {
+    transform: translateY(-2%) scale(1.06);
+    transform-origin: center bottom;
+  }
+  .intro-section, .activities-section, .stories-section, .updates-section { padding-block: 70px; }
+  .community-section { padding-block: 0 70px; }
+  .sport-layout { min-height: 0; padding-block: 72px; }
+  .sport-art { transform: none; }
+  .footer-grid { padding-top: 66px; padding-bottom: 55px; }
+  .bazar-card,.visit-card { min-height: 430px; }
+}
+@media (max-width: 520px) {
+  .principle-card { min-height: 0; }
+  .activity-card { min-height: 220px; }
+  .stories-symbol { min-height: 300px; }
+  .footer-grid { padding-bottom: 35px; }
+}
