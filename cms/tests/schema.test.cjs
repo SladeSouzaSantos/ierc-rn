@@ -6,7 +6,7 @@ const { execFileSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 test('generator cria rotas e schemas reproduziveis do Strapi', () => {
   execFileSync(process.execPath, [path.join(root, 'scripts/generate.mjs')], { stdio: 'pipe' });
-  for (const singular of ['news-article','event','activity','athlete','gallery','media-record','site-settings']) {
+  for (const singular of ['news-article','event','activity','athlete','gallery','media-record','site-setting']) {
     const schemaPath = path.join(root, 'src/api', singular, 'content-types', singular, 'schema.json');
     const model = JSON.parse(readFileSync(schemaPath, 'utf8'));
     assert.equal(model.info.singularName, singular);
@@ -39,7 +39,7 @@ test('nada publica dados de visitas ou usuarios automaticamente', () => {
   const src = readFileSync(path.join(root, 'scripts/generate.mjs'), 'utf8');
   assert.ok(!src.includes('strapi.admin.services.user.create'));
   assert.ok(!src.includes('apiToken: { token:'));
-  const settings = JSON.parse(readFileSync(path.join(root, 'src/api/site-settings/content-types/site-settings/schema.json')));
+  const settings = JSON.parse(readFileSync(path.join(root, 'src/api/site-setting/content-types/site-setting/schema.json')));
   assert.equal(settings.kind,'singleType');
   assert.ok(settings.attributes.visitBookingUrl);
   assert.ok(!settings.attributes.visitBookingUrl.default);
