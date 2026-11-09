@@ -84,7 +84,7 @@ put('src/admin/tsconfig.json', JSON.stringify({
   extends: '@strapi/typescript-utils/tsconfigs/admin',
   include: ['../plugins/**/admin/src/**/*', './'],
   exclude: ['node_modules/', 'build/', 'dist/', '**/*.test.ts'],
-}, null, 2) + '\\n');
+}, null, 2) + '\n');
 put('src/admin/app.js', `export default {
   config: { locales: ['pt-BR'] },
   bootstrap() {},
