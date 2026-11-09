@@ -23,7 +23,7 @@ test("títulos do hero e rodapé não partem palavras nem transbordam em diferen
         let node: Node | null = walker.nextNode();
         while (node) {
           const text = node.textContent ?? "";
-          for (const match of text.matchAll(/\\S+/gu)) {
+          for (const match of text.matchAll(/\S+/gu)) {
             const offset = match.index ?? 0;
             const range = document.createRange();
             range.setStart(node, offset);
