@@ -30,7 +30,7 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="container header-inner">
-        <Link href="/" className="brand" aria-label="IERC-RN — página inicial" onClick={() => setOpened(false)}>
+        <Link href="/" className="brand" onClick={() => setOpened(false)}>
           <span className="brand-mark" aria-hidden="true"><span>I</span><span className="brand-dot">·</span></span>
           <span className="brand-copy">
             <strong>IERC<span className="brand-slash">/</span>RN</strong>
