@@ -5,7 +5,7 @@ test("capa apresenta leitura tátil sem depender da ilustração para informar",
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("abrir possibilidades");
   await expect(page.locator(".hero-art")).toHaveAttribute("aria-hidden", "true");
-  await expect(page.locator(".hero-art")).toContainText("Leitura tátil, autonomia e novos caminhos.");
+  await expect(page.locator(".hero-lead")).toContainText("educação, autonomia, cultura e esporte");
   const image = page.locator(".hero-art-illustration");
   await expect(image).toHaveAttribute("alt", "");
   await expect(image).toHaveAttribute("src", "/illustrations/leitura-tatil.svg");
@@ -17,7 +17,7 @@ test("bloco de goalball inclui imagem de quadra e bola sonora meramente decorati
   await expect(page.getByRole("heading", { name: /O som da bola/ })).toBeVisible();
   const illustration = page.locator(".sport-art");
   await expect(illustration).toHaveAttribute("aria-hidden", "true");
-  await expect(illustration).toContainText("GOALBALL · BOLA SONORA");
+  await expect(page.locator(".sport-copy")).toContainText("O goalball faz parte da vida esportiva");
   const image = illustration.locator(".sport-art-illustration");
   // Next/Image carrega imagens abaixo da dobra sob demanda: simular rolagem real.
   await image.scrollIntoViewIfNeeded();
@@ -63,4 +63,18 @@ test("homepage redesenhada continua sem violações automatizadas axe-core A/AA"
     .withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa"])
     .analyze();
   expect(result.violations).toEqual([]);
+});
+
+test("no desktop, artes do modelo ocupam sua coluna sem substituir conteúdo textual", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Medições se aplicam à composição desktop");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  const hero = await page.locator(".hero").boundingBox();
+  const art = await page.locator(".hero-art").boundingBox();
+  const sport = await page.locator(".sport-art").boundingBox();
+  if (!hero || !art || !sport) throw new Error("Uma das áreas visuais não foi renderizada");
+  expect(art.width).toBeGreaterThan(hero.width * 0.34);
+  expect(art.height).toBeGreaterThan(450);
+  expect(sport.width / sport.height).toBeGreaterThan(1.25);
+  await expect(page.getByRole("link", { name: "Conheça o Instituto" }).first()).toBeVisible();
 });
