@@ -6,6 +6,8 @@ O site apresenta as frentes de educação, reabilitação, cultura e esporte, co
 
 > **Status:** Sprints 1 e 1.1 integradas à `main` pelo PR #5; Sprint 2 (conteúdo e nove perfis esportivos) integrada à `main` pelo PR #11. Sprint 3.1 (CMS editorial) em desenvolvimento e homologação na `dev`; a `main` permanece com a baseline da Sprint 2. Este portal ainda não foi homologado para lançamento institucional público: faltam testes manuais com tecnologias assistivas e validação dos conteúdos e acervo. A logo integrada tem baixa resolução e poderá ser substituída por original de maior qualidade.
 
+A separação entre CMS DEV existente e PROD futura (Docker, PostgreSQL, volumes e credenciais) está documentada em [CMS: ambientes e diagnóstico](docs/CMS-ENVIRONMENTS.md). **Não é necessário alterar o Docker local para consultar a lentidão do painel.**
+
 ## Tecnologia
 
 A partir da Sprint 3.1, a `dev` inclui o **Strapi 5 isolado em Docker/PostgreSQL**, com painel administrativo e integração opcional de publicações aprovadas (notícias, eventos, atividades e novas trajetórias), sem migrar a interface existente. Consulte [Guia do CMS](docs/CMS-SPRINT3.md) para criar credenciais locais e configurar o acesso à API no servidor Next.js. O CMS não é ativado automaticamente no portal.
