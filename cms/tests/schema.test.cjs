@@ -44,3 +44,10 @@ test('nada publica dados de visitas ou usuarios automaticamente', () => {
   assert.ok(settings.attributes.visitBookingUrl);
   assert.ok(!settings.attributes.visitBookingUrl.default);
 });
+
+test('favicon provisório existe e é um PNG válido antes do boot', () => {
+  const favicon = path.join(root, 'favicon.png');
+  assert.ok(existsSync(favicon));
+  const buffer = readFileSync(favicon);
+  assert.deepEqual(Array.from(buffer.subarray(0, 8)), [137, 80, 78, 71, 13, 10, 26, 10]);
+});
