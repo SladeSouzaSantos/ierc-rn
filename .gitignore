@@ -9,3 +9,14 @@ test-results/
 !.env.example
 *.tsbuildinfo
 .DS_Store
+
+# Strapi CMS - generated schema, secrets and runtime data
+cms/config/
+cms/src/api/
+cms/src/admin/
+cms/src/index.js
+cms/.tmp/
+cms/.cache/
+cms/.strapi/
+cms/dist/
+cms/public/uploads/
