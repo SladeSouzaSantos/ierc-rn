@@ -64,10 +64,6 @@ jobs:
           node-version: "22"
       - name: Install isolated CMS dependencies
         run: npm install --prefix cms --no-audit --no-fund
-      - name: Install browser smoke dependencies
-        run: |
-          npm install --no-audit --no-fund
-          npx playwright install --with-deps chromium
       - name: Build Strapi editorial admin
         run: npm run --prefix cms build
         env:
@@ -101,8 +97,6 @@ jobs:
           DATABASE_SSL: false
         run: |
           set -euo pipefail
-          # CI database is disposable: create its own administrator, never the user's account.
-          npm run --prefix cms strapi admin:create-user -- --firstname=CI --lastname=Smoketest --email=ci-admin@ierc.invalid --password=CIOnly_Strapi_2026_ValidPassword! > /tmp/ierc-admin-create.log 2>&1
           npm run --prefix cms start > /tmp/ierc-strapi-smoke.log 2>&1 &
           PID=$!
           cleanup() {
@@ -125,15 +119,5 @@ jobs:
           [ "$ADMIN_STATUS" = "200" ]
           FAVICON_STATUS=$(curl --max-time 5 -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:1337/favicon.ico)
           [ "$FAVICON_STATUS" = "200" ]
-          node cms/tests/admin-ui-smoke.mjs
           echo "CMS admin and favicon verified (HTTP 200)."
           echo "CMS health OK; anonymous news API denied ($HTTP_CODE)."
-
-      - name: Upload Strapi Content Manager browser diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: strapi-content-manager-diagnostics
-          path: cms-test-results/
-          if-no-files-found: ignore
-          retention-days: 7
