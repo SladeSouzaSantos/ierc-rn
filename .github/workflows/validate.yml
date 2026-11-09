@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: CMS schema and editorial safety contract
-        run: node --test cms/tests/schema.test.cjs
+        run: node --test cms/tests/*.test.cjs
       - name: Build
         run: npm run build
       - name: Typecheck
