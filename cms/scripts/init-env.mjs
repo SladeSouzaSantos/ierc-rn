@@ -22,6 +22,7 @@ const values = {
   APP_KEYS: Array.from({ length: 4 }, () => secret()).join(','),
   API_TOKEN_SALT: secret(),
   ADMIN_JWT_SECRET: secret(),
+  ENCRYPTION_KEY: secret(),
   TRANSFER_TOKEN_SALT: secret(),
   JWT_SECRET: secret(),
 };
