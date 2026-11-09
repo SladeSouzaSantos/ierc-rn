@@ -4,7 +4,7 @@ Primeira versão de homologação do portal do **Instituto de Educação e Reabi
 
 O site apresenta as frentes de educação, reabilitação, cultura e esporte, com espaço para goalball, histórias, notícias, eventos, galerias, bazar solidário, visitas e apoio à instituição.
 
-> **Status:** Sprints 1 e 1.1 aprovadas visualmente e integradas à `main` pelo PR #5; Sprint 2 em desenvolvimento na `dev`. Este portal ainda não foi homologado para lançamento institucional público: faltam testes manuais com tecnologias assistivas e validação dos conteúdos e acervo. A logo integrada tem baixa resolução e poderá ser substituída por original de maior qualidade.
+> **Status:** Sprints 1 e 1.1 integradas à `main` pelo PR #5; Sprint 2 (conteúdo e nove perfis esportivos) integrada à `main` pelo PR #11. As branches `dev` e `main` estão alinhadas. Este portal ainda não foi homologado para lançamento institucional público: faltam testes manuais com tecnologias assistivas e validação dos conteúdos e acervo. A logo integrada tem baixa resolução e poderá ser substituída por original de maior qualidade.
 
 ## Tecnologia
 

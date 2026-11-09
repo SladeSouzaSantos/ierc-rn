@@ -22,7 +22,7 @@
 - Validar desktop/mobile, movimento reduzido e leitores de tela.
 
 ## Sprint 2 — Conteúdo e acervo
-**Situação em 09/11/2026:** implementação inicial em `dev`, com fontes verificadas, histórico, clipping e registro esportivo 2026. Aprovação institucional e acervo autorizado pendentes. Ver [fontes da Sprint 2](SOURCES-SPRINT2.md).
+**Situação em 09/11/2026:** conteúdo institucional, arquivo de goalball e nove trajetórias esportivas integrados à `main` pelo PR #11, após CI aprovado. **Permanecem pendentes para lançamento público:** aprovação institucional, testes manuais de acessibilidade, contatos oficiais e licenças das fotografias de terceiros. Ver [fontes da Sprint 2](SOURCES-SPRINT2.md).
 **Acompanhamento:** [#7](https://github.com/SladeSouzaSantos/ierc-rn/issues/7) · [#1](https://github.com/SladeSouzaSantos/ierc-rn/issues/1) · [#3](https://github.com/SladeSouzaSantos/ierc-rn/issues/3)
 
 - Confirmar textos, canais, atividades e horários, bazar e excursões.
