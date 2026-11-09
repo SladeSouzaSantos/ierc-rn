@@ -19,6 +19,8 @@ jobs:
           node-version: "22"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: CMS schema and editorial safety contract
+        run: node --test cms/tests/schema.test.cjs
       - name: Build
         run: npm run build
       - name: Typecheck
@@ -37,3 +39,27 @@ jobs:
             test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  cms-build:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install isolated CMS dependencies
+        run: npm install --prefix cms --no-audit --no-fund
+      - name: Build Strapi editorial admin
+        run: npm run --prefix cms build
+        env:
+          APP_KEYS: ci-key-1,ci-key-2,ci-key-3,ci-key-4
+          ADMIN_JWT_SECRET: ci-admin-jwt-only
+          API_TOKEN_SALT: ci-api-token-salt-only
+          TRANSFER_TOKEN_SALT: ci-transfer-only
+          JWT_SECRET: ci-jwt-only
+          DATABASE_HOST: 127.0.0.1
+          DATABASE_NAME: ierc_cms_ci
+          DATABASE_USERNAME: ierc_cms_ci
+          DATABASE_PASSWORD: ci-secret-only
