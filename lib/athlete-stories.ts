@@ -38,9 +38,9 @@ export const athleteProfiles: readonly AthleteProfile[] = [
       { label: "Vínculo com o IERC — perfil de Clara Daniele no CPB", url: "https://cpb.org.br/atletas/clara-daniele-da-silva/" },
     ],
     photo: {
-      src: "https://www.gov.br/secom/pt-br/acompanhe-a-secom/noticias/2024/08/brasil-brilha-em-paris-no-3o-dia-de-disputas-e-vai-ao-podio-dez-vezes-tres-delas-no-lugar-mais-alto/thalita-simplicio.jpg/%40%40images/4c524136-1f17-4989-8685-895076a67754.jpeg",
+      src: "https://www.gov.br/secom/pt-br/acompanhe-a-secom/noticias/2024/08/brasil-brilha-em-paris-no-3o-dia-de-disputas-e-vai-ao-podio-dez-vezes-tres-delas-no-lugar-mais-alto/thalita-simplicio.jpg/@@images/5f256ce8-17de-4b9d-9be5-a12072d0e112.jpeg",
       alt: "Thalita Simplício, de uniforme amarelo e azul do Brasil, corre ao lado de seu atleta-guia na pista dos Jogos Paralímpicos de Paris 2024.",
-      credit: "Foto publicada pela Secom/Gov.br; autoria e licença individual ainda em verificação.",
+      credit: "Foto: Alexandre Schneider/CPB, publicada pela Secom/Gov.br; autorização de reprodução no portal ainda pendente.",
       publisherUrl: "https://www.gov.br/secom/pt-br/acompanhe-a-secom/noticias/2024/08/brasil-brilha-em-paris-no-3o-dia-de-disputas-e-vai-ao-podio-dez-vezes-tres-delas-no-lugar-mais-alto",
       permission: "pending",
     },

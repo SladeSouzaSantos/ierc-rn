@@ -70,3 +70,12 @@ test("histórias passam pela auditoria automática WCAG A/AA e preservam imagens
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
   expect(report.violations).toEqual([]);
 });
+
+test("imagem de Thalita aponta para a foto oficial correta e não para a atleta Carol Santiago", async ({ page }) => {
+  await page.goto("/historias");
+  const card = page.locator("#thalita-simplicio");
+  const image = card.locator(".athlete-story-frame img");
+  await expect(image).toHaveAttribute("src", /\/thalita-simplicio\\.jpg\/@@images\/5f256ce8-17de-4b9d-9be5-a12072d0e112\\.jpeg$/);
+  await expect(card.locator(".athlete-photo-credit")).toContainText("Alexandre Schneider/CPB");
+  await expect(image).not.toHaveAttribute("src", /maria-carolina/);
+});
