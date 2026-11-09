@@ -30,6 +30,7 @@ put('config/server.js', `module.exports = ({ env }) => ({
 put('config/admin.js', `module.exports = ({ env }) => ({
   auth: { secret: env('ADMIN_JWT_SECRET') },
   apiToken: { salt: env('API_TOKEN_SALT') },
+  secrets: { encryptionKey: env('ENCRYPTION_KEY') },
   transfer: { token: { salt: env('TRANSFER_TOKEN_SALT') } },
   flags: { nps: false, promoteEE: false },
 });
@@ -55,6 +56,7 @@ put('config/middlewares.js', `module.exports = [
   'strapi::errors',
   'strapi::security',
   'strapi::cors',
+  'global::private-api-gate',
   'strapi::poweredBy',
   'strapi::query',
   { name: 'strapi::body', config: {
@@ -72,6 +74,19 @@ put('config/plugins.js', `module.exports = () => ({
 `);
 put('config/api.js', `module.exports = {
   rest: { defaultLimit: 20, maxLimit: 50, withCount: true },
+};
+`);
+put('src/middlewares/private-api-gate.js', `// Public REST endpoints require a token. The admin panel retains Strapi auth.
+module.exports = () => async (ctx, next) => {
+  const path = ctx.path || '';
+  if (path.startsWith('/api/') && !ctx.get('authorization')) {
+    ctx.status = 401;
+    ctx.body = { data: null, error: {
+      status: 401, name: 'UnauthorizedError', message: 'Token de leitura obrigatorio',
+    } };
+    return;
+  }
+  await next();
 };
 `);
 put('src/index.js', `module.exports = {
