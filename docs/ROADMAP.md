@@ -12,6 +12,14 @@
 - Testar lint/typecheck/build, axe-core, zoom/reflow, desktop/mobile e movimento reduzido.
 - **Gate de aprovação manual obrigatório:** NVDA, VoiceOver ou TalkBack, leitura linear, links, botões, modo alto contraste e revisão com usuários.
 
+## Sprint 1.1 — Ilustrações institucionais
+**Acompanhamento:** [#10](https://github.com/SladeSouzaSantos/ierc-rn/issues/10)
+
+- Trocar capa abstrata por mãos, leitura tátil e percurso de autonomia.
+- Redesenhar goalball com quadra, meta e bola com aberturas sonoras.
+- Usar SVG autoral e conteúdo equivalente em textos adjacentes, sem depender de imagem.
+- Validar desktop/mobile, movimento reduzido e leitores de tela.
+
 ## Sprint 2 — Conteúdo e acervo
 **Acompanhamento:** [#7](https://github.com/SladeSouzaSantos/ierc-rn/issues/7) · [#1](https://github.com/SladeSouzaSantos/ierc-rn/issues/1) · [#3](https://github.com/SladeSouzaSantos/ierc-rn/issues/3)
 

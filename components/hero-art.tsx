@@ -1,8 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
+/**
+ * Arte exclusivamente editorial. O h1, a introdução e os links adjacentes
+ * carregam a informação essencial para leitores de tela.
+ */
 export function HeroArt() {
   const systemReducedMotion = useReducedMotion();
   const [userReducedMotion, setUserReducedMotion] = useState(false);
@@ -15,15 +20,28 @@ export function HeroArt() {
   }, []);
 
   const reduceMotion = systemReducedMotion || userReducedMotion;
+
   return (
     <div className="hero-art" aria-hidden="true">
       <div className="hero-art-grid" />
-      <div className="hero-art-texture">I · E · R · C</div>
-      <motion.div className="hero-orb" animate={reduceMotion ? undefined : { y: [0, -12, 0] }} transition={reduceMotion ? undefined : { duration: 8, ease: "easeInOut", repeat: Infinity }}>
-        <div className="hero-orb-ring"><div className="hero-orb-core" /></div>
+      <span className="hero-art-texture">I · E · R · C</span>
+      <motion.div
+        className="hero-art-visual"
+        animate={reduceMotion ? { y: 0 } : { y: [0, -7, 0] }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 9, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Image
+          src="/illustrations/leitura-tatil.svg"
+          alt=""
+          fill
+          unoptimized
+          priority
+          sizes="(max-width: 760px) 90vw, (max-width: 1200px) 45vw, 560px"
+          className="hero-art-illustration"
+        />
       </motion.div>
-      <div className="hero-art-caption"><span className="hero-art-caption-line" />Um novo jeito de se conectar.</div>
-      <div className="hero-art-index">01 / 08</div>
+      <div className="hero-art-caption"><span className="hero-art-caption-line" />Leitura tátil, autonomia e novos caminhos.</div>
+      <span className="hero-art-index">01 / 08</span>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight, ArrowUpRight, AudioLines, BookOpenText, CalendarDays, CircleHelp,
@@ -68,10 +69,18 @@ export default function Home() {
             <a className="sport-source" href="https://www.cbdv.org.br/regional-nordeste-de-goalball-comeca-no-dia-26-de-abril-em-campina-grande" target="_blank" rel="noopener noreferrer">Fonte: CBDV, 2026 <span className="sr-only">(abre em nova aba)</span></a>
           </div>
           <div className="sport-art" aria-hidden="true">
-            <span className="court-lines court-lines-one" /><span className="court-lines court-lines-two" />
-            <div className="sport-ball decorative-orbit"><div className="sport-ball-line sport-ball-line-a" /><div className="sport-ball-line sport-ball-line-b" /></div>
-            <span className="sport-art-label">GOALBALL / IERC-RN</span>
-            <span className="sport-art-number">01</span>
+            <div className="sport-art-visual decorative-orbit">
+              <Image
+                src="/illustrations/goalball-quadra.svg"
+                alt=""
+                fill
+                unoptimized
+                sizes="(max-width: 760px) 90vw, (max-width: 1200px) 45vw, 560px"
+                className="sport-art-illustration"
+              />
+            </div>
+            <span className="sport-art-label">GOALBALL · BOLA SONORA</span>
+            <span className="sport-art-number">02 / 08</span>
           </div>
         </div>
       </section>

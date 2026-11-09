@@ -86,16 +86,39 @@ a:focus-visible,button:focus-visible,input:focus-visible { outline: 3px solid #d
 .hero .text-action { color: #fff; }
 .hero-mini { display: flex; gap: 12px; align-items: center; margin-top: 68px; color: #dce5e6; font-size: .84rem; }
 .hero-mini-mark { color: var(--warm); font-size: 1.8rem; }
-.hero-art { height: min(620px,55vw); min-height: 455px; border: 1px solid #8bafb344; border-radius: 240px 240px 15px 15px; position: relative; overflow: hidden; background: radial-gradient(circle at 40% 40%, #32606a 0%, #1b4855 38%, #0c3040 90%); }
-.hero-art-grid { position: absolute; inset: 0; opacity: .2; background-image: linear-gradient(90deg,#e1f2ee38 1px,transparent 1px),linear-gradient(#e1f2ee38 1px,transparent 1px); background-size: 35px 35px; }
-.hero-art-texture { position: absolute; top: 8%; left: 13%; font-size: .7rem; letter-spacing: .42em; font-weight: 800; color: #d4e8df; }
-.hero-orb { position: absolute; width: 80%; aspect-ratio: 1; left: 10%; top: 18%; border-radius: 50%; filter: drop-shadow(3px 32px 40px #071e2699); }
-.hero-orb-ring { position: absolute; inset: 0; border: clamp(26px,3.2vw,57px) solid var(--warm); border-radius: 50%; transform: rotate(-26deg); box-shadow: inset 0 0 0 2px #ffd98533, 0 0 0 2px #ffffff15; }
-.hero-orb-ring:after { content:""; position:absolute; width:45%; height:25%; border:12px solid #0d3340; border-radius:50%; transform:rotate(55deg); top:35%; left:22%; }
-.hero-orb-core { position: absolute; width: 35%; aspect-ratio:1; border: 2px solid #fff8; border-radius: 50%; top: 33%; left: 34%; background: radial-gradient(circle at 35% 35%, #f8d994, #e8ad35 72%); }
-.hero-art-caption { position: absolute; bottom: 9%; left: 9%; display: flex; flex-direction: column; gap: 14px; max-width: 180px; font-size: .87rem; letter-spacing: -.01em; }
-.hero-art-caption-line { height: 3px; width: 48px; background: var(--warm); }
-.hero-art-index { position: absolute; bottom: 9%; right: 9%; font-size: .72rem; letter-spacing: .2em; }
+.hero-art {
+  position: relative;
+  isolation: isolate;
+  height: min(620px, 55vw);
+  min-height: 455px;
+  border: 1px solid #8bafb344;
+  border-radius: 240px 240px 15px 15px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 38%, #235775 0%, #154564 56%, #0c304a 100%);
+}
+.hero-art-grid {
+  position: absolute; inset: 0; opacity: .13;
+  background-image: linear-gradient(90deg,#e1f2ee38 1px,transparent 1px),linear-gradient(#e1f2ee38 1px,transparent 1px);
+  background-size: 35px 35px;
+}
+.hero-art-texture {
+  position: absolute; z-index: 2; top: 7%; left: 11%;
+  color: #f8f2ff; font-size: .73rem; letter-spacing: .4em; font-weight: 850;
+}
+.hero-art-visual { position: absolute; z-index: 1; inset: 3% -2% 3%; }
+.hero-art-illustration { object-fit: contain; object-position: center; }
+.hero-art-caption {
+  position: absolute; z-index: 2; bottom: 6%; left: 7%;
+  display: flex; flex-direction: column; gap: 10px;
+  max-width: 250px; padding: 9px 12px 9px 0;
+  color: #fff; font-size: .9rem; line-height: 1.5;
+  text-shadow: 0 2px 8px #09273e;
+}
+.hero-art-caption-line { height: 3px; width: 45px; background: var(--warm); }
+.hero-art-index {
+  position: absolute; z-index: 2; bottom: 8%; right: 7%;
+  font-size: .73rem; font-weight: 750; letter-spacing: .14em; color: #fff;
+}
 .hero-bottom { display: flex; justify-content: space-between; gap: 20px; padding-block: 22px; border-top: 1px solid #9ebeb547; color: #d7e5e6; font-size: .78rem; }
 .hero-bottom a { font-weight: 750; }
 
@@ -127,16 +150,24 @@ a:focus-visible,button:focus-visible,input:focus-visible { outline: 3px solid #d
 .sport-copy h2 em { color: var(--warm); }
 .sport-copy > p:not(.eyebrow) { max-width: 540px; color: #d8e9ec; font-size: 1.08rem; line-height: 1.85; }
 .sport-source { display: block; width: max-content; max-width: 100%; margin-top: 26px; font-size: .78rem; color: #dbe8e7; text-decoration: underline; text-underline-offset: 3px; }
-.sport-art { position: relative; width: 100%; min-height: 490px; border-radius: 230px 230px 16px 16px; background: radial-gradient(circle at 50% 56%,#3c6b65 0,#1e4c4f 44%,#153e42 70%,#102f37 100%); overflow: hidden; border: 1px solid #6489867e; }
-.court-lines { position: absolute; border: 2px solid #b5c7ad99; width: 75%; height: 75%; top: 12.5%; left: 12.5%; transform: skewY(-12deg); }
-.court-lines-two { width: 40%; left: 30%; opacity: .6; }
-.sport-ball { position: absolute; width: 42%; aspect-ratio: 1; border-radius: 50%; left: 29%; top: 27%; overflow: hidden; box-shadow: 0 30px 40px #091f27a6; background: radial-gradient(circle at 29% 25%,#ffe4a7,#f6ba4e 40%,#d68d24 78%,#9b641e); }
-.sport-ball:before,.sport-ball:after { content: ""; position: absolute; width: 16%; height: 16%; border-radius: 50%; background: #204554; border: 8px solid #c48725; top: 41%; }
-.sport-ball:before { left: -8%; }.sport-ball:after { right: -8%; }
-.sport-ball-line { position: absolute; width: 100%; height: 2px; background: #7e5d26a6; top: 40%; transform: rotate(25deg); }
-.sport-ball-line-b { top: 67%; transform: rotate(-25deg); }
-.sport-art-label { position: absolute; bottom: 8%; left: 9%; letter-spacing: .2em; font-size: .78rem; font-weight: 800; }
-.sport-art-number { position: absolute; top: 11%; right: 9%; font-family: Georgia,serif; font-size: 3.6rem; color: #dce9df; }
+.sport-art {
+  position: relative; isolation: isolate; width: 100%; min-height: 490px;
+  overflow: hidden; border-radius: 230px 230px 16px 16px;
+  background: radial-gradient(circle at 50% 55%, #283c6b 0%, #232f59 58%, #132d50 100%);
+  border: 1px solid #9576bd7e;
+}
+.sport-art-visual { position: absolute; inset: -2% -3% 0; z-index: 1; }
+.sport-art-illustration { object-fit: contain; object-position: center; }
+.sport-art-label {
+  position: absolute; z-index: 2; bottom: 7%; left: 8%;
+  color: #fff; font-size: .75rem; line-height: 1.5; letter-spacing: .12em;
+  font-weight: 850; text-shadow: 0 2px 6px #0b2941;
+}
+.sport-art-number {
+  position: absolute; z-index: 2; top: 10%; right: 9%;
+  color: #fff; font-size: .8rem; font-weight: 750;
+  letter-spacing: .12em; text-shadow: 0 2px 6px #0b2941;
+}
 
 /* Histórias */
 .stories-section { background: #fff; }
