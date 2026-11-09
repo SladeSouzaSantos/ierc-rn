@@ -43,7 +43,7 @@ test("eventos arquivados não simulam agenda futura", async ({ page }) => {
 
 test("endereço de contato é verificável e não há telefone fictício", async ({ page }) => {
   await page.goto("/contato");
-  await expect(page.getByText(/Rua Fonseca e Silva, 1113/)).toBeVisible();
+  await expect(page.locator(".verified-address")).toContainText("Rua Fonseca e Silva, 1113");
   await expect(page.locator('a[href^="tel:"],a[href^="mailto:"]')).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Ver endereço citado pelo TRE-RN/ })).toHaveAttribute("target", "_blank");
 });
