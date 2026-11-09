@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight, Instagram, MapPin } from "lucide-react";
 
 const footerNavigation = [
@@ -18,6 +19,7 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="container footer-grid">
         <div className="footer-identity">
+          <div className="footer-logo-lockup"><Image src="/ierc-logo.webp" alt="" width={100} height={70} className="footer-logo" /><span>IERC-RN</span></div>
           <p className="eyebrow light">O futuro é mais inclusivo quando construído em conjunto.</p>
           <h2>Um lugar de encontro, aprendizado e possibilidades.</h2>
           <Link className="button button-yellow" href="/apoie">Apoie o Instituto <ArrowUpRight size={18} aria-hidden="true" /></Link>

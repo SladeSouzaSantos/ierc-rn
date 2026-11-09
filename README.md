@@ -4,7 +4,7 @@ Primeira versão de homologação do portal do **Instituto de Educação e Reabi
 
 O site apresenta as frentes de educação, reabilitação, cultura e esporte, com espaço para goalball, histórias, notícias, eventos, galerias, bazar solidário, visitas e apoio à instituição.
 
-> **Status:** protótipo editorial em `dev`, **não aprovado para publicação oficial**. A branch `main` permanece com a base original. A marca textual é provisória até a obtenção do logotipo oficial do [@iercrn](https://www.instagram.com/iercrn/).
+> **Status:** protótipo editorial em `dev`, **não aprovado para publicação oficial**. A branch `main` permanece com a base original. A logo fornecida pelo responsável pelo projeto foi integrada em versão transparente e otimizada. A imagem de origem tem baixa resolução; será substituída por arquivo oficial de maior qualidade, se disponível.
 
 ## Tecnologia
 
@@ -40,6 +40,10 @@ Para rodar os testes e2e, a aplicação deve estar compilada (`npm run build`); 
 - `main`: base institucional aprovada.
 - `dev`: implementação e homologação.
 - Pull requests para revisão antes da publicação.
+
+## Marcos de desenvolvimento
+
+Veja [docs/ROADMAP.md](docs/ROADMAP.md) para as quatro sprints e [docs/ACESSIBILIDADE-VALIDACAO.md](docs/ACESSIBILIDADE-VALIDACAO.md) para os testes manuais necessários.
 
 ## Acessibilidade
 

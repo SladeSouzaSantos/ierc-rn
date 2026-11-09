@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -31,7 +32,9 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="container header-inner">
         <Link href="/" className="brand" onClick={() => setOpened(false)}>
-          <span className="brand-mark" aria-hidden="true"><span>I</span><span className="brand-dot">·</span></span>
+          {/* O nome textual adjacente já identifica o destino do link.
+              alt="" evita anunciar a mesma instituição duas vezes. */}
+          <Image src="/ierc-logo.webp" alt="" aria-hidden="true" className="brand-logo" width={94} height={65} priority />
           <span className="brand-copy">
             <strong>IERC<span className="brand-slash">/</span>RN</strong>
             <small>Instituto de Educação e Reabilitação de Cegos</small>

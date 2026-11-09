@@ -12,7 +12,7 @@
 
 ## Itens necessários antes do lançamento
 
-1. **Marca**: arquivo original da identidade usada no @iercrn. Instagram restringiu acesso automatizado ao logo. O símbolo `I·` do protótipo é deliberadamente provisório.
+1. **Marca**: logo recebida do responsável pelo projeto em baixa resolução, recortada para fundo transparente e integrada ao protótipo. Substituir por original SVG/PNG em alta resolução quando disponível e homologar uso oficial.
 2. **Imagens e vídeos**: arquivos originais, crédito, contexto, autorização de uso de imagem e consentimento dos responsáveis quando aplicável.
 3. **Histórico institucional**: data de fundação, nome oficial, missão, coordenadores, atividades e serviços atualizados.
 4. **Canais de atendimento**: endereço, CEP, telefone, WhatsApp, e-mail e horários. Diretórios divergem nos telefones.
