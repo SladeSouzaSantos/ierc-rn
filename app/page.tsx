@@ -6,11 +6,12 @@ import {
 } from "lucide-react";
 import { HeroArt } from "@/components/hero-art";
 import { GoalballScene } from "@/components/goalball-scene";
-import { activities } from "@/lib/site-data";
+import { getDisplayActivities } from "@/lib/cms";
 
 const icons = [Music2, Laptop2, Compass, BookOpenText, BookOpenText, PersonStanding, Sparkles, Volleyball];
 
-export default function Home() {
+export default async function Home() {
+  const activities = await getDisplayActivities();
   return (
     <>
       <section className="hero" aria-labelledby="hero-titulo">
@@ -48,7 +49,7 @@ export default function Home() {
           <div className="section-heading row-heading"><div><p className="eyebrow">O que fazemos</p><h2>Oito atividades.<br/><span>Muitas descobertas.</span></h2></div><Link href="/atividades" className="inline-link">Todas as atividades <ArrowUpRight size={18} aria-hidden="true" /></Link></div>
           <div className="activity-grid">
             {activities.map((activity, index) => {
-              const Icon = icons[index];
+              const Icon = icons[index] ?? Sparkles;
               return <Link href={"/atividades#" + activity.id} className="activity-card" key={activity.id}>
                 <div className="activity-top"><span className="activity-icon"><Icon size={27} strokeWidth={1.65} aria-hidden="true" /></span><ArrowUpRight size={20} aria-hidden="true" /></div>
                 <p className="activity-type">{activity.category}</p><h3>{activity.title}</h3><p>{activity.description}</p>
