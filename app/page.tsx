@@ -74,7 +74,7 @@ export default function Home() {
       <section className="stories-section section-pad">
         <div className="container stories-layout">
           <div className="stories-symbol" aria-hidden="true"><span>“</span><span className="symbol-footnote">Histórias em construção</span></div>
-          <div className="stories-copy"><p className="eyebrow">Trajetórias</p><h2>Cada conquista começa com a chance de <em>descobrir seu próprio caminho.</em></h2><p>Queremos reunir histórias de alunos e ex-alunos que fizeram do aprendizado ponto de partida para conquistas na cultura, no trabalho, no esporte e na vida.</p><Link className="inline-link" href="/historias">Conheça a proposta <ArrowUpRight size={18} aria-hidden="true"/></Link></div>
+          <div className="stories-copy"><p className="eyebrow">Trajetórias</p><h2>Cada conquista começa com a chance de <em>descobrir seu próprio caminho.</em></h2><p>Conheça trajetórias de atletas cuja passagem pelo IERC-RN está registrada em fontes públicas, da descoberta do esporte às conquistas nacionais e internacionais.</p><Link className="inline-link" href="/historias">Conheça as trajetórias <ArrowUpRight size={18} aria-hidden="true"/></Link></div>
         </div>
       </section>
 
