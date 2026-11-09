@@ -41,7 +41,7 @@ jobs:
           retention-days: 7
 
   cms-build:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     services:
