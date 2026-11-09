@@ -128,7 +128,6 @@ export const athleteProfiles: readonly AthleteProfile[] = [
     ],
     sources: [
       { label: "Entrevista com Maria Clara — Tribuna do Norte, julho de 2026", url: "https://tribunadonorte.com.br/rio-grande-do-norte/cegos-transformam-desafios-e-conquistam-mais-autonomia/" },
-      { label: "Equipe feminina do IERC em 2026 — CBDV", url: "https://www.cbdv.org.br/regional-nordeste-de-goalball-comeca-no-dia-26-de-abril-em-campina-grande" },
     ],
   },
 ] as const;
