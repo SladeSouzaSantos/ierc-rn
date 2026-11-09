@@ -2,6 +2,8 @@
 
 ## Arquitetura
 
+**DEV e PROD separados:** [consulte arquitetura, portas, bancos/volumes, geração de segredos independentes e diagnóstico de lentidão do Content Manager](CMS-ENVIRONMENTS.md). O arquivo `compose.cms.yml` é o DEV existente e continua preservando o usuário administrador já criado. A PROD futura usa `compose.cms.prod.yml`, sem inicialização automática.
+
 O portal **Next.js 15.5/React 19** permanece intacto em `/`; o gerenciador **Strapi 5.59 (React 18)** executa isolado em `cms/`, com PostgreSQL 17 em volume persistente. A separação evita alterar a base visual já aprovada e respeita as faixas de compatibilidade do Payload/Next.js publicadas em novembro de 2026.
 
 O CMS possui o próprio painel de administração, autenticação, RBAC, mídia e Draft & Publish. A origem pública do portal **não** publica as rotas `/admin` e `/api` do Strapi. O Docker vincula o CMS em **127.0.0.1:1337**, sem acesso externo ou porta exposta do banco.
