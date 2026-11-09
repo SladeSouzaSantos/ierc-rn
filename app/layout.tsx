@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://example.org"),
   robots: { index: false, follow: false },
   openGraph: { title: "IERC-RN", locale: "pt_BR", type: "website" },
+  icons: { icon: [{ url: "/ierc-logo.webp", type: "image/webp" }] },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
