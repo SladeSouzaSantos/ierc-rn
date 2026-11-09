@@ -1,0 +1,39 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { getCmsNewsBySlug } from "@/lib/cms";
+
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const item = await getCmsNewsBySlug(slug);
+  return { title: item?.title ?? "Notícia não encontrada", description: item?.summary ?? undefined, robots: { index: false, follow: false } };
+}
+
+export default async function NewsDetail({ params }: Props) {
+  const { slug } = await params;
+  const entry = await getCmsNewsBySlug(slug);
+  if (!entry) notFound();
+  return <article className="container interior-body cms-detail">
+    <nav aria-label="Voltar à lista de notícias">
+      <Link className="inline-link" href="/noticias"><ArrowLeft size={18} aria-hidden="true"/> Voltar às notícias</Link>
+    </nav>
+    <header className="detail-intro">
+      <p className="eyebrow">{entry.category || "Notícias do IERC-RN"}</p>
+      <h1>{entry.title}</h1>
+      <p>{entry.summary}</p>
+      {entry.date && !Number.isNaN(Date.parse(entry.date)) && <time dateTime={entry.date}>
+        {new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeZone: "America/Fortaleza" }).format(new Date(entry.date))}
+      </time>}
+    </header>
+    {entry.body && <div className="cms-article-body">{entry.body}</div>}
+    {entry.sourceUrl && <p className="cms-source">
+      <a className="editorial-source" href={entry.sourceUrl} target="_blank" rel="noopener noreferrer">
+        {entry.sourceName || "Fonte documental"} <ArrowUpRight size={16} aria-hidden="true"/>
+        <span className="sr-only"> (abre em nova aba)</span>
+      </a>
+    </p>}
+  </article>;
+}
