@@ -1,0 +1,26 @@
+{
+  "name": "ierc-rn-cms",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Painel editorial isolado do portal Next.js IERC-RN",
+  "scripts": {
+    "dev": "node scripts/generate.mjs && strapi develop",
+    "develop": "node scripts/generate.mjs && strapi develop",
+    "build": "node scripts/generate.mjs && strapi build",
+    "start": "node scripts/generate.mjs && strapi start",
+    "strapi": "strapi",
+    "test:schema": "node --test tests/*.test.cjs"
+  },
+  "dependencies": {
+    "@strapi/strapi": "5.59.0",
+    "@strapi/plugin-users-permissions": "5.59.0",
+    "pg": "8.16.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.30.1",
+    "styled-components": "6.1.19"
+  },
+  "engines": {
+    "node": ">=22 <27"
+  }
+}
