@@ -75,7 +75,7 @@ test("imagem de Thalita aponta para a foto oficial correta e não para a atleta 
   await page.goto("/historias");
   const card = page.locator("#thalita-simplicio");
   const image = card.locator(".athlete-story-frame img");
-  await expect(image).toHaveAttribute("src", /\/thalita-simplicio\\.jpg\/@@images\/5f256ce8-17de-4b9d-9be5-a12072d0e112\\.jpeg$/);
+  await expect(image).toHaveAttribute("src", /\/thalita-simplicio\.jpg\/@@images\/5f256ce8-17de-4b9d-9be5-a12072d0e112\.jpeg$/);
   await expect(card.locator(".athlete-photo-credit")).toContainText("Alexandre Schneider/CPB");
   await expect(image).not.toHaveAttribute("src", /maria-carolina/);
 });
