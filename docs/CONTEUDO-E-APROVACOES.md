@@ -10,11 +10,20 @@
 - Instagram oficial indicado: https://www.instagram.com/iercrn/.
 - Nomes sugeridos para curadoria de trajetórias: Rosicleide Andrade, Romário Marques, Halyson Boto, Geovana, Thalita Simplício e Clara Daniele. **Não publicar biografias ou fotografias sem validação.**
 
+## Implementação documental da Sprint 2 — 09/11/2026
+
+- Endereço Rua Fonseca e Silva, 1113, Alecrim, Natal/RN documentado pela CBDV e TRE-RN. CEP, telefone, e-mail e horários atuais **ainda não confirmados**.
+- Fundação em 16/07/1952 documentada no histórico do IERC e cadastro CBDV. A missão histórica não substitui redação aprovada para o presente.
+- Série A feminina e representação masculina/feminina do Regional Nordeste constam em publicações da CBDV de **2026**, sem inferir elencos atuais.
+- `/noticias` e `/eventos` exibem registros passados datados e atribuídos a fontes externas.
+- Pessoas sugeridas para histórias sem prova de vínculo foram retiradas da interface até validação. Não foram adicionadas imagens sem permissão.
+- Ver [matriz de fontes, divergências e gate editorial](SOURCES-SPRINT2.md).
+
 ## Itens necessários antes do lançamento
 
 1. **Marca**: logo recebida do responsável pelo projeto em baixa resolução, recortada para fundo transparente e integrada ao protótipo. Substituir por original SVG/PNG em alta resolução quando disponível e homologar uso oficial.
 2. **Imagens e vídeos**: arquivos originais, crédito, contexto, autorização de uso de imagem e consentimento dos responsáveis quando aplicável.
-3. **Histórico institucional**: data de fundação, nome oficial, missão, coordenadores, atividades e serviços atualizados.
+3. **Histórico institucional**: data de fundação e nome constam de registros; validar missão formal vigente, coordenação, atividades e serviços atuais.
 4. **Canais de atendimento**: endereço, CEP, telefone, WhatsApp, e-mail e horários. Diretórios divergem nos telefones.
 5. **Cursos**: público-alvo, horários, requisitos e processo de inscrição; verificar a denominação de "leitura cursiva".
 6. **Bazar**: horário exato de terça-feira, itens aceitos, locais de entrega, condições de compra e eventual calendário de pausas.

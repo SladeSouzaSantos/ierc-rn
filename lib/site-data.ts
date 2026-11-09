@@ -18,14 +18,4 @@ export const activities = [
   { id: "goalball", title: "Goalball", description: "Modalidade coletiva paralímpica, com equipes e competições.", category: "Esporte" },
 ] as const;
 
-export const stories = [
-  { name: "Rosicleide Andrade", area: "Judô paralímpico" },
-  { name: "Romário Marques", area: "Goalball" },
-  { name: "Halyson Boto", area: "Judô paralímpico" },
-  { name: "Geovana", area: "Goalball" },
-  { name: "Thalita Simplício", area: "Atletismo paralímpico" },
-  { name: "Clara Daniele", area: "Atletismo paralímpico" },
-] as const;
-
-// Os nomes são pautas editoriais, não perfis publicados. Confirmação dos vínculos,
-// autorização das imagens e validação biográfica são obrigatórias antes da divulgação.
+// Pautas sobre pessoas não verificadas permanecem apenas na curadoria documental.

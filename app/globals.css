@@ -714,3 +714,98 @@ html[data-high-contrast="true"] .visit-card { background: #ffda55; }
 }
 html[data-reduce-motion="true"] .goalball-ball,
 html[data-reduce-motion="true"] .goalball-echo { will-change: auto; }
+
+/* Sprint 2 — conteúdo editorial documentado */
+.editorial-section { margin-block: clamp(56px,7vw,100px); }
+.editorial-section > .eyebrow { margin-bottom: 12px; }
+.editorial-section > .interior-subtitle { max-width: 850px; margin-bottom: 22px; }
+.editorial-intro { color: var(--muted); font-size: 1.05rem; max-width: 790px; line-height: 1.8; }
+.editorial-timeline { margin: 30px 0 0; padding: 0; list-style: none; display: grid; gap: 16px; }
+.timeline-item { display: grid; grid-template-columns: minmax(76px,120px) minmax(0,1fr); gap: clamp(16px,3vw,40px); padding: clamp(20px,3vw,32px); background: #fff; border: 1px solid var(--line); border-radius: 16px; }
+.timeline-year { color: var(--brand-purple); font-size: clamp(1.6rem,3vw,2.3rem); font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.timeline-item h3 { margin-bottom: 10px; font-size: clamp(1.2rem,2vw,1.5rem); }
+.timeline-item p { color: var(--muted); margin-bottom: 12px; }
+.editorial-source { display: inline-flex; align-items: center; gap: 8px; color: #5a2c86; text-decoration: underline; text-underline-offset: 4px; line-height: 1.5; font-size: .88rem; font-weight: 800; }
+.editorial-source svg { flex: none; }
+.editorial-source:hover { text-decoration-thickness: 2px; }
+.editorial-panels { margin-top: 30px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
+.editorial-panels-three { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.editorial-panels .detail-card { display: flex; flex-direction: column; gap: 12px; min-width: 0; min-height: 0; margin: 0; }
+.editorial-panels .detail-card > span { margin-bottom: 0; }
+.editorial-panels .detail-card h3 { margin: 0; }
+.editorial-panels .detail-card p { margin: 0; }
+.editorial-panels .editorial-source { margin-top: auto; padding-top: 14px; }
+.sport-roster h4 { font-size: 1rem; margin: 12px 0 0; letter-spacing: 0; }
+.sport-roster ul { margin: 0; padding-left: 22px; line-height: 1.8; }
+.editorial-place { display: flex; align-items: center; gap: 8px; }
+.verified-address { font-style: normal; color: var(--ink); font-size: 1rem; line-height: 1.7; margin-block: 14px; }
+.detail-card > .editorial-source { margin-top: 12px; }
+@media (max-width:900px) { .editorial-panels-three { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:760px) {
+  .editorial-panels,.editorial-panels-three { grid-template-columns:1fr; }
+  .timeline-item { grid-template-columns:1fr; gap:10px; }
+  .editorial-section { margin-block:58px; }
+}
+html[data-high-contrast="true"] .timeline-item { border:2px solid #000; background:#fff; }
+html[data-high-contrast="true"] .editorial-source { color:#210b49; }
+
+/* Sprint 2.1 — histórias de atletas: cartões editoriais com fotografias e créditos */
+.athlete-stories { margin-block: clamp(60px, 7vw, 105px); }
+.athlete-stories-intro { max-width: 850px; margin-bottom: 40px; }
+.athlete-stories-intro h2 { margin: 10px 0 20px; font-size: clamp(2.2rem, 4vw, 4rem); }
+.athlete-stories-intro > p:last-child { color: var(--muted); font-size: 1.08rem; line-height: 1.85; }
+.athlete-story-list { display: grid; gap: 26px; }
+.athlete-story {
+  display: grid; grid-template-columns: minmax(0, .86fr) minmax(0, 1.14fr); align-items: stretch;
+  border: 1px solid var(--line); border-radius: 20px;
+  overflow: clip; background: #fff; box-shadow: 0 8px 32px rgba(19,45,75,.07);
+  scroll-margin-top: 112px;
+}
+.athlete-story:nth-child(even) { grid-template-columns: minmax(0,1.14fr) minmax(0,.86fr); }
+.athlete-story:nth-child(even) .athlete-story-media { order: 2; }
+.athlete-story-media { min-width: 0; background: #eee6f4; display: flex; flex-direction: column; }
+.athlete-story-figure { display: flex; flex-direction: column; gap: 0; margin: 0; flex: 1; }
+.athlete-story-frame { position: relative; width: 100%; min-height: 340px; height: clamp(340px,34vw,510px); overflow: hidden; background: #e4d9ee; }
+.athlete-story-frame img { object-fit: cover; object-position: center 30%; }
+.athlete-photo-credit { padding: 16px 19px; font-size: .76rem; line-height: 1.55; color: #39294a; background: #eee6f4; }
+.athlete-photo-credit a { display: inline; text-decoration: underline; text-underline-offset: 3px; font-weight: 750; }
+.athlete-photo-pending {
+  display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; min-height: 400px; padding: 30px; text-align: center;
+  background: linear-gradient(135deg,#efe4f6,#dde9f2); color: #502e70;
+}
+.athlete-photo-pending p { margin: 10px 0 0; font-size: 1.2rem; font-weight: 800; }
+.athlete-photo-pending span { max-width: 250px; font-size: .87rem; color: #3b4056; }
+.athlete-story-content { min-width: 0; padding: clamp(28px,4vw,54px); }
+.athlete-story-discipline { margin: 0 0 12px; font-weight: 850; color: #5a2c86; font-size: .78rem; text-transform: uppercase; letter-spacing: .09em; }
+.athlete-story-content h3 { font-size: clamp(1.9rem,2.7vw,3rem); line-height: 1.13; margin-bottom: 14px; }
+.athlete-story-relation { font-size: .9rem; font-weight: 750; color: #5a2c86; }
+.athlete-story-summary { font-size: 1rem; line-height: 1.8; color: var(--ink); }
+.athlete-story-content h4 { margin: 30px 0 12px; font-size: 1rem; line-height: 1.3; letter-spacing: normal; }
+.athlete-story-milestones { margin: 0; padding-left: 20px; color: var(--muted); line-height: 1.75; }
+.athlete-story-milestones li { margin-block: 7px; }
+.athlete-story-sources { border-top: 1px solid var(--line); margin-top: 30px; padding-top: 18px; }
+.athlete-story-sources > p { font-weight: 800; font-size: .85rem; margin-bottom: 10px; }
+.athlete-story-sources ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.athlete-story-sources li a { color: #542581; display: inline-flex; align-items: baseline; gap: 6px; font-size: .86rem; line-height: 1.6; text-decoration: underline; text-underline-offset: 4px; font-weight: 700; }
+.athlete-story-sources li a svg { flex: none; align-self: center; }
+.athlete-stories-note { margin-top: 30px; max-width: 960px; color: #394c59; font-size: .87rem; line-height: 1.75; }
+html[data-high-contrast="true"] .athlete-story { border: 2px solid #000; box-shadow: none; }
+html[data-high-contrast="true"] .athlete-story-media,
+html[data-high-contrast="true"] .athlete-photo-credit,
+html[data-high-contrast="true"] .athlete-photo-pending { background: #fff; color: #000; }
+html[data-high-contrast="true"] .athlete-story-discipline,
+html[data-high-contrast="true"] .athlete-story-relation,
+html[data-high-contrast="true"] .athlete-story-sources li a { color: #300954; }
+@media (max-width: 960px) {
+  .athlete-story,.athlete-story:nth-child(even) { grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr); }
+  .athlete-story-content { padding: 26px; }
+}
+@media (max-width: 760px) {
+  .athlete-story,.athlete-story:nth-child(even) { grid-template-columns: 1fr; }
+  .athlete-story:nth-child(even) .athlete-story-media { order: initial; }
+  .athlete-story-frame { height: auto; aspect-ratio: 4/3; min-height: 0; }
+  .athlete-photo-pending { min-height: 235px; }
+  .athlete-story-content { padding: 26px 23px 32px; }
+  .athlete-story-list { gap: 25px; }
+}

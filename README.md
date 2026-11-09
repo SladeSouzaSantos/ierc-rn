@@ -4,7 +4,7 @@ Primeira versão de homologação do portal do **Instituto de Educação e Reabi
 
 O site apresenta as frentes de educação, reabilitação, cultura e esporte, com espaço para goalball, histórias, notícias, eventos, galerias, bazar solidário, visitas e apoio à instituição.
 
-> **Status:** protótipo editorial em `dev`, **não aprovado para publicação oficial**. A branch `main` permanece com a base original. A logo fornecida pelo responsável pelo projeto foi integrada em versão transparente e otimizada. A imagem de origem tem baixa resolução; será substituída por arquivo oficial de maior qualidade, se disponível.
+> **Status:** Sprints 1 e 1.1 aprovadas visualmente e integradas à `main` pelo PR #5; Sprint 2 em desenvolvimento na `dev`. Este portal ainda não foi homologado para lançamento institucional público: faltam testes manuais com tecnologias assistivas e validação dos conteúdos e acervo. A logo integrada tem baixa resolução e poderá ser substituída por original de maior qualidade.
 
 ## Tecnologia
 
@@ -43,7 +43,7 @@ Para rodar os testes e2e, a aplicação deve estar compilada (`npm run build`); 
 
 ## Marcos de desenvolvimento
 
-Veja [docs/ROADMAP.md](docs/ROADMAP.md) para as quatro sprints e [docs/ACESSIBILIDADE-VALIDACAO.md](docs/ACESSIBILIDADE-VALIDACAO.md) para os testes manuais necessários.
+Veja [docs/ROADMAP.md](docs/ROADMAP.md) para as quatro sprints, [docs/SOURCES-SPRINT2.md](docs/SOURCES-SPRINT2.md) para evidências de conteúdo e [docs/ACESSIBILIDADE-VALIDACAO.md](docs/ACESSIBILIDADE-VALIDACAO.md) para testes manuais.
 
 ## Acessibilidade
 
