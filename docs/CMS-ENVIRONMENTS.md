@@ -84,3 +84,5 @@ O portal em PROD usará `CMS_ENABLED=true`, `CMS_API_URL` apontando exclusivamen
 - [ ] Só então concluir o PR #12 e criar o deploy PROD.
 
 Referências técnicas: [Docker para Strapi 5](https://docs.strapi.io/cms/installation/docker) e [Docker Desktop/WSL 2](https://docs.docker.com/desktop/features/wsl/).
+
+**Teste CSP controlado:** ver [diagnóstico opt-in no DEV](CMS-SPRINT3.md#diagnóstico-opt-in-de-csp-no-dev-sem-alterar-prod). Nunca ativar `unsafe-eval` no Compose PROD.

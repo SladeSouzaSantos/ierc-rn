@@ -58,10 +58,25 @@ put('config/database.js', `module.exports = ({ env }) => ({
   },
 });
 `);
-put('config/middlewares.js', `module.exports = [
+put('config/middlewares.js', `// Local diagnostic only, disabled unless BOTH independent flags are set.
+const allowLocalCspEval =
+  process.env.CMS_INSTANCE_KIND === 'dev' &&
+  process.env.CMS_DIAGNOSTIC_UNSAFE_EVAL === 'true';
+if (allowLocalCspEval) {
+  console.warn('[IERC CMS] CSP unsafe-eval TEMPORARILY enabled in isolated DEV for diagnosis only.');
+}
+module.exports = [
   'strapi::logger',
   'strapi::errors',
-  'strapi::security',
+  allowLocalCspEval ? {
+    name: 'strapi::security',
+    config: {
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: { 'script-src': ["'self'", "'unsafe-eval'"] },
+      },
+    },
+  } : 'strapi::security',
   'strapi::cors',
   'global::private-api-gate',
   'strapi::poweredBy',

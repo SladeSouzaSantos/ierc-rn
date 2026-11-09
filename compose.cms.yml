@@ -19,6 +19,10 @@ services:
     build: { context: ./cms, dockerfile: Dockerfile }
     restart: unless-stopped
     env_file: ./cms/.env
+    environment:
+      CMS_INSTANCE_KIND: dev
+      # Explicit, reversible local-only diagnostic. Disabled by default.
+      CMS_DIAGNOSTIC_UNSAFE_EVAL: ${CMS_DIAGNOSTIC_UNSAFE_EVAL:-false}
     depends_on:
       db: { condition: service_healthy }
     ports:

@@ -109,3 +109,39 @@ docker compose --env-file cms/.env -f compose.cms.yml up -d --build
 ```
 
 Para observar o status sem expor credenciais: `docker compose --env-file cms/.env -f compose.cms.yml ps`.
+
+
+## Diagnóstico opt-in de CSP no DEV (sem alterar PROD)
+
+O erro do Chrome *"Content Security Policy ... blocks the use of eval"* não comprova, isoladamente, a causa do spinner. A issue [Strapi #28303](https://github.com/strapi/strapi/issues/28303) também descreve um problema de redirecionamento no Content Manager 5.59.0. É necessário comparar comportamentos.
+
+**Proteção:** a CSP padrão permanece intacta. Foi adicionado um controle explicitamente temporário, que só ativa a diretiva `script-src 'self' 'unsafe-eval'` quando `CMS_INSTANCE_KIND=dev` **e** `CMS_DIAGNOSTIC_UNSAFE_EVAL=true`. O arquivo PROD não define `CMS_INSTANCE_KIND=dev`. Não liberamos `unsafe-inline`, `https:` genérico ou mudanças de CORS, imagens ou mídia. O uso de `unsafe-eval` aumenta o risco de XSS, mesmo localmente, e não deve ser utilizado como solução permanente.
+
+Para testar no **PowerShell** (no diretório raiz do repositório):
+
+```powershell
+git switch dev
+git pull --ff-only origin dev
+
+# Só o CMS: reconstrói a imagem com o novo controle sem apagar banco/volumes.
+$env:CMS_DIAGNOSTIC_UNSAFE_EVAL="true"
+docker compose --env-file cms/.env -f compose.cms.yml up -d --build --no-deps cms
+
+# Com a autenticação já existente, abrir novamente:
+Start-Process "http://localhost:1337/admin/content-manager"
+
+# Confira no Console e na aba Network se o spinner mudou.
+# Verifique se o cabeçalho contém unsafe-eval neste teste:
+curl.exe -s -D - -o NUL "http://localhost:1337/admin" | Select-String "content-security-policy"
+```
+
+Se aparecerem erros, reúna a **primeira exceção da aba Console**, sem tokens/cookies. Teste também a rota direta `/admin/content-manager/collection-types/api::news-article.news-article`. A reconstrução com cache pode ser demorada no Windows; não execute `down -v`.
+
+**Desativar após o teste (sem rebuild):**
+
+```powershell
+Remove-Item Env:CMS_DIAGNOSTIC_UNSAFE_EVAL -ErrorAction SilentlyContinue
+docker compose --env-file cms/.env -f compose.cms.yml up -d --no-deps --force-recreate cms
+```
+
+Esse segundo comando recria só o contêiner do CMS, reutilizando os volumes existentes e a mesma imagem. Confirme `docker compose --env-file cms/.env -f compose.cms.yml ps`. Não instale plugins, não use `strapi develop` nem limpe diretórios temporários de uma instalação diferente para esse teste. Se liberar `unsafe-eval` não resolver, não mantenha o flag ativo: investigue redirecionamento, erros React e rede em vez de enfraquecer a política permanentemente.
