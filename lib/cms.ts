@@ -1,4 +1,5 @@
 import "server-only";
+import { activities as baselineActivities } from "@/lib/site-data";
 
 /**
  * Leitura de conteudo Strapi publicada, explicitamente aprovada e somente no servidor.
@@ -138,4 +139,17 @@ export async function getCmsAthletes(): Promise<CmsAthlete[]> {
     sourceUrl: url(v.sourceUrl),
   })).filter(v => /^[a-z0-9-]{1,90}$/.test(v.slug) &&
      v.name && v.summary && v.connectionToIerc && v.sourceUrl);
+}
+
+/** Conteudo homologado substitui ou complementa registros basicos sem quebrar o site. */
+export async function getDisplayActivities(): Promise<CmsActivity[]> {
+  const merged: CmsActivity[] = baselineActivities.map(item => ({
+    id: item.id, title: item.title, description: item.description, category: item.category,
+  }));
+  for (const item of await getCmsActivities()) {
+    const position = merged.findIndex(current => current.id === item.id);
+    if (position === -1) merged.push(item);
+    else merged[position] = item;
+  }
+  return merged;
 }
