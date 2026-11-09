@@ -18,12 +18,14 @@ test("esporte diferencia registro público de elenco atual", async ({ page }) =>
   await expect(page.getByText(/não representam escalação atual/)).toBeVisible();
 });
 
-test("histórias não atribuem vínculo a nomes não verificados", async ({ page }) => {
+test("histórias apresentam trajetórias documentadas e não atribuem vínculo sem fonte", async ({ page }) => {
   await page.goto("/historias");
-  await expect(page.getByRole("heading", { name: "Pautas em preparação" })).toBeVisible();
-  for (const name of ["Rosicleide Andrade", "Romário Marques", "Thalita Simplício"]) {
-    await expect(page.getByText(name)).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Pessoas, caminhos e conquistas" })).toBeVisible();
+  await expect(page.locator(".athlete-story")).toHaveCount(5);
+  for (const name of ["Rosicleide Andrade", "Romário Marques", "Halyson Boto"]) {
+    await expect(page.getByRole("heading", { name, exact: true })).toHaveCount(0);
   }
+  await expect(page.getByRole("heading", { name: "Thalita Vitória Simplício", exact: true })).toBeVisible();
 });
 
 test("notícias exibem clippings de terceiros com links e datas", async ({ page }) => {
