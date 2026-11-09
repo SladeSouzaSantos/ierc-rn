@@ -63,7 +63,7 @@ export const models = {
     signedConsentReference: str(),
     imageRightsStatus: { type: 'enumeration', enum: ['pendente', 'autorizado', 'restrito'], default: 'pendente', required: true },
   }),
-  'site-settings': make('site-settings', 'site-settings', 'Configurações institucionais', 'Dados oficiais para homologação.', {
+  'site-setting': make('site-setting', 'site-settings', 'Configurações institucionais', 'Dados oficiais para homologação.', {
     siteName: str(true), mission: text(),
     phone: str(), email: { type: 'email' }, businessHours: text(), visitBookingUrl: str(),
   }, 'singleType'),
