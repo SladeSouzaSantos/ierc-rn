@@ -56,3 +56,17 @@ test("preferência de acessibilidade do site pausa e reativa o movimento", async
   await page.getByRole("checkbox", { name: "Reduzir animações" }).uncheck();
   await expect(scene).toHaveAttribute("data-motion", "active");
 });
+
+test("as ondas de eco ficam visíveis durante o impacto com animação permitida", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  const scene = page.locator(".goalball-scene");
+  await scene.scrollIntoViewIfNeeded();
+  await expect(scene).toHaveAttribute("data-motion", "active");
+  const wave = scene.locator(".goalball-echo").first();
+  // O impacto ocorre após o primeiro quique; a onda é visível por menos de um segundo.
+  await expect.poll(
+    () => wave.evaluate((element) => Number(getComputedStyle(element).opacity)),
+    { timeout: 12000, intervals: [120, 120, 120, 120, 120, 120] },
+  ).toBeGreaterThan(0.06);
+});
