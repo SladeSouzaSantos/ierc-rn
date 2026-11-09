@@ -115,4 +115,9 @@ jobs:
           # Sem token ou contas criadas, a API editorial deve recusar consulta pública.
           HTTP_CODE=$(curl --max-time 5 -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:1337/api/news-articles)
           [ "$HTTP_CODE" = "403" ] || [ "$HTTP_CODE" = "401" ]
+          ADMIN_STATUS=$(curl --max-time 5 -sS -L -o /dev/null -w '%{http_code}' http://127.0.0.1:1337/admin)
+          [ "$ADMIN_STATUS" = "200" ]
+          FAVICON_STATUS=$(curl --max-time 5 -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:1337/favicon.ico)
+          [ "$FAVICON_STATUS" = "200" ]
+          echo "CMS admin and favicon verified (HTTP 200)."
           echo "CMS health OK; anonymous news API denied ($HTTP_CODE)."
