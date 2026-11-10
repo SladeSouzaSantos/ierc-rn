@@ -128,3 +128,64 @@ test('editorial skip:true is accepted rather than causing endless fallback',asyn
   assert.equal(result.provider,'openrouter');
   assert.equal(calls,1);
 });
+
+
+test('diagnostics distinguish reasoning-only responses, token truncation and schema errors',async()=>{
+  const cases=[
+    {reason:'token_limit',payload:{choices:[{finish_reason:'length',message:{content:'{"title":"partial"}'}}]}},
+    {reason:'reasoning_without_text',payload:{choices:[{finish_reason:'stop',message:{content:'',reasoning:'private internal text'}}]}},
+    {reason:'empty_content',payload:{choices:[{finish_reason:'stop',message:{content:''}}]}},
+    {reason:'json_syntax',payload:{choices:[{finish_reason:'stop',message:{content:'not a json draft'}}]},
+      validator:raw=>{if(!raw.startsWith('{'))throw Error('Model output is not JSON');}},
+    {reason:'incomplete_draft',payload:{choices:[{finish_reason:'stop',message:{content:'{"title":"only"}'}}]},
+      validator:()=>{throw Error('Incomplete model draft');}},
+  ];
+  for(const entry of cases){
+    const logs=[];const meter=new MemoryMeter();
+    const router=new FreeLlmRouter({providers:[candidates[0]],state:meter,settings:config,
+      logger:event=>logs.push(event),
+      fetchImpl:async()=>new Response(JSON.stringify(entry.payload),{status:200})});
+    await assert.rejects(router.complete({
+      system:'private-secret-instruction',prompt:'private-source-text',
+      validateOutput:entry.validator,
+    }),e=>e instanceof LlmExhaustedError&&e.message==='all_free_providers_unavailable');
+    assert.equal(meter.n,1);
+    assert.equal(logs[0].result,'invalid_output');
+    assert.equal(logs[0].reason,entry.reason);
+    assert.ok(!JSON.stringify(logs).includes('private'));
+    assert.ok(!JSON.stringify(logs).includes('partial'));
+  }
+});
+test('free OpenRouter Nemotron receives reasoning off and bounded 1600 token JSON budget',async()=>{
+  const providers=providersFromEnv({
+    CURATOR_OPENROUTER_API_KEY:'fake-secret-test-only',
+    CURATOR_OPENROUTER_MODEL:'nvidia/nemotron-3.5-super-vl:free',
+  });
+  assert.equal(providers.length,1);
+  assert.equal(providers[0].reasoningEnabled,false);
+  const settings=settingsFromEnv({});
+  assert.equal(settings.outputMaxTokens,1600);
+  let sent;
+  const router=new FreeLlmRouter({providers,state:new MemoryMeter(),settings,
+    fetchImpl:async(url,options)=>{
+      assert.equal(url,'https://openrouter.ai/api/v1/chat/completions');
+      sent=JSON.parse(options.body);
+      return ok();
+    }});
+  await router.complete({system:'s',prompt:'p'});
+  assert.equal(sent.max_tokens,1600);
+  assert.deepEqual(sent.reasoning,{enabled:false});
+  assert.equal(sent.model,'nvidia/nemotron-3.5-super-vl:free');
+  assert.equal(sent.stream,false);
+  assert.throws(()=>settingsFromEnv({CURATOR_MAX_OUTPUT_TOKENS:'10000'}));
+  assert.throws(()=>providersFromEnv({
+    CURATOR_OPENROUTER_API_KEY:'fake',
+    CURATOR_OPENROUTER_MODEL:'nvidia/nemotron-3.5-super-vl:free',
+    CURATOR_OPENROUTER_REASONING_ENABLED:'maybe',
+  }),/must be true or false/);
+  assert.equal(providersFromEnv({
+    CURATOR_OPENROUTER_API_KEY:'fake',
+    CURATOR_OPENROUTER_MODEL:'nvidia/nemotron-3.5-super-vl:free',
+    CURATOR_OPENROUTER_REASONING_ENABLED:'true',
+  })[0].reasoningEnabled,true);
+});
