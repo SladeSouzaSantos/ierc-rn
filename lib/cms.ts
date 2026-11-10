@@ -139,7 +139,8 @@ export async function getCmsNews(): Promise<CmsArticle[]> {
 export async function getCmsRadarNews(): Promise<CmsArticle[]> {
   return (await find("news-articles", {"filters[originType][$eq]": "externa"}))
     .map(mapNewsRecord)
-    .filter(item => validNewsArticle(item) && attributableExternalArticle(item));
+    .filter(item => validNewsArticle(item) && attributableExternalArticle(item) &&
+      item.scope !== "local");
 }
 
 export async function getCmsNewsBySlug(slug: string): Promise<CmsArticle | null> {
