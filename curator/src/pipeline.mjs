@@ -1,7 +1,7 @@
 import { SOURCES, parseFeed, fetchSource } from './feeds.mjs';
 import { parseListing } from './listings.mjs';
 import { rankArticles } from './relevance.mjs';
-import { processArticle } from './editorial.mjs';
+import { processArticle, generateAiDraft } from './editorial.mjs';
 
 /**
  * Preview: all verified source listings, including sources held for policy review.
@@ -9,14 +9,17 @@ import { processArticle } from './editorial.mjs';
  * Round-robin guarantees a single source does not consume the entire 3-item batch.
  */
 export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, store, cms,
-  now = Date.now(), maxArticles = 3, maxAgeDays = 45, dryRun = true, logger = () => {} }) {
+  now = Date.now(), maxArticles = 3, maxAgeDays = 45, dryRun = true,
+  aiPreview = false, logger = () => {} }) {
+  if (aiPreview && (!dryRun || cms))
+    throw new Error('AI preview cannot write to CMS or run in live mode');
   if (!Number.isInteger(maxAgeDays) || maxAgeDays < 1 || maxAgeDays > 365)
     throw new Error('Invalid article age window');
   if (!Number.isInteger(maxArticles) || maxArticles < 1 || maxArticles > 30)
     throw new Error('Invalid article batch size');
   const buckets = [];
   for (const source of sources) {
-    if (!dryRun && source.previewOnly === true) {
+    if ((!dryRun || aiPreview) && source.previewOnly === true) {
       logger({ event: 'source_skipped_by_policy', source: source.id, reason: source.readiness });
       continue;
     }
@@ -56,20 +59,28 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
     for (const bucket of buckets) {
       if (remaining <= 0 || bucket.cursor >= bucket.articles.length) continue;
       const article = bucket.articles[bucket.cursor++];
-      const result = await processArticle(article, { router, store, cms, dryRun, logger });
+      const result = aiPreview
+        ? await generateAiDraft(article, {router,logger})
+        : await processArticle(article, { router, store, cms, dryRun, logger });
       results.push({
         source: bucket.source.id,
         status: result.status,
         ...(dryRun ? {
-          title: result.article,
+          title: aiPreview ? article.title : result.article,
           publishedAt: article.publishedAt,
           relevanceScore: article.relevance.score,
           topics: article.relevance.topics,
           previewOnly: bucket.source.previewOnly === true,
+          ...(aiPreview ? {
+            originalUrl: article.url,
+            ...(result.status === 'draft_ready' ? {
+              draft: result.draft, provider: result.provider,
+            } : {}),
+          } : {}),
         } : {}),
       });
       if (!['seen', 'already_in_cms', 'locked'].includes(result.status)) remaining--;
     }
   }
-  return { results, preview: dryRun, count: results.length };
+  return { results, preview: dryRun, aiGenerated: aiPreview, count: results.length };
 }
