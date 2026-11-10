@@ -74,6 +74,12 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
     if (articles.length) buckets.push({ source, articles, cursor: 0 });
   }
 
+  // Prioritize explicitly documented IERC coverage, then national news,
+  // then global practices. Preserve round-robin fairness within each tier.
+  buckets.sort((a,b)=>
+    (b.articles[0]?.relevance?.priority||0)-(a.articles[0]?.relevance?.priority||0) ||
+    (b.articles[0]?.relevance?.score||0)-(a.articles[0]?.relevance?.score||0));
+
   let remaining = maxArticles;
   const results = [];
   const skippedPreviouslyProcessed={redis:0,cms:0};
@@ -81,6 +87,8 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
     for (const bucket of buckets) {
       if (remaining <= 0 || bucket.cursor >= bucket.articles.length) continue;
       const article = bucket.articles[bucket.cursor++];
+      // The track is derived from source evidence, not from AI speculation.
+      // It never turns an external news item into an IERC announcement.
       if(reviewPreview){
         // Check historical CMS documents (draft AND published) and Redis seen
         // keys BEFORE either LLM call. A lookup error aborts the run.
@@ -137,6 +145,8 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
           publishedAt: article.publishedAt,
           relevanceScore: article.relevance.score,
           topics: article.relevance.topics,
+          coverageTrack:article.coverageTrack,
+          coverageScope:article.coverageScope,
           previewOnly: bucket.source.previewOnly === true,
           ...(aiPreview ? {
             originalUrl: article.url,
