@@ -95,3 +95,36 @@ test('invalid settings fail closed',()=>{
  assert.throws(()=>settingsFromEnv({CURATOR_MAX_ATTEMPTS:'999'}));
  assert.throws(()=>settingsFromEnv({CURATOR_GLOBAL_MAX_CALLS:'0'}));
 });
+
+
+test('editorial schema mismatch falls back to another free provider',async()=>{
+  const meter=new MemoryMeter();const observed=[];
+  let calls=0;
+  const result=await new FreeLlmRouter({providers:candidates.slice(0,2),state:meter,
+    settings:config,fetchImpl:async()=>{
+      calls++;
+      const content=calls===1?'{"title":"incomplete"}':
+        '{"title":"not enough by itself","summary":"full draft"}';
+      return new Response(JSON.stringify({choices:[{message:{content}}]}),{status:200});
+    },logger:e=>observed.push(e)}).complete({
+      system:'original editorial guidance',prompt:'public feed data',
+      validateOutput:raw=>{
+        const obj=JSON.parse(raw);
+        if(!obj.title||!obj.summary)throw Error('not enough evidence');
+      },
+    });
+  assert.equal(result.provider,'gemini');
+  assert.equal(result.attempts,2);
+  assert.equal(result.fallbackUsed,true);
+  assert.equal(meter.n,2);
+  assert.ok(meter.blocked.openrouter>=config.cooldownMs);
+  assert.deepEqual(observed.map(x=>x.result),['invalid_output','success']);
+});
+test('editorial skip:true is accepted rather than causing endless fallback',async()=>{
+  const meter=new MemoryMeter();let calls=0;
+  const result=await make(meter,async()=>{
+    calls++;return new Response(JSON.stringify({choices:[{message:{content:'{"skip":true}'}}]}),{status:200});
+  }).complete({system:'s',prompt:'p',validateOutput:raw=>JSON.parse(raw)});
+  assert.equal(result.provider,'openrouter');
+  assert.equal(calls,1);
+});
