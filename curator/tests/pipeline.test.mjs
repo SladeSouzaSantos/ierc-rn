@@ -280,7 +280,8 @@ test('review:preview performs two free-model passes and zero CMS or persistence 
  }};
  const result=await runOnce({sources:[source],
    fetchImpl:async()=>new Response(rss),now:Date.parse('2026-11-10T12:00:00Z'),
-   router,store:null,cms:null,dryRun:true,aiPreview:true,reviewPreview:true,maxArticles:1});
+   router,store:null,cms:null,dryRun:true,aiPreview:true,reviewPreview:true,
+   previewLookup:{async check(){return null;}},maxArticles:1});
  assert.equal(result.count,1);assert.equal(calls,2);
  assert.equal(result.results[0].status,'review_approved_preview');
  assert.equal(result.results[0].draft.category,'Esporte adaptado');
@@ -291,4 +292,63 @@ test('review preview cannot bypass normal AI-preview safety flags',async()=>{
  await assert.rejects(runOnce({reviewPreview:true,dryRun:true}),/read-only AI preview/);
  await assert.rejects(runOnce({reviewPreview:true,aiPreview:true,dryRun:false}),
    /cannot write to CMS/);
+});
+
+
+test('review preview skips Redis seen and CMS published sources before spending either model call',async()=>{
+ const feed='<feed>'+
+   '<entry><title>Braille literacy for blind students</title><link href="https://www.w3.org/WAI/news/first"/><updated>2026-11-10T10:00:00Z</updated><summary>Inclusive education for blind students with Braille instruction and accessibility technology for early classroom learning.</summary></entry>'+
+   '<entry><title>Accessible sports for blind students</title><link href="https://www.w3.org/WAI/news/second"/><updated>2026-11-09T10:00:00Z</updated><summary>Inclusive accessible sports and adapted activities for students with visual disabilities in group lessons and school programs.</summary></entry>'+
+   '<entry><title>New assistive technology for low vision</title><link href="https://www.w3.org/WAI/news/third"/><updated>2026-11-08T10:00:00Z</updated><summary>Assistive technology and accessible devices are presented to support students with low vision in inclusive school settings.</summary></entry>'+
+   '</feed>';
+ const seen=[];let calls=0;
+ const draft={title:'Nova tecnologia assistiva auxilia estudantes com baixa visão',
+   summary:'Uma nova tecnologia assistiva oferece possibilidades de aprendizagem inclusiva para estudantes com baixa visão em ambientes escolares.',
+   body:'Uma organização descreve uma tecnologia assistiva destinada a estudantes com baixa visão, destacando recursos de acessibilidade e oportunidades de aprendizagem em ambientes escolares inclusivos.',
+   whyItMatters:'A tecnologia assistiva pode contribuir para debates sobre recursos acessíveis e educação inclusiva.',
+   category:'tecnologia'};
+ const out=await runOnce({
+   sources:[source],fetchImpl:async()=>new Response(feed),
+   now:Date.parse('2026-11-10T12:00:00Z'),maxArticles:1,
+   dryRun:true,aiPreview:true,reviewPreview:true,store:null,cms:null,
+   previewLookup:{async check(article){
+     seen.push(article.url);
+     if(article.url.endsWith('/first'))return 'redis';
+     if(article.url.endsWith('/second'))return 'cms';
+     return null;
+   }},
+   router:{async complete(){
+     calls++;return {provider:'openrouter',content:JSON.stringify(calls===1?draft:{
+       decision:'hold',factualSupport:'insufficient',evidenceQuotes:[],unsupportedClaims:[],issues:['Fonte insuficiente']
+     })};
+   }},
+ });
+ assert.equal(out.count,1);
+ assert.equal(out.results.length,1);
+ assert.equal(calls,2);
+ assert.equal(seen.length,3);
+ assert.equal(out.results[0].originalUrl,'https://www.w3.org/WAI/news/third');
+ assert.equal(out.results[0].status,'review_pending_preview');
+ assert.deepEqual(out.skippedPreviouslyProcessed,{redis:1,cms:1});
+});
+test('review preview stops before any LLM call if CMS/Redis lookup fails',async()=>{
+ const feed='<feed><entry><title>Braille literacy for blind students</title>'+
+   '<link href="https://www.w3.org/WAI/news/first"/><updated>2026-11-10T10:00:00Z</updated>'+
+   '<summary>Accessible Braille education in inclusive settings and assistive learning for students with visual disabilities.</summary></entry></feed>';
+ let calls=0;
+ await assert.rejects(runOnce({sources:[source],fetchImpl:async()=>new Response(feed),
+   now:Date.parse('2026-11-10T12:00:00Z'),dryRun:true,aiPreview:true,reviewPreview:true,
+   maxArticles:1,previewLookup:{async check(){throw Error('CMS read-only duplicate lookup unavailable');}},
+   router:{async complete(){calls++;throw Error('should not reach AI');}}}),/CMS read-only duplicate lookup unavailable/);
+ assert.equal(calls,0);
+});
+test('review preview has no fallback to unverified duplicates, and no LLM when all seen',async()=>{
+ const out=await runOnce({sources:[source],
+   fetchImpl:async()=>new Response(atom),now:Date.parse('2026-11-10T12:00:00Z'),
+   maxArticles:1,dryRun:true,aiPreview:true,reviewPreview:true,
+   previewLookup:{async check(){return 'cms';}},
+   router:{async complete(){throw Error('should never call a model');}}});
+ assert.equal(out.count,0);assert.equal(out.aiGenerated,false);
+ assert.deepEqual(out.skippedPreviouslyProcessed,{redis:0,cms:1});
+ assert.deepEqual(out.results,[]);
 });
