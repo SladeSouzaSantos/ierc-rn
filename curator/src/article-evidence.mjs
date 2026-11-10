@@ -41,6 +41,12 @@ function authorized(source){
      p.reference==='https://agenciabrasil.ebc.com.br/sobre'&&
      p.usage==='journalistic-noncommercial')
     return {agencyBrasil:true,licenseReference:p.reference};
+  if(source.id==='eu-commission-news'&&
+     source.hostname==='commission.europa.eu'&&
+     p.basis==='cc-by-4.0-public-notice'&&
+     p.reference==='https://commission.europa.eu/legal-notice_en'&&
+     p.usage==='attributed-adaptation')
+    return {agencyBrasil:false,euCommission:true,licenseReference:p.reference};
   if(['perkins','w3c-wai'].includes(source.id)&&
      source.hostname===({perkins:'www.perkins.org','w3c-wai':'www.w3.org'})[source.id]&&
      p.basis==='written-permission')
@@ -48,12 +54,31 @@ function authorized(source){
   deny('source_permission_pending');
 }
 function verifyArticleRights(html,source,access){
-  if(!access.agencyBrasil)return;
+  if(!access.agencyBrasil&&!access.euCommission)return;
   const $=load(html);
-  const author=$('.autor-noticia').first().text().replace(/\s+/g,' ').trim();
-  const body=$('.conteudo-noticia').first().text().replace(/\s+/g,' ').trim();
   const path=new URL(source.url);
-  if(!new RegExp('^/'+source.section+'/noticia/\\d{4}-\\d{2}/[a-z0-9-]+/?
+  if(access.agencyBrasil){
+    const author=$('.autor-noticia').first().text().replace(/\s+/g,' ').trim();
+    const body=$('.conteudo-noticia').first().text().replace(/\s+/g,' ').trim();
+    const prefix='/'+source.section+'/noticia/';
+    if(!path.pathname.startsWith(prefix)||
+       !/^\d{4}-\d{2}\/[a-z0-9-]+\/?$/.test(path.pathname.slice(prefix.length))||
+       !body||body.length<400||
+       !/(?:Ag[eê]ncia Brasil|Rep[oó]rter(?:a)? da (?:EBC|Ag[eê]ncia Brasil)|EBC - Empresa Brasil de Comunica[cç][aã]o)/i.test(author)||
+       /\b(?:Reuters|Associated Press|AFP|AP News|Ansa|EFE)\b/i.test(author)||
+       /[eé]\s+proibida\s+a\s+reprodu[cç][aã]o\s+deste\s+conte[uú]do/i.test(body))
+      deny('article_rights_unverified');
+  }
+  if(access.euCommission){
+    const byline=$('.ecl-page-header__meta').first().text().replace(/\s+/g,' ').trim();
+    const body=$('#block-ewcms-theme-main-page-content article .ecl').first().text().replace(/\s+/g,' ').trim();
+    if(!/^\/news-and-media\/news\/[a-z0-9-]+_en\/?$/.test(path.pathname)||
+       !byline.includes('Directorate-General for Communication')||
+       !body||body.length<400||
+       /(?:all rights reserved|reproduction prohibited|©\s*(?:Reuters|AFP|Associated Press))/i.test(body))
+      deny('article_rights_unverified');
+  }
+}
 async function boundedHtml(response){
   const type=(response.headers.get('content-type')||'').toLowerCase();
   if(!/^text\/html(?:\s*;|$)/.test(type))deny('article_not_html');
@@ -82,7 +107,7 @@ export function extractArticleEvidence(html,{sourceUrl,sourceId}){
   if(typeof html!=='string'||html.length>MAX_BYTES)deny('article_too_large');
   const $=load(html);
   $('script,style,template,noscript,svg,iframe,form,nav,aside,footer,header,canvas,video,audio,figure,.share,.social,.related,.newsletter,.cookie-banner').remove();
-  const containers=['.conteudo-noticia','main article','.entry-content','.wp-block-post-content','article','.post-content','main'];
+  const containers=['.conteudo-noticia','#block-ewcms-theme-main-page-content article .ecl','main article','.entry-content','.wp-block-post-content','article','.post-content','main'];
   let nodes=[];
   for(const selector of containers){
     const container=$(selector).first();
