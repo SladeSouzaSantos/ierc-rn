@@ -150,9 +150,15 @@ const reviewSource={...source,title:'Accessible learning and sports help blind s
 const reviewDraft={...draft,
   title:'Esporte acessível promove aprendizado com crianças',
   body:'Uma escola especializada descreve esportes acessíveis e atividades escolares inclusivas para crianças com deficiência visual. O texto apresenta oportunidades de convivência entre colegas e participação em jogos, com base no resumo disponibilizado pela organização.'};
+const approvedEvidence={verified:true,mode:'full_article',sourceUrl:reviewSource.url,
+  digest:'e'.repeat(64),blocks:[
+    {id:'E01',text:'The school describes inclusive sports and accessible classroom practices for children with visual disabilities in a supervised educational environment.'},
+    {id:'E02',text:'Students participate in adapted games and learn alongside peers during inclusive group activities in school classrooms.'},
+    {id:'E03',text:'Families and educators exchange perspectives on inclusive learning and accessibility while developing opportunities for children.'},
+  ]};
 const reviewReply={decision:'approve',factualSupport:'fully_supported',
-  evidenceQuotes:['Accessible learning and sports help blind students',
-    'inclusive sports and accessible classroom practices for blind children'],
+  evidenceQuotes:['inclusive sports and accessible classroom practices',
+    'Students participate in adapted games and learn alongside peers'],
   unsupportedClaims:[],issues:[]};
 test('opted-in second AI review can publish one newly created Draft after independent CMS preflight',async()=>{
  let n=0,created=0,published=0;
@@ -168,7 +174,7 @@ test('opted-in second AI review can publish one newly created Draft after indepe
    assert.equal(payload.aiAssisted,true);return {published:true};
  }};
  const store={async set(){return 'OK';},async exists(){return 0;},async eval(){return 1;}};
- const out=await processArticle(reviewSource,{router,store,cms,dryRun:false,autoPublish:true,publisher});
+ const out=await processArticle(reviewSource,{router,store,cms,dryRun:false,autoPublish:true,publisher,fullArticleEvidence:approvedEvidence});
  assert.equal(out.status,'draft_published');
  assert.equal(created,1);assert.equal(published,1);assert.equal(n,2);
 });
@@ -180,7 +186,7 @@ test('AI review HOLD or unavailable leaves newly generated item as unpublished D
  const store={async set(){return 'OK';},async exists(){return 0;},async eval(){return 1;}};
  const cms={async existing(){return false;},async create(){created++;return 'a1b2c3d4e5f6g7h8i9j0klmn';}};
  const publisher={async publishApprovedDraft(){publisherCalls++;}};
- const out=await processArticle(reviewSource,{router,store,cms,dryRun:false,autoPublish:true,publisher});
+ const out=await processArticle(reviewSource,{router,store,cms,dryRun:false,autoPublish:true,publisher,fullArticleEvidence:approvedEvidence});
  assert.equal(out.status,'draft_created_review_pending');
  assert.equal(created,1);assert.equal(publisherCalls,0);assert.equal(modelCalls,2);
 });
@@ -191,7 +197,7 @@ test('Strapi publish failure remains Draft and never leaks CMS errors',async()=>
  const store={async set(){return 'OK';},async exists(){return 0;},async eval(){return 1;}};
  const cms={async existing(){return false;},async create(){return 'a1b2c3d4e5f6g7h8i9j0klmn';}};
  const publisher={async publishApprovedDraft(){throw Error('secret CMS error detail');}};
- const out=await processArticle(reviewSource,{router,store,cms,dryRun:false,autoPublish:true,publisher,
+ const out=await processArticle(reviewSource,{router,store,cms,dryRun:false,autoPublish:true,publisher,fullArticleEvidence:approvedEvidence,
    logger:x=>events.push(x)});
  assert.equal(out.status,'draft_created_publish_failed');
  assert.ok(events.some(x=>x.event==='auto_publish_failed'));
@@ -222,4 +228,13 @@ test('live writer detects a previously published article even after Redis seen T
  assert.equal(result.status,'already_in_cms');
  assert.equal(calls,2);assert.equal(modelCalls,0);
  assert.equal(sourceKey,source.dedupeKey);
+});
+
+test('auto publication rejects RSS-only reviewer evidence before acquiring a Redis lock',async()=>{
+  let reads=0;const store={async set(){reads++;}};
+  await assert.rejects(processArticle(reviewSource,{
+    dryRun:false,autoPublish:true,publisher:{async publishApprovedDraft(){}},
+    router:null,store,cms:null,
+  }),/authorized full article evidence/);
+  assert.equal(reads,0);
 });
