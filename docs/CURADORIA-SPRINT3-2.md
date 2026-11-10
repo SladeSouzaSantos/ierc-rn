@@ -419,3 +419,35 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml --profile cura
 **Não executar `npm run once` ainda**. Somente após identificar o parâmetro rejeitado corrigir a causa, repetir `cms:check` e confirmar `status=ok` antes de permitir uma única criação Draft DEV. Preservar backup de 245848 bytes, PostgreSQL DEV, `main`, PR #12 Draft e agendador desligado.
 
 Referências: [Strapi 5 filtros](https://docs.strapi.io/cms/api/rest/filters), [status draft](https://docs.strapi.io/cms/api/rest/status), [validação de entrada](https://docs.strapi.io/cms/migration/v4-to-v5/breaking-changes/default-input-validation).
+
+
+## Diagnóstico confirmado: dedupeKey ausente no Strapi em execução — 10/11/2026
+
+**Evidência real de Windows, `dev=862db90`:** 68/68 testes locais aprovados; imagem do curador recompilada. A execução de `cms:check` obteve `HTTP 200` em `collection`, `draft_status` e `pagination`, mas `HTTP 400` em `dedupe_filter` e `combined`. O teste somente leitura do schema do contêiner CMS confirmou `{"draftAndPublish":true,"dedupeKeyPresent":false}`. A definição versionada `cms/schemas.mjs` **já inclui** `news-article.attributes.dedupeKey` (`string,unique:true`); portanto, existe divergência real entre imagem CMS em execução e definição da branch `dev`. Não alterar o filtro do curador nem habilitar `Full Access`: isso eliminaria a deduplicação e não corrigiria a ausência da coluna/campo.
+
+**Precaução necessária:** em Strapi 5, o startup sincroniza o schema e pode remover tabelas e colunas que deixaram de existir no código. Veja [documentação oficial sobre migrations](https://docs.strapi.io/cms/database-migrations) e [configuração de banco](https://docs.strapi.io/cms/configurations/database). Existe backup recente `cms-backups/ierc-before-curator.dump` (245848 bytes), com cópia confirmada, mas **restauração não testada**. Não executar `docker compose down -v`, não reconstruir PostgreSQL e não reiniciar o CMS às cegas.
+
+### Gate de comparação antes de atualizar o contêiner CMS DEV
+
+A `dev` disponibiliza o utilitário **somente leitura** `cms/scripts/check-deployed-schema.mjs`: recebe por stdin uma cópia dos JSON schemas instalados no contêiner, compara com `cms/schemas.mjs` na branch atual e retorna apenas uma lista de `additions` e `hazards`, sem dados pessoais, tokens ou acessos SQL. Execute da raiz no PowerShell, sem reiniciar serviços:
+
+```powershell
+git switch dev
+git pull --ff-only origin dev
+node --test cms/tests/deployed-schema-diff.test.cjs
+
+# Inspeciona unicamente a definicao dos content types da imagem CMS atual.
+docker compose --env-file cms/.env -f compose.cms.yml exec -T cms node -e "const fs=require('fs'); const base='/opt/app/src/api'; const data={}; for(const name of fs.readdirSync(base)){const path=base+'/'+name+'/content-types/'+name+'/schema.json'; if(fs.existsSync(path))data[name]=JSON.parse(fs.readFileSync(path,'utf8'));} process.stdout.write(JSON.stringify(data));" | node cms/scripts/check-deployed-schema.mjs
+```
+
+Saída de exemplo para uma divergência **exclusivamente aditiva**:
+
+```json
+{"status":"additions_only","additions":[{"model":"news-article","field":"dedupeKey","type":"string"}],"hazards":[],"readOnly":true,"databaseSchemaNotChecked":true}
+```
+
+Se houver `hazards`, **não reiniciar o Strapi**: investigar os modelos afetados e avaliar uma migração que preserve conteúdo. Se houver somente `additions_only`, ainda é necessário revisar as alterações e confirmar o backup e os registros existentes, pois **esse utilitário compara schemas do código, não inspeciona todo o catálogo PostgreSQL ou garante que a sincronização não terá efeitos colaterais**. A aprovação de um deploy CMS fica condicionada à inspeção dessas diferenças.
+
+Após aprovar o delta aditivo, o caminho previsto será compilar somente `cms` e recriar somente o serviço `cms` com `--no-deps`, preservando `db` e volumes, confirmar `dedupeKeyPresent:true` e executar `cms:check` novamente. Só com `status=ok` poderá ocorrer a rodada supervisionada `once` que cria **um único Draft**, sem agenda/publicação automática.
+
+`main` e PR #12 Draft permanecem intactos; Redis e worker não precisam de nova modificação por este erro.
