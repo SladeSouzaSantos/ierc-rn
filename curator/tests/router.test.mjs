@@ -51,7 +51,7 @@ test('402 credits exhausted moves to next provider',async()=>{
  assert.equal(result.provider,'gemini');assert.equal(meter.blocked.openrouter,86400000);
 });
 test('provider local allowance skips to next without spending global quota',async()=>{
- const meter=new MemoryMeter({perProvider:0});
+ const meter=new MemoryMeter({perProvider:20});
  meter.p.openrouter=10;
  const result=await make(meter,async()=>ok()).complete({system:'s',prompt:'p'});
  assert.equal(result.provider,'gemini');
