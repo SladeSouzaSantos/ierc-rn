@@ -124,3 +124,34 @@ test('EBC public license cannot be broadened to arbitrary hosts or categories',a
    fetchImpl:async()=>new Response(ebcHtml(),{headers:{'content-type':'text/html'}}),
  }),/article_rights_unverified/);
 });
+
+
+const commission=SOURCES.find(x=>x.id==='eu-commission-news');
+const euArticle='https://commission.europa.eu/news-and-media/news/boosting-accessibility-and-inclusion-persons-disabilities-2026-05-06_en';
+const euHtml=(author='Directorate-General for Communication',extra='')=>
+  '<html><body><div class="ecl-page-header__meta">News article · 6 May 2026 · '+author+'</div>'+
+  '<main id="main-content"><div id="block-ewcms-theme-main-page-content">'+
+  '<article><div class="ecl">'+
+  '<p>The European Commission has introduced new measures to strengthen accessibility and rights for people with disabilities. The plan includes new initiatives that build upon the union strategy for social inclusion.</p>'+
+  '<p>One proposal aims to improve cross-border recognition of disability and parking cards. It also includes support for independent living and transport accessibility in participating European countries.</p>'+
+  '<p>The initiative will explore assistive technologies and accessible public services. The commission plans further engagement with stakeholders and institutions involved in the implementation of the strategy.</p>'+
+  '</div></article></div></main>'+extra+'</body></html>';
+test('European Commission-owned news is eligible under official CC BY 4.0 reuse notice',async()=>{
+ assert.equal(commission.fullTextAccess.basis,'cc-by-4.0-public-notice');
+ const ev=await fetchArticleEvidence(commission,{url:euArticle},{
+   fetchImpl:async()=>new Response(euHtml(),{headers:{'content-type':'text/html'}}),
+ });
+ assert.equal(ev.verified,true);
+ assert.equal(ev.blocks.length,3);
+ assert.equal(ev.licenseReference,'https://commission.europa.eu/legal-notice_en');
+});
+test('European Commission news with missing institutional author or third-party copyright is held',async()=>{
+ for(const value of [
+   euHtml('News agency partner'),
+   euHtml('Directorate-General for Communication').replace('The European Commission has introduced','© Reuters. The European Commission has introduced'),
+ ]){
+   await assert.rejects(fetchArticleEvidence(commission,{url:euArticle},{
+     fetchImpl:async()=>new Response(value,{headers:{'content-type':'text/html'}}),
+   }),/article_rights_unverified/);
+ }
+});
