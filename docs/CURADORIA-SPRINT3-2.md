@@ -135,3 +135,26 @@ A validação de cartões HTML agora separa falhas em contadores sem registrar U
 Na IBSA, um HTML que só contém o placeholder `Loading news...` é classificado como `listingState=client_render_pending`, diferentemente de `no_cards` e `cards_detected`. É um diagnóstico: **não habilitar navegador automatizado nem rota interna não autorizada para contornar a renderização dinâmica**. A fonte permanece exclusivamente `previewOnly`; nenhuma síntese do texto de origem ou cópia de imagens é realizada.
 
 Nova homologação segura: `git pull --ff-only origin dev`, `npm run --prefix curator test` e `npm run --prefix curator preview`. Avaliar os contadores RNIB e `listingState` IBSA. Manter `CURATOR_ENABLED=false` e `CURATOR_WRITE_DRAFTS=false`; `main` sem alterações.
+
+
+## Homologação local concluída do diagnóstico das fontes — 10/11/2026
+
+Evidência obtida em PowerShell no Windows com `dev=b580696` às **03:26 UTC de 10/11/2026**:
+
+| Fonte | Últimos 365 dias | Janela de 120 dias | Candidatos temáticos | Parecer |
+| --- | ---: | ---: | ---: | --- |
+| W3C/WAI | 8 | 4 | 4 | RSS elegível ao processamento supervisionado, sem escrita ativada |
+| Perkins | 10 | 10 | 10 | RSS elegível ao processamento supervisionado, sem escrita ativada |
+| RNIB | 10 | 10 | 6 | **Diagnóstico e extração de links resolvidos**, somente `previewOnly` |
+| IBSA | 0 | 0 | 0 | `client_render_pending`: a resposta inicial do cliente não contém cartões |
+| WBU | 0 | 0 | 0 | RSS acessível, mas sem itens recentes identificados |
+
+A RNIB passou de `detectedCards=10, invalidLink=10` (prévia anterior) para **`detectedCards=10, accepted=10, invalidLink=0, relativeHref=10`** na prévia de 10/11: o erro era a rejeição de links relativos, agora normalizados sem permitir saída da origem oficial. Os seis candidatos são **títulos disponíveis na prévia**, não permissão de reutilização de texto, imagem nem autorização para criação de rascunhos.
+
+A IBSA permanece corretamente categorizada como `listingState=client_render_pending`, e a WBU não registrou falha HTTP: ambas não bloqueiam o próximo gate editorial. Não foi confirmado feed RSS oficial alternativo da IBSA nesta inspeção; não recorrer a APIs internas ou automatização de navegação sem avaliação de autorização e estabilidade.
+
+O resultado foi `preview=true, count=6`, com dois itens selecionados de cada origem W3C/WAI, Perkins e RNIB, preservando alternância por origem e limite do lote. **Nenhuma LLM, Redis, escrita Strapi ou agenda foi acionada.**
+
+**Validação:** `npm run --prefix curator test`: **48/48 testes locais aprovados**; [CI do commit b580696](https://github.com/SladeSouzaSantos/ierc-rn/actions/runs/42749324237) finalizado com **success**. A coleta e a prévia da Sprint 3.2 ficam tecnicamente homologadas para as fontes elegíveis e para a política de somente prévia das demais; **a Sprint 3.2 integral não está homologada para produção**.
+
+**Próximo gate prioritário:** voltar à Sprint 3.1 no CMS DEV existente, após a atualização planejada do Strapi 5.61 e proteção dos volumes, e confirmar que o Content Manager funciona sem o erro `invalidatesTags`, com autenticação, Author/Editor, rascunho, aprovação e teste de invisibilidade pública do conteúdo pendente. Sem isso, não ativar o worker de rascunhos ou realizar merge do PR #12.
