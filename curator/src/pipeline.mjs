@@ -3,6 +3,8 @@ import { parseListing } from './listings.mjs';
 import { rankArticles } from './relevance.mjs';
 import { processArticle, generateAiDraft } from './editorial.mjs';
 import { reviewAiDraft } from './auto-review.mjs';
+import {generateFullArticleDraft,reviewFullArticleDraft} from './full-article-review.mjs';
+import {sanitizeArticleEvidenceError} from './article-evidence.mjs';
 
 /**
  * Preview: all verified source listings, including sources held for policy review.
@@ -11,13 +13,18 @@ import { reviewAiDraft } from './auto-review.mjs';
  */
 export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, store, cms,
   now = Date.now(), maxArticles = 3, maxAgeDays = 45, dryRun = true,
-  aiPreview = false, reviewPreview = false, previewLookup = null,
+  aiPreview = false, reviewPreview = false, fullArticlePreview = false,
+  articleReader = null, previewLookup = null,
   autoPublish = false, publisher = null,
   autoPublishSources = [], logger = () => {} }) {
   if (aiPreview && (!dryRun || cms || autoPublish || publisher))
     throw new Error('AI preview cannot write to CMS or run in live mode');
   if(reviewPreview && !aiPreview)
     throw new Error('Review preview requires read-only AI preview');
+  if(fullArticlePreview && (!reviewPreview||!aiPreview))
+    throw new Error('Full-article preview requires read-only editorial preview');
+  if((fullArticlePreview||autoPublish) && typeof articleReader!=='function')
+    throw new Error('Permission-gated full article reader is required');
   if(reviewPreview && (!previewLookup || typeof previewLookup.check!=='function'))
     throw new Error('Review preview requires a read-only Redis and CMS duplicate preflight');
   if(!reviewPreview && previewLookup)
@@ -85,17 +92,40 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
           continue;
         }
       }
+      let evidence=null;
+      if(fullArticlePreview||autoPublish){
+        try{
+          evidence=await articleReader(bucket.source,article,{fetchImpl});
+          if(evidence?.verified!==true||evidence?.mode!=='full_article'||evidence?.sourceUrl!==article.url)
+            throw new Error('Invalid article evidence');
+        }catch(error){
+          const reason=sanitizeArticleEvidenceError(error);
+          logger({event:'article_evidence_unavailable',source:bucket.source.id,reason});
+          results.push({source:bucket.source.id,status:'article_evidence_unavailable',
+            ...(dryRun?{title:article.title,publishedAt:article.publishedAt,
+              originalUrl:article.url,previewOnly:false}:{}) ,
+            evidenceReason:reason});
+          remaining--;
+          continue;
+        }
+      }
       let result;
       if(aiPreview){
-        result=await generateAiDraft(article,{router,logger});
+        result=fullArticlePreview
+          ? await generateFullArticleDraft(article,evidence,{router,logger})
+          : await generateAiDraft(article,{router,logger});
         if(reviewPreview && result.status==='draft_ready'){
-          const verdict=await reviewAiDraft(article,result.draft,{router,logger});
+          const verdict=fullArticlePreview
+            ? await reviewFullArticleDraft(article,result.draft,evidence,{router,logger})
+            : await reviewAiDraft(article,result.draft,{router,logger});
           result={...result,
             status:verdict.approved?'review_approved_preview':'review_pending_preview',
-            reviewReason:verdict.reason};
+            reviewReason:verdict.reason,
+            ...(fullArticlePreview?{reviewBasis:'full_article'}:{})};
         }
       }else{
         result=await processArticle(article,{router,store,cms,dryRun,logger,
+          fullArticleEvidence:evidence,
           autoPublish:autoPublish&&autoPublishSources.includes(bucket.source.id),publisher});
       }
       results.push({
@@ -125,5 +155,6 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
     'draft_created_review_pending','draft_created_publish_failed','draft_published',
     'review_approved_preview','review_pending_preview'].includes(status));
   return { results, preview: dryRun, aiGenerated, count: results.length,
-    ...(reviewPreview ? {skippedPreviouslyProcessed} : {}) };
+    ...(reviewPreview ? {skippedPreviouslyProcessed,
+      reviewBasis:fullArticlePreview?'full_article':'rss'} : {}) };
 }
