@@ -253,3 +253,42 @@ test('auto mode cannot publish a source excluded by the explicit allowlist',asyn
   assert.equal(out.aiGenerated,true);
   assert.equal(attempts,1);
 });
+
+
+test('review:preview performs two free-model passes and zero CMS or persistence calls',async()=>{
+ const summary='Blind students participate in accessible sports, group learning, and classroom games. The program provides adapted games and activities that encourage participation alongside peers, supporting inclusion within school lessons.';
+ const title='Accessible sports and inclusive learning programs for blind students';
+ const rss='<feed><entry><title>'+title+'</title>'+
+   '<link href="https://www.w3.org/WAI/news/example"/>'+
+   '<updated>2026-11-09T15:00:00Z</updated><summary>'+summary+'</summary></entry></feed>';
+ const draft={
+   title:'Iniciativas de esporte adaptado e inclusão na aprendizagem',
+   summary:'Uma organização relata atividades esportivas acessíveis para estudantes com deficiência visual e oportunidades de participação com colegas.',
+   body:'O material apresenta programas de aprendizagem inclusiva para estudantes com deficiência visual e relata jogos acessíveis em grupo, além de atividades que possibilitam a participação dos alunos no contexto escolar.',
+   whyItMatters:'A experiência pode orientar uma reflexão sobre esporte adaptado e educação inclusiva sem estabelecer vínculos institucionais brasileiros.',
+   category:'esporte',
+ };
+ let calls=0;
+ const router={async complete(){
+   calls++;
+   return {provider:'openrouter',content:JSON.stringify(calls===1?draft:{
+     decision:'approve',factualSupport:'fully_supported',
+     evidenceQuotes:['Accessible sports and inclusive learning programs',
+       'accessible sports, group learning, and classroom games'],
+     unsupportedClaims:[],issues:[],
+   })};
+ }};
+ const result=await runOnce({sources:[source],
+   fetchImpl:async()=>new Response(rss),now:Date.parse('2026-11-10T12:00:00Z'),
+   router,store:null,cms:null,dryRun:true,aiPreview:true,reviewPreview:true,maxArticles:1});
+ assert.equal(result.count,1);assert.equal(calls,2);
+ assert.equal(result.results[0].status,'review_approved_preview');
+ assert.equal(result.results[0].draft.category,'Esporte adaptado');
+ assert.equal(result.results[0].reviewReason,'rss_review_passed');
+ assert.equal(result.aiGenerated,true);assert.equal(result.preview,true);
+});
+test('review preview cannot bypass normal AI-preview safety flags',async()=>{
+ await assert.rejects(runOnce({reviewPreview:true,dryRun:true}),/read-only AI preview/);
+ await assert.rejects(runOnce({reviewPreview:true,aiPreview:true,dryRun:false}),
+   /cannot write to CMS/);
+});
