@@ -218,9 +218,9 @@ test('live scan with already-seen sources does not claim AI generation',async()=
 
 test('auto publication refuses preview, batch >1 and missing allowlisted sources',async()=>{
   await assert.rejects(runOnce({autoPublish:true,articleReader:async()=>{throw Error('not called');},dryRun:true,publisher:{},
-    autoPublishSources:['perkins'],maxArticles:1}),/live mode/);
+    autoPublishSources:['agencia-brasil-esportes'],maxArticles:1}),/live mode/);
   await assert.rejects(runOnce({autoPublish:true,articleReader:async()=>{throw Error('not called');},dryRun:false,publisher:{},
-    autoPublishSources:['perkins'],maxArticles:3}),/one-item batch/);
+    autoPublishSources:['agencia-brasil-esportes'],maxArticles:3}),/one-item batch/);
   await assert.rejects(runOnce({autoPublish:true,articleReader:async()=>{throw Error('not called');},dryRun:false,publisher:{},
     autoPublishSources:['unknown'],maxArticles:1}),/source allowlist/);
   await assert.rejects(runOnce({autoPublish:true,articleReader:async()=>{throw Error('not called');},dryRun:false,publisher:{},
@@ -246,7 +246,7 @@ test('auto mode cannot publish a source excluded by the explicit allowlist',asyn
   }};
   const out=await runOnce({sources:[source],fetchImpl:async()=>new Response(content),
     now:Date.parse('2026-11-10T12:00:00Z'),maxArticles:1,dryRun:false,store,cms,router,
-    autoPublish:true,autoPublishSources:['perkins'],
+    autoPublish:true,autoPublishSources:['agencia-brasil-esportes'],
     articleReader:async()=>{throw Error('Reader not called for excluded source');},
     publisher:{async publishApprovedDraft(){throw Error('unlisted source published');}}});
   assert.equal(out.count,1);
@@ -412,10 +412,10 @@ test('full-article mode rejects an unconfigured evidence reader',async()=>{
 test('auto publishing cannot write or call LLM when source lacks full-text permission',async()=>{
   const {ArticleEvidenceError}=await import('../src/article-evidence.mjs');
   let llm=0,writes=0,redisWrites=0;
-  const response=await runOnce({sources:[source],
+  const response=await runOnce({sources:[{...source,id:'agencia-brasil-esportes'}],
     fetchImpl:async()=>new Response(atom,{status:200}),
     now:Date.parse('2026-11-10T12:00:00Z'),
-    maxArticles:1,dryRun:false,autoPublish:true,autoPublishSources:['w3c-wai'],
+    maxArticles:1,dryRun:false,autoPublish:true,autoPublishSources:['agencia-brasil-esportes'],
     articleReader:async()=>{throw new ArticleEvidenceError('source_permission_pending');},
     cms:{async existing(){writes++;throw Error('never called');},async create(){writes++;}},
     store:{async set(){redisWrites++;throw Error('never called');}},
