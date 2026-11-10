@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, CalendarDays } from "lucide-react";
 import { athleteProfiles } from "@/lib/athlete-stories";
 import type { CmsArticle, CmsEvent, CmsAthlete } from "@/lib/cms";
+import { sortNewsNewestFirst } from "@/lib/news-order";
 
 function dateLabel(value?: string) {
   if (!value || Number.isNaN(Date.parse(value))) return null;
@@ -39,7 +40,9 @@ function CmsNewsCard({ item, external = false, grouped = false }:
 }
 
 export function CmsNewsList({ items }: { items: CmsArticle[] }) {
-  const official = items.filter(item => item.originType !== "externa");
+  const official = sortNewsNewestFirst(
+    items.filter(item => item.originType !== "externa"), item => item.date,
+  );
   if (!official.length) return null;
   return <section className="editorial-section" aria-labelledby="cms-news-title">
     <p className="eyebrow">Publicações do Instituto</p>
@@ -52,9 +55,11 @@ export function CmsNewsList({ items }: { items: CmsArticle[] }) {
 }
 
 export function CmsIercPressList({ items }: { items: CmsArticle[] }) {
-  const mentions=items.filter(item => item.originType === "externa" &&
-    item.scope === "local" && !!item.sourceName &&
-    !!item.sourceUrl?.startsWith("https://"));
+  const mentions=sortNewsNewestFirst(
+    items.filter(item => item.originType === "externa" &&
+      item.scope === "local" && !!item.sourceName &&
+      !!item.sourceUrl?.startsWith("https://")), item => item.date,
+  );
   if(!mentions.length)return null;
   return <section className="editorial-section" aria-labelledby="ierc-press-heading">
     <p className="eyebrow">IERC-RN na imprensa</p>
@@ -80,8 +85,10 @@ export function CmsRadarList({ items }: { items: CmsArticle[] }) {
       </Link>
     </section>;
   }
-  const national=external.filter(item=>item.scope==="brasil");
-  const international=external.filter(item=>item.scope!=="brasil");
+  const national=sortNewsNewestFirst(
+    external.filter(item=>item.scope==="brasil"), item=>item.date);
+  const international=sortNewsNewestFirst(
+    external.filter(item=>item.scope!=="brasil"), item=>item.date);
   return <section className="editorial-section" aria-labelledby="radar-list-heading">
     <p className="eyebrow">Conteúdos verificados · Brasil e mundo</p>
     <h2 id="radar-list-heading" className="interior-subtitle">Sínteses de fontes externas</h2>
