@@ -10,19 +10,36 @@ function dateLabel(value?: string) {
 
 export function CmsNewsList({ items }: { items: CmsArticle[] }) {
   if (!items.length) return null;
-  return <section className="editorial-section" aria-labelledby="cms-news-title">
-    <p className="eyebrow">Publicações do Instituto</p>
-    <h2 className="interior-subtitle" id="cms-news-title">Notícias da equipe do IERC-RN</h2>
-    <p className="editorial-intro">Conteúdos cadastrados e aprovados no painel editorial.</p>
-    <div className="editorial-panels editorial-panels-three">
-      {items.map(item => <article className="detail-card editorial-news" key={item.slug}>
-        <span>{item.category || "Notícia"}{dateLabel(item.date) ? " · " : ""}{dateLabel(item.date) && <time dateTime={item.date}>{dateLabel(item.date)}</time>}</span>
-        <h3>{item.title}</h3>
-        <p>{item.summary}</p>
-        <Link className="editorial-source" href={"/noticias/" + item.slug}>Ler notícia <ArrowUpRight size={16} aria-hidden="true"/></Link>
-      </article>)}
-    </div>
-  </section>;
+  const official = items.filter(item => item.originType !== "externa");
+  const international = items.filter(item => item.originType === "externa");
+  const list = (rows: CmsArticle[]) => <div className="editorial-panels editorial-panels-three">
+    {rows.map(item => <article className="detail-card editorial-news" key={item.slug}>
+      <span>{item.category || "Notícia"}{dateLabel(item.date) ? " · " : ""}{dateLabel(item.date) &&
+        <time dateTime={item.date}>{dateLabel(item.date)}</time>}</span>
+      <h3>{item.title}</h3>
+      <p>{item.summary}</p>
+      {item.originType === "externa" && <p className="editorial-place">
+        Fonte externa{item.sourceName ? ": " + item.sourceName : ""}{item.country ? " · " + item.country : ""}
+      </p>}
+      <Link className="editorial-source" href={"/noticias/" + item.slug}>
+        Ler {item.originType === "externa" ? "síntese" : "notícia"} <ArrowUpRight size={16} aria-hidden="true"/>
+      </Link>
+    </article>)}
+  </div>;
+  return <>
+    {official.length > 0 && <section className="editorial-section" aria-labelledby="cms-news-title">
+      <p className="eyebrow">Publicações do Instituto</p>
+      <h2 className="interior-subtitle" id="cms-news-title">Notícias da equipe do IERC-RN</h2>
+      <p className="editorial-intro">Conteúdos cadastrados e aprovados no painel editorial.</p>
+      {list(official)}
+    </section>}
+    {international.length > 0 && <section className="editorial-section" aria-labelledby="cms-world-title">
+      <p className="eyebrow">Panorama internacional</p>
+      <h2 className="interior-subtitle" id="cms-world-title">Radar da Inclusão — Brasil e Mundo</h2>
+      <p className="editorial-intro">Sínteses em português de fontes externas, revisadas pela equipe do IERC-RN. Não representam parcerias ou ações do Instituto.</p>
+      {list(international)}
+    </section>}
+  </>;
 }
 
 export function CmsEventsList({ items }: { items: CmsEvent[] }) {
