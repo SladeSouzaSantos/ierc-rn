@@ -96,10 +96,20 @@ export default async function ContentPage({ params }: RouteProps) {
         </>}
 
         {slug === "noticias" && <>
-          <div className="detail-intro"><p className="eyebrow">Acontece e aconteceu</p><h2>Fontes confiáveis para acompanhar o IERC.</h2><p>Reunimos referências verificáveis sobre a instituição e sua participação esportiva e comunitária. Notícias aprovadas no painel editorial serão exibidas nesta página; os registros externos permanecem disponíveis para consulta.</p></div>
+          <div className="detail-intro"><p className="eyebrow">Acontece e aconteceu</p><h2>Fontes confiáveis para acompanhar o IERC.</h2><p>Reunimos notícias institucionais aprovadas e referências verificáveis sobre a participação esportiva e comunitária do IERC-RN. Reportagens sobre iniciativas de outras organizações ficam em uma área separada, o Radar da Inclusão.</p></div>
           <CmsNewsList items={cmsNews} />
           <ExternalClippings />
-          <Note>Não foram criadas notícias fictícias. Para comunicados atuais, consulte o <a href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer">Instagram informado do IERC<span className="sr-only"> (abre em nova aba)</span></a>.</Note>
+          <section className="radar-teaser" aria-labelledby="radar-teaser-title">
+            <div>
+              <p className="eyebrow">Conteúdo externo · Brasil e mundo</p>
+              <h2 id="radar-teaser-title">Conheça o Radar da Inclusão</h2>
+              <p>Um espaço para acompanhar experiências de esporte adaptado, educação, tecnologia assistiva e acessibilidade em outras instituições. Sínteses com fontes identificadas, publicadas somente após aprovação editorial.</p>
+            </div>
+            <Link className="button button-yellow" href="/radar-da-inclusao">
+              Explorar o Radar <ArrowUpRight size={18} aria-hidden="true"/>
+            </Link>
+          </section>
+          <Note>Os registros acima referem-se a fontes verificáveis, não a notícias fictícias. Para comunicados atuais do Instituto, consulte o <a href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer">Instagram informado do IERC<span className="sr-only"> (abre em nova aba)</span></a>.</Note>
         </>}
 
         {slug === "eventos" && <>
