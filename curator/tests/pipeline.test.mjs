@@ -94,3 +94,22 @@ test('live ingestion excludes all preview-only HTML sources and empty WBU feed',
   assert.ok(result.results.every(x=>x.status==='seen'));
   assert.equal(events.filter(x=>x.event==='source_skipped_by_policy').length,3);
 });
+
+test('empty HTML shows detectedCards=0 rather than a silent source failure',async()=>{
+ const {SOURCES}=await import('../src/feeds.mjs');
+ const events=[];
+ await runOnce({sources:[SOURCES.find(x=>x.id==='rnib')],
+  fetchImpl:async()=>new Response('<html><main>empty</main></html>'),
+  dryRun:true,logger:e=>events.push(e)});
+ assert.equal(events[0].event,'feed_checked');
+ assert.equal(events[0].listingDiagnostics.detectedCards,0);
+});
+test('external redirects log only a fixed reason without private URLs',async()=>{
+ const {SOURCES}=await import('../src/feeds.mjs');
+ const events=[];
+ await runOnce({sources:[SOURCES.find(x=>x.id==='wbu')],
+  fetchImpl:async()=>new Response(null,{status:302,headers:{Location:'https://evil.example'}}),
+  dryRun:true,logger:e=>events.push(e)});
+ assert.equal(events[0].reason,'redirect_blocked');
+ assert.ok(!JSON.stringify(events).includes('evil.example'));
+});

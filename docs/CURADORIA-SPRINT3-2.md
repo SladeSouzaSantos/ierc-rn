@@ -116,3 +116,11 @@ Fontes técnicas: [OpenRouter free](https://openrouter.ai/collections/free-model
 [Gemini OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai),
 [Groq API](https://console.groq.com/docs/api-reference),
 [W3C WAI Atom/RSS](https://www.w3.org/WAI/news/subscribe/).
+
+## Diagnóstico RNIB/IBSA e WBU — 10/11/2026
+
+As páginas RNIB e IBSA foram observadas com cards no navegador, mas a execução local pelo Node.js retornou zero. A prévia agora informa `listingDiagnostics` com contadores `detectedCards`, `invalidTitle`, `invalidLink`, `invalidDate`, `outsideWindow` e `accepted`. Esses dados não expõem texto nem URLs externas e distinguem HTML sem cards de itens reprovados pela validação. Fontes HTML seguem restritas a `previewOnly`; não tentar burlar bloqueios ou regras dos sites.
+
+O coletor admite apenas **um redirecionamento HTTPS** mantendo domínio e caminho canônico (ex.: `/feed/` → `/feed`), rejeitando outros destinos. O RSS oficial WBU pode ser válido e não possuir nenhuma notícia — agora isso é distinguido de resposta HTML inesperada ou falha de transporte, com categorias fixas no log.
+
+Teste local seguro: `npm run --prefix curator test` e `npm run --prefix curator preview`. Sem IA, Redis nem criação de rascunhos.

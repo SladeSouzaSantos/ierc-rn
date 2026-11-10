@@ -50,3 +50,13 @@ test('unapproved HTML source cannot be parsed as a publishable feed', () => {
   assert.throws(() => parseListing(rnibHtml, {...rnib, previewOnly:false}, now), /preview-only/);
   assert.throws(() => parseListing(rnibHtml, {...rnib, id:'unknown'}, now), /Unsupported HTML source/);
 });
+
+test('counter diagnostics distinguish empty listing, invalid dates and foreign links',()=>{
+ const none={};const date={};const link={};
+ assert.equal(parseListing('<html><div>no card</div></html>',rnib,now,45,none).length,0);
+ assert.equal(none.detectedCards,0);
+ assert.equal(parseListing(rnibHtml.replace('2 November 2026','unknown'),rnib,now,45,date).length,0);
+ assert.equal(date.invalidDate,1);
+ assert.equal(parseListing(rnibHtml.replace('https://www.rnib.org.uk/news/','https://evil.example/news/'),rnib,now,45,link).length,0);
+ assert.equal(link.invalidLink,1);
+});

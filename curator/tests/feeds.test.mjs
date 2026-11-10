@@ -45,3 +45,27 @@ test('Perkins RSS parses current educational news and preserves official source 
  assert.ok(entries[0].summary.includes('Accessible'));
  assert.equal(relevant(entries[0]),true);
 });
+
+test('empty RSS channel is valid but HTML pretending to be a feed is not',()=>{
+ const wbu=SOURCES.find(x=>x.id==='wbu');
+ assert.deepEqual(parseFeed('<rss><channel><title>WBU</title></channel></rss>',wbu),[]);
+ assert.throws(()=>parseFeed('<html><body>blocked</body></html>',wbu),/Invalid RSS\/Atom/);
+});
+test('safe one-hop slash redirect works, external and extra redirects are blocked',async()=>{
+ const {fetchSource}=await import('../src/feeds.mjs');
+ const wbu=SOURCES.find(x=>x.id==='wbu');
+ const urls=[];
+ const payload=await fetchSource(wbu,async url=>{
+  urls.push(url);
+  return urls.length===1?new Response(null,{status:301,headers:{Location:'https://wbu.ngo/feed'}}):
+   new Response('<rss><channel/></rss>',{status:200});
+ });
+ assert.equal(urls.length,2);assert.ok(payload.includes('rss'));
+ await assert.rejects(fetchSource(wbu,async()=>new Response(null,{status:302,headers:{Location:'https://evil.example/feed'}})),/Unsafe source redirect/);
+ let attempts=0;
+ await assert.rejects(fetchSource(wbu,async()=>{
+  attempts++;
+  return new Response(null,{status:302,headers:{Location:'https://wbu.ngo/feed'}});
+ }),/Unsafe source redirect/);
+ assert.equal(attempts,2);
+});
