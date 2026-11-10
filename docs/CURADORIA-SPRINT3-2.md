@@ -483,3 +483,36 @@ node cms/scripts/check-deployed-schema.mjs --schema-root (Join-Path $snapshotRoo
 Esperado: JSON com `status`, `additions`, `hazards`, `readOnly:true` e `databaseSchemaNotChecked:true`. O script retornará código 0 em `additions_only`, 3 em `manual_review_required` e 2 em `invalid_snapshot`; o código 0 **não é aprovação automática de migração PostgreSQL**. Caso haja apenas `dedupeKey` em `additions`, ainda exigimos a revisão do delta antes de reconstruir somente o serviço `cms`. Caso haja `hazards` ou `invalid_snapshot`, parar sem reiniciar o CMS. O dump anterior de **245848 bytes** permanece preservado, sem restauração ensaiada.
 
 Não executar `npm run once` nem ativar `CURATOR_ENABLED`/`CURATOR_WRITE_DRAFTS` ou qualquer publicação até o schema DEV ser corrigido e `cms:check` retornar `status=ok`.
+
+
+## Delta real de schemas validado: nove adições em news-article (10/11/2026)
+
+O operador atualizou `dev` para `a0d6ff2`, executou **7/7 testes** de `cms/tests/deployed-schema-diff.test.cjs`, copiou com êxito aproximadamente 61 kB de `/opt/app/src/api` do contêiner CMS DEV em execução para pasta temporária Windows usando `docker cp` e executou `check-deployed-schema.mjs --schema-root`.
+
+**Relatório real:**
+```json
+{"status":"additions_only","additions":[{"model":"news-article","field":"originType","type":"enumeration"},{"model":"news-article","field":"scope","type":"enumeration"},{"model":"news-article","field":"country","type":"string"},{"model":"news-article","field":"sourceLanguage","type":"string"},{"model":"news-article","field":"originalTitle","type":"string"},{"model":"news-article","field":"originalPublishedAt","type":"datetime"},{"model":"news-article","field":"whyItMatters","type":"text"},{"model":"news-article","field":"aiAssisted","type":"boolean"},{"model":"news-article","field":"dedupeKey","type":"string"}],"hazards":[],"readOnly":true,"databaseSchemaNotChecked":true}
+```
+
+**Interpretação:** os schemas implantados têm só **nove campos pendentes de adição**, todos em `news-article`; nenhum campo removido, modificado ou content-type ausente detectado. Os campos são de origem/rastreabilidade, transparência IA, justificativa e deduplicação. O comparador **não inspecionou o esquema físico PostgreSQL nem os registros**; ainda não há aprovação para executar sincronização do CMS.
+
+**Tokens separados:** na raiz o operador mantém `.env.local` com `CMS_ENABLED=true`, `CMS_API_URL=http://127.0.0.1:1337` e `CMS_READ_TOKEN` (valor mascarado no relato). Este token é do **portal Next.js para leitura** e **não deve ser reutilizado** como `CURATOR_STRAPI_DRAFT_TOKEN`, que fica exclusivamente em `curator/.env` com `find/create` em Notícias. Preservar também `cms/.env` e seus segredos de autenticação Strapi para não invalidar tokens existentes.
+
+### Inspeção física PostgreSQL somente leitura antes de rebuild do CMS
+
+Na raiz, no PowerShell, sem modificar volumes, executar os comandos em linhas separadas:
+
+```powershell
+# Verificar nome real da tabela e colunas atuais.
+docker compose --env-file cms/.env -f compose.cms.yml exec -T db psql -X -v ON_ERROR_STOP=1 -U ierc_cms -d ierc_cms -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name='ierc_news_articles';"
+docker compose --env-file cms/.env -f compose.cms.yml exec -T db psql -X -v ON_ERROR_STOP=1 -U ierc_cms -d ierc_cms -c "SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema='public' AND table_name='ierc_news_articles' ORDER BY ordinal_position;"
+docker compose --env-file cms/.env -f compose.cms.yml exec -T db psql -X -v ON_ERROR_STOP=1 -U ierc_cms -d ierc_cms -c "SELECT COUNT(*) AS total_news_rows FROM public.ierc_news_articles;"
+```
+
+**Esses SELECTs não modificam o banco e não imprimem valores das notícias, tokens ou dados pessoais.** Conferir se a tabela existe, o volume de linhas atuais e se os nove campos já estão ou não fisicamente instalados. Caso a tabela não exista ou surja divergência inesperada, não reconstruir o CMS até investigar.
+
+**Depois** da inspeção física, confirmar o backup `cms-backups/ierc-before-curator.dump` (245848 bytes, restore ainda não testado), avaliar o risco de sincronização automática Strapi 5 e decidir o deploy de **somente** `cms` (`docker compose ... build cms` e `up -d --no-deps cms`, sem subir novamente o `db` e sem apagar volumes). Em Strapi 5 a sincronização de schema na inicialização pode remover objetos não presentes no content-type; documentação oficial: https://docs.strapi.io/cms/database-migrations e https://docs.strapi.io/cms/configurations/database. Não habilitar `forceMigration:false` de forma ad hoc, pois afeta o rastreamento de objetos removidos; não alterar configuração sem análise.
+
+Após eventual deploy, verificar `dedupeKeyPresent:true`, conferir contagem e conteúdo existente no Content Manager, `npm run cms:check` com status `ok` e **somente depois** permitir uma única criação `Draft` supervisionada, sem cron ou publicação automática.
+
+**Estado:** `main` intocada, PR #12 Draft, `CURATOR_ENABLED=false` e `CURATOR_WRITE_DRAFTS=false` persistidos; nenhum novo rascunho gerado no CMS nesta etapa.
