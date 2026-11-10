@@ -309,3 +309,43 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml --profile cura
 O arquivo local `curator/.env` pode continuar com o modelo NVIDIA gratuito e os limites 30 chamadas globais/10 OpenRouter (ou inferiores). Manter `CURATOR_ENABLED=false`, `CURATOR_WRITE_DRAFTS=false`, `CURATOR_STRAPI_DRAFT_TOKEN` vazio, `CURATOR_GEMINI_API_KEY` e `CURATOR_GROQ_API_KEY` vazias enquanto não houver confirmação de acesso gratuito sem faturamento. Se quiser configurar explicitamente, `CURATOR_MAX_OUTPUT_TOKENS=1600` e `CURATOR_OPENROUTER_REASONING_ENABLED=false`, mas no modelo NVIDIA acima esses valores já são defaults do novo código. Não há reset do contador de Redis: qualquer tentativa anterior consome quota, e um cooldown persistente pode gerar `llm_unavailable` temporário sem nova chamada.
 
 **Resultado esperado para revisão de conteúdo:** `draft_ready` com campos `draft.title, draft.summary, draft.body, draft.whyItMatters, draft.category`, ou nova categoria segura no evento `llm_attempt`. Ainda **não há prova** de `draft_ready` em uma execução real; nenhum token Strapi de escrita deve ser ativado antes da análise de qualidade da notícia em pt-BR.
+
+
+## Homologação da primeira notícia gerada por IA — 10/11/2026
+
+**Evidência local:** o operador executou `git pull --ff-only origin dev` até `774e91d`, obteve **60/60 testes de curadoria aprovados**, reconstruiu a imagem do worker e realizou uma única chamada real de `generate-preview` no Docker Windows. O Redis estava `healthy`, a coleta classificou W3C/WAI (0 itens nos últimos 45 dias) e Perkins (10 candidatos) e excluiu RNIB/IBSA/WBU da geração por política. O OpenRouter respondeu em **1.960 ms**, com evento `llm_attempt.result=success`, `status=draft_ready` e `aiGenerated=true`. **Não houve POST nem criação no Strapi**, pois a execução foi `generate-preview`.
+
+A matéria selecionada foi `More than a game: How sport opens doors to learning and belonging for children with disabilities` (Perkins, 05/11/2026). A síntese original produzida em pt-BR tem título, resumo, corpo, justificativa para inclusão e categoria `Esporte e lazer`. Os campos passaram pelo validador. A primeira falha `invalid_output` com 900 tokens deixou de ocorrer após orçamento de saída de 1600 tokens e desativação de raciocínio padrão no modelo gratuito NVIDIA. **Isso confirma o comportamento deste teste, não que o modelo produzirá sempre resultados válidos**.
+
+**Avaliação editorial:** a publicação original da Perkins (fonte pública verificada) aborda alegria, realização, conexão, aprendizado, independência e confiança. A síntese, em linhas gerais, corresponde ao tema, mas apresentou erro `Perkins School for theBlind` e generalizações na explicação de relevância. Como o curador recebe **somente título e resumo RSS**, a confirmação de alguns detalhes na reportagem integral não significa que a IA possuía essa evidência no prompt. A revisão humana deve conferir a fonte integral, respeitar os direitos de reutilização, distinguir opinião contextual de fato demonstrado e corrigir grafia antes de qualquer publicação. O prompt foi refinado para preservar nomes próprios e evitar impactos afirmados sem suporte explícito no resumo (commit `54913fd`).
+
+### Próximo gate: um único Draft no Strapi DEV, sem agendamento
+
+**Preparação técnica disponibilizada na `dev`**: `CURATOR_ONCE_LIMIT=1` restringe uma execução manual `npm run once` a no máximo um item processado, sem alterar o batch agendado de até três. `CURATOR_ENABLED` e `CURATOR_WRITE_DRAFTS` continuam desativados no arquivo de configuração, e o modo `generate-preview` continua 100% somente leitura.
+
+Antes de qualquer escrita real, completar estes requisitos:
+- Inspecionar o estado do CMS DEV, sem tocar na instância PROD; backup fresco da base PostgreSQL, sem `down -v`.
+- Criar um token API **Custom e temporário** no Strapi DEV com `find` e `create` apenas em Notícias, sem `publish`, `update`, `delete` ou Full Access. Guardar unicamente em `curator/.env` local.
+- Confirmar `CURATOR_INSTANCE_KIND=dev` e provedor gratuito sem cobrança; preservar `CURATOR_ENABLED=false` e `CURATOR_WRITE_DRAFTS=false` no arquivo.
+
+Somente para a **rodada de homologação supervisionada**, usar o comando abaixo, que sobrepõe as flags apenas no container efêmero (o arquivo local permanece com as flags desativadas):
+
+```powershell
+git switch dev
+git pull --ff-only origin dev
+npm run --prefix curator test
+
+# Não reconstruir o CMS, nem apagar volumes. Atualizar apenas o worker após mudanças em src.
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator build worker
+
+# Única execução de geração e escrita como Draft, com guarda de um item.
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T `
+  -e CURATOR_ENABLED=true `
+  -e CURATOR_WRITE_DRAFTS=true `
+  -e CURATOR_ONCE_LIMIT=1 `
+  -e CURATOR_GEMINI_API_KEY= `
+  -e CURATOR_GROQ_API_KEY= `
+  worker npm run once
+```
+
+**Atenção:** esse último comando **escreve** no Strapi DEV: não executá-lo até confirmar o backup recente e as permissões mínimas do token. Deve criar no máximo **um** documento com `status=draft`, `editorialStatus=em_revisao`, `aiAssisted=true` e `imageRightsStatus=pendente`. Verificar no Content Manager que `publishedAt=null`, texto correto e ausência da notícia no portal público. Após o teste, desativar ou revogar o token temporário e descartar ou manter o rascunho de teste conforme a decisão editorial. Se houver `llm_unavailable`, `invalid_draft`, `insufficient_evidence` ou `already_in_cms`, o resultado **não demonstra criação de rascunho**. Não habilitar agendamento, PROD nem publicação automática.
