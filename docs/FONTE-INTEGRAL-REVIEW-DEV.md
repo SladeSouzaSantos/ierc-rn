@@ -63,11 +63,11 @@ Veja também [issue #14](https://github.com/SladeSouzaSantos/ierc-rn/issues/14),
 
 ## 5. Diagnóstico do RSS europeu no Windows e Docker (10/11/2026)
 
-O Windows do operador tentou acessar \`https://commission.europa.eu/node/29665/rss_en\` com \`curl.exe --max-time 20\`: \`curl: (28)\`, \`HTTP=000\`, \`0 bytes received\`, aproximadamente 20,0 s. Isso comprova apenas que **essa requisição no host Windows expirou**. O primeiro teste Docker não chegou a executar \`fetch\`: o PowerShell alterou as aspas de \`node -e\` ao repassar argumentos, provocando \`SyntaxError: Unexpected token ':'\`. Não registrar o Docker como indisponível sem um segundo teste válido.
+O Windows do operador tentou acessar `https://commission.europa.eu/node/29665/rss_en` com `curl.exe --max-time 20`: `curl: (28)`, `HTTP=000`, `0 bytes received`, aproximadamente 20,0 s. Isso comprova apenas que **essa requisição no host Windows expirou**. O primeiro teste Docker não chegou a executar `fetch`: o PowerShell alterou as aspas de `node -e` ao repassar argumentos, provocando `SyntaxError: Unexpected token ':'`. Não registrar o Docker como indisponível sem um segundo teste válido.
 
 Repetir com **here-string + stdin** do Node, sem dependência de escaping entre PowerShell/Docker:
 
-\`\`\`powershell
+```powershell
 $diagnostico = @'
 const url = "https://commission.europa.eu/node/29665/rss_en";
 fetch(url, { redirect: "manual", signal: AbortSignal.timeout(20000) })
@@ -90,8 +90,8 @@ fetch(url, { redirect: "manual", signal: AbortSignal.timeout(20000) })
 '@
 
 $diagnostico | docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker node -
-\`\`\`
+```
 
-Interpretar: \`status:200\` e XML com corpo indica acesso; \`301/302/307/308\` exige avaliação de \`Location\` antes de qualquer alteração na política de redirects; \`TimeoutError\` significa expiração real do teste Docker; \`TypeError\` com \`cause\` exige distinguir DNS, IPv4/IPv6, TLS ou falha de rede. Se Windows **e** Docker expirarem, não concluir automaticamente que o feed está fora do ar para todos; manter como fonte degradada e permitir que as demais fontes continuem operando. Não ampliar timeout indiscriminadamente, não usar proxies não aprovados, não ativar publicação automática.
+Interpretar: `status:200` e XML com corpo indica acesso; `301/302/307/308` exige avaliação de `Location` antes de qualquer alteração na política de redirects; `TimeoutError` significa expiração real do teste Docker; `TypeError` com `cause` exige distinguir DNS, IPv4/IPv6, TLS ou falha de rede. Se Windows **e** Docker expirarem, não concluir automaticamente que o feed está fora do ar para todos; manter como fonte degradada e permitir que as demais fontes continuem operando. Não ampliar timeout indiscriminadamente, não usar proxies não aprovados, não ativar publicação automática.
 
-O arquivo \`next-env.d.ts\` pode ser atualizado automaticamente pelo Next.js durante o desenvolvimento; sua diferença de cabeçalho ou referência de rotas não se relaciona ao curador. Conferir \`git diff -- next-env.d.ts\` e decidir separadamente sobre essa mudança.
+O arquivo `next-env.d.ts` pode ser atualizado automaticamente pelo Next.js durante o desenvolvimento; sua diferença de cabeçalho ou referência de rotas não se relaciona ao curador. Conferir `git diff -- next-env.d.ts` e decidir separadamente sobre essa mudança.
