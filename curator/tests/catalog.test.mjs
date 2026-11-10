@@ -19,6 +19,7 @@ test('source catalog declares publication policy and exact official HTTPS origin
     .every(x=>x.fullTextAccess===undefined),true);
   const eu=SOURCES.find(x=>x.id==='eu-commission-news');
   assert.equal(eu.feed,'https://commission.europa.eu/node/29665/rss_en');
-  assert.equal(eu.readiness,'official_rss_link_verified_runtime_check_pending');
+  assert.equal(eu.paused,true);
+  assert.equal(eu.readiness,'temporarily_paused_timeout_windows_docker_2026-11-10');
   assert.equal(SOURCES.find(x=>x.id==='wbu').readiness,'feed_verified_empty');
 });
