@@ -40,7 +40,15 @@ Na raiz do projeto, com Node.js 22 ou superior:
     npm run --prefix curator test
     npm run --prefix curator preview
 
-A prévia consulta apenas o feed público W3C/WAI, sem Redis, Strapi nem APIs de IA. Pode retornar lista vazia se não houver notícias recentes. Não cria notícias no site.
+A prévia consulta apenas o feed público W3C/WAI, sem Redis, Strapi nem APIs de IA. O modo preview examina **120 dias** por padrão para permitir testes com publicações históricas; o worker real continua limitado a **45 dias**, preservando atualidade. O campo validLastYear informa quantos itens válidos existem no feed em 365 dias; withinWindow informa quantos passaram pelo filtro de recência; candidates corresponde aos que também passaram pelo tema. Não cria notícias no site.
+
+Para simular outra janela somente na prévia, no PowerShell:
+
+    $env:CURATOR_PREVIEW_DAYS = '180'
+    npm run --prefix curator preview
+    Remove-Item Env:CURATOR_PREVIEW_DAYS -ErrorAction SilentlyContinue
+
+Uma lista vazia pode significar que a fonte não publicou material recente ou que o tema não passou no filtro; as novas contagens ajudam a distinguir essas situações.
 
 ## Preparar DEV para futura homologação (não iniciar automaticamente)
 
