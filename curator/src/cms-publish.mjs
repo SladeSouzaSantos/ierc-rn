@@ -17,6 +17,17 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
       if(!expected||!/^https:\/\//.test(expected.sourceUrl||'')||
          !/^[a-f0-9]{64}$/i.test(expected.dedupeKey||''))
         throw new Error('Invalid approved source');
+      // Production-worthy autonomous publishing is enabled only for an
+      // explicitly documented reuse policy on the exact original publisher.
+      const sourceHost=new URL(expected.sourceUrl).hostname;
+      const allowedPolicy=(
+        sourceHost==='agenciabrasil.ebc.com.br' &&
+        reviewEvidence?.licenseReference==='https://agenciabrasil.ebc.com.br/sobre'
+      )||(
+        sourceHost==='commission.europa.eu' &&
+        reviewEvidence?.licenseReference==='https://commission.europa.eu/legal-notice_en'
+      );
+      if(!allowedPolicy)throw new Error('Publisher requires documented source reuse permission');
       const quotes=reviewEvidence?.evidenceQuotes;
       if(!Array.isArray(quotes)||quotes.length!==2||
          quotes.some(x=>typeof x!=='string'||x.length<12||x.length>160||
@@ -58,7 +69,8 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
             approvalReference:reference,
             approvalNote:'Revisão IA ('+reviewEvidence.reviewerProvider+
               ') fundamentada no texto integral autorizado, sem validação humana. SHA256 do texto: '+
-              reviewEvidence.evidenceDigest+'. Evidências internas: "'+
+              reviewEvidence.evidenceDigest+'. Licença/política de reutilização: '+
+              reviewEvidence.licenseReference+'. Síntese original em pt-BR, com alterações editoriais. Evidências internas: "'+
               audit[0]+'" | "'+audit[1]+'".',
           }}),
           redirect:'error',signal:AbortSignal.timeout(9000),
