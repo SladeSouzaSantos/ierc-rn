@@ -99,3 +99,40 @@ Verificar a postagem publicada em `/radar-da-inclusao`, o link de origem, o indi
 Na ocorrência de texto incorreto, **desativar imediatamente `CURATOR_AUTO_PUBLISH_ENABLED` e parar o worker de schedule**, depois despublicar/corrigir a matéria por Editor humano. Preservar evidências de publicação, logs de resultados sanitizados e registros originais. Revogar o token Custom temporário ao fim dos testes.
 
 Referências: [Strapi 5 REST status](https://docs.strapi.io/cms/api/rest/status), [REST API](https://docs.strapi.io/cms/api/rest), [Sprint 3.2](CURADORIA-SPRINT3-2.md), [Radar da Inclusão](RADAR-DA-INCLUSAO.md).
+
+
+## 6. Prévia da próxima notícia inédita sem escrita no Strapi
+
+**Aprimoramento implantado somente na `dev`:** `review:preview` não escolhe mais automaticamente a notícia antiga da Perkins quando ela já estiver marcada como processada.
+
+A sequência de seleção acontece **antes de qualquer chamada à IA**:
+
+1. Coletar, validar data e ordenar candidatas RSS elegíveis conforme `rankArticles`. Não utiliza as fontes `previewOnly` (RNIB/IBSA/WBU);
+2. Consultar somente o comando Redis `EXISTS ierc:curator:seen:<dedupeKey>`. Se houver marca de processamento, ignorar a candidata sem chamar a IA;
+3. Para candidatas não marcadas no Redis, consultar o Strapi com **GET autenticado** em `/api/news-articles?status=draft&filters[dedupeKey][$eq]=...&pagination[pageSize]=1`. Se encontrar, ignorar;
+4. Se não encontrar um Draft, repetir o mesmo **GET** com `status=published`. Se encontrar uma notícia publicada, ignorar; caso contrário, ela é considerada inédita;
+5. Gerar síntese e revisão IA somente para a **primeira candidata inédita** (padrão `CURATOR_AI_PREVIEW_LIMIT=1`). Se todas estiverem processadas, não chama a IA e retorna `count=0`.
+
+A saída da prévia contém `skippedPreviouslyProcessed: {"redis":N,"cms":N}` e loga somente o motivo de exclusão (`redis` ou `cms`) e a fonte, não o token, URL completa, título ou corpo. O `count` reflete **somente as candidatas efetivamente avaliadas pela IA**, nunca as ignoradas.
+
+**Falha fechada:** erro de Redis ou Strapi 400/401/403/5xx, resposta inválida ou token ausente **interrompe a prévia**, em vez de confundir erro com notícia inédita. Não contornar credenciais ou permissões.
+
+**Credenciais:** `CURATOR_STRAPI_READ_TOKEN` é opcional, preferencialmente um token Custom apenas `find` em Notícias. Se não for informado, usa exclusivamente para **GET** o `CURATOR_STRAPI_DRAFT_TOKEN`, que o operador já configurou para `find/create`. O objeto de consulta da prévia não oferece métodos `create`, `update` ou `publish`; seu código nunca executa HTTP POST/PUT. O modo `generate:preview` permanece como antes, sem consulta CMS.
+
+**Ressalva Redis:** a deduplicação da prévia só faz `EXISTS`, sem gravar marca de notícia processada. Entretanto as chamadas à IA, quando ocorrem, **continuam registrando contadores de cota no Redis**, indispensáveis para o orçamento de provedores gratuitos. Portanto `review:preview` não significa zero escritas no Redis; significa **zero escritas editoriais no CMS ou em chaves de deduplicação**.
+
+Teste no Windows após atualização e rebuild do worker:
+
+```powershell
+git switch dev
+git pull --ff-only origin dev
+npm run --prefix curator check
+npm run --prefix curator test
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator build worker
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T `
+  -e CURATOR_GEMINI_API_KEY= `
+  -e CURATOR_GROQ_API_KEY= `
+  worker npm run review:preview
+```
+
+Não necessita de token de publicação (`CURATOR_STRAPI_PUBLISH_TOKEN`), nenhuma habilitação `CURATOR_ENABLED=true`, nem mudança do arquivo `curator/.env` além de eventualmente fornecer o token opcional de leitura. `main`, publicação automática e agendamento permanecem sem alterações. A existência de uma aprovação de prévia **não autoriza publicação** da nova matéria sem homologação separada.
