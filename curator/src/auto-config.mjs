@@ -10,8 +10,9 @@ export function autoPublishSettingsFromEnv(env,cmd,{dryRun}){
 
   if(env.CURATOR_INSTANCE_KIND!=='dev'||dryRun||
       !['once','schedule'].includes(cmd)||
-      env.CURATOR_AUTO_PUBLISH_ACK!=='RSS_ONLY_REVIEW_ACCEPTED')
-    throw new Error('Auto publication requires explicit DEV RSS-only review acknowledgment and live write mode');
+      env.CURATOR_FULL_ARTICLE_REVIEW_ENABLED!=='true'||
+      env.CURATOR_AUTO_PUBLISH_ACK!=='FULL_ARTICLE_REVIEW_ACCEPTED')
+    throw new Error('Auto publication requires explicit DEV licensed full-article review acknowledgment and live write mode');
 
   const allowedSources=(env.CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES||'')
     .split(',').map(x=>x.trim()).filter(Boolean);
