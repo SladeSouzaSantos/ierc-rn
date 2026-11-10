@@ -299,7 +299,7 @@ test('review preview skips Redis seen and CMS published sources before spending 
  const feed='<feed>'+
    '<entry><title>Braille literacy for blind students</title><link href="https://www.w3.org/WAI/news/first"/><updated>2026-11-10T10:00:00Z</updated><summary>Inclusive education for blind students with Braille instruction and accessibility technology for early classroom learning.</summary></entry>'+
    '<entry><title>Accessible sports for blind students</title><link href="https://www.w3.org/WAI/news/second"/><updated>2026-11-09T10:00:00Z</updated><summary>Inclusive accessible sports and adapted activities for students with visual disabilities in group lessons and school programs.</summary></entry>'+
-   '<entry><title>New assistive technology for low vision</title><link href="https://www.w3.org/WAI/news/third"/><updated>2026-11-08T10:00:00Z</updated><summary>Assistive technology and accessible devices are presented to support students with low vision in inclusive school settings.</summary></entry>'+
+   '<entry><title>New assistive technology for low vision</title><link href="https://www.w3.org/WAI/news/third"/><updated>2026-11-08T10:00:00Z</updated><summary>Assistive technology and accessible devices are presented to support students with low vision in inclusive school settings. The communication also describes learning resources and classroom support practices, offering information about participation during school activities.</summary></entry>'+
    '</feed>';
  const seen=[];let calls=0;
  const draft={title:'Nova tecnologia assistiva auxilia estudantes com baixa visão',
