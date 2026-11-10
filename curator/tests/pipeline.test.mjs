@@ -35,6 +35,29 @@ test('valid feeds with no matching inclusion topic report editorial filtering, n
  assert.equal(events.some(x=>x.event==='feed_unavailable'),false);
 });
 
+test('paused feed does not issue HTTP requests or block healthy feeds',async()=>{
+  const {SOURCES}=await import('../src/feeds.mjs');
+  const eu=SOURCES.find(x=>x.id==='eu-commission-news');
+  let fetchedEu=0;
+  const seen=[];
+  const result=await runOnce({
+    sources:[eu,source],now:Date.parse('2026-11-10T20:00:00Z'),
+    fetchImpl:async url=>{
+      if(url.includes('commission.europa.eu')){fetchedEu++;throw Error('paused feed fetched');}
+      return new Response(atom,{status:200});
+    },
+    dryRun:true,logger:event=>seen.push(event),
+  });
+  assert.equal(fetchedEu,0);
+  assert.equal(result.count,1);
+  assert.equal(result.results[0].source,'w3c-wai');
+  assert.deepEqual(seen[0],{
+    event:'source_paused',source:'eu-commission-news',
+    reason:'temporarily_paused_timeout_windows_docker_2026-11-10',
+  });
+  assert.equal(seen[1].event,'feed_checked');
+});
+
 test('unavailable feed is logged and never triggers the model',async()=>{
  const events=[];
  const value=await runOnce({sources:[source],fetchImpl:async()=>new Response('',{status:503}),
