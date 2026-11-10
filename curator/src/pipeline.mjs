@@ -160,6 +160,9 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
         status: result.status,
         ...(dryRun ? {
           title: aiPreview ? article.title : result.article,
+          // Public source URL permits one-click editorial verification in
+          // local read-only monitor reports; never a CMS publication link.
+          originalUrl: article.url,
           publishedAt: article.publishedAt,
           relevanceScore: article.relevance.score,
           topics: article.relevance.topics,
