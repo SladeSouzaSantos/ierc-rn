@@ -98,39 +98,48 @@ async function find(collection: string, filters?: Record<string, string>): Promi
   }
 }
 
-export async function getCmsNews(): Promise<CmsArticle[]> {
-  return (await find("news-articles")).map(v => ({
+function mapNewsRecord(v: Json): CmsArticle {
+  return {
     slug: string(v.slug, 90), title: string(v.title, 200), summary: string(v.summary),
     body: string(v.body, 15000) || undefined,
     category: string(v.category, 50) || undefined,
     date: string(v.date, 40) || undefined,
     sourceName: string(v.sourceName, 100) || undefined,
     sourceUrl: url(v.sourceUrl),
-    originType: v.originType === "externa" ? "externa" as const : "institucional" as const,
-    scope: v.scope === "internacional" ? "internacional" as const : v.scope === "brasil" ? "brasil" as const : "local" as const,
+    originType: v.originType === "externa" ? "externa" : "institucional",
+    scope: v.scope === "internacional" ? "internacional" : v.scope === "brasil" ? "brasil" : "local",
     country: string(v.country, 80) || undefined,
     sourceLanguage: string(v.sourceLanguage, 15) || undefined,
     whyItMatters: string(v.whyItMatters, 1000) || undefined,
     aiAssisted: v.aiAssisted === true,
-  })).filter(v => /^[a-z0-9-]{1,90}$/.test(v.slug) && v.title.length > 0 && v.summary.length > 0);
+  };
 }
+function validNewsArticle(item: CmsArticle): boolean {
+  return /^[a-z0-9-]{1,90}$/.test(item.slug) &&
+    item.title.length > 0 && item.summary.length > 0;
+}
+function attributableExternalArticle(item: CmsArticle): boolean {
+  return item.originType === "externa" && !!item.sourceName &&
+    !!item.sourceUrl?.startsWith("https://");
+}
+
+export async function getCmsNews(): Promise<CmsArticle[]> {
+  return (await find("news-articles")).map(mapNewsRecord).filter(validNewsArticle);
+}
+
+/** Radar has its own CMS query, retaining published + approved guards and pagination. */
+export async function getCmsRadarNews(): Promise<CmsArticle[]> {
+  return (await find("news-articles", {"filters[originType][$eq]": "externa"}))
+    .map(mapNewsRecord)
+    .filter(item => validNewsArticle(item) && attributableExternalArticle(item));
+}
+
 export async function getCmsNewsBySlug(slug: string): Promise<CmsArticle | null> {
   if (!/^[a-z0-9-]{1,90}$/.test(slug)) return null;
-  const matching = (await find("news-articles", { "filters[slug][$eq]": slug }))
-    .map(v => ({
-      slug: string(v.slug, 90), title: string(v.title, 200), summary: string(v.summary),
-      body: string(v.body, 15000) || undefined, category: string(v.category, 50) || undefined,
-      date: string(v.date, 40) || undefined,
-      sourceName: string(v.sourceName, 100) || undefined,
-      sourceUrl: url(v.sourceUrl),
-      originType: v.originType === "externa" ? "externa" as const : "institucional" as const,
-      scope: v.scope === "internacional" ? "internacional" as const : v.scope === "brasil" ? "brasil" as const : "local" as const,
-      country: string(v.country, 80) || undefined,
-      sourceLanguage: string(v.sourceLanguage, 15) || undefined,
-      whyItMatters: string(v.whyItMatters, 1000) || undefined,
-      aiAssisted: v.aiAssisted === true,
-    }))
-    .find(v => v.slug === slug && v.title && v.summary);
+  const matching = (await find("news-articles", {"filters[slug][$eq]": slug}))
+    .map(mapNewsRecord)
+    .find(item => item.slug === slug && validNewsArticle(item) &&
+      (item.originType !== "externa" || attributableExternalArticle(item)));
   return matching ?? null;
 }
 export async function getCmsEvents(): Promise<CmsEvent[]> {
