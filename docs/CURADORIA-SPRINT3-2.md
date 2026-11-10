@@ -258,3 +258,27 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml --profile cura
 O segundo comando pode mostrar o Redis já iniciado, e isso é normal. **Não executar `docker compose down -v`, não reiniciar o banco CMS, não habilitar o agendador e não colocar a chave de API na conversa.** O comando `generate-preview` ainda está isolado de escrita, usa apenas RSS W3C/WAI e Perkins e contabiliza toda tentativa na quota Redis.
 
 Se houver erro de conexão após o ajuste, consultar `docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator logs --tail=60 redis` (não colar segredos). Um erro `Redis is unavailable or not ready; quota enforcement blocked the AI request` significa que o trabalho parou **antes de chamar o modelo**. O resultado bem-sucedido produz `aiGenerated:true`, `status:draft_ready` e o texto gerado em pt-BR, sujeito a verificação editorial.
+
+
+## Teste Docker Windows: Redis resolvido, Gemini bloqueado pela proteção de custos — 10/11/2026
+
+O operador confirmou em PowerShell a atualização da `dev` para `0496c74`, **58/58 testes locais aprovados**, Redis 7 `healthy` e reconstrução bem-sucedida da imagem do worker. O erro anterior `Stream isn't writeable and enableOfflineQueue options is false` **não reapareceu**.
+
+A chamada manual `docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run generate:preview` avançou até a validação dos provedores e falhou com:
+
+```text
+Error: gemini requires an operator-confirmed free-tier-only account
+    at providersFromEnv (file:///app/src/providers.mjs:43:13)
+```
+
+**Diagnóstico:** a presença de `CURATOR_GEMINI_API_KEY` com `CURATOR_GEMINI_FREE_TIER_CONFIRMED` diferente de `true` aciona a proteção deliberada contra cobrança. Não é erro de Redis, Docker ou Strapi. A validação ocorre **antes da chamada à API LLM**; nenhum conteúdo novo foi gerado no teste.
+
+**Procedimento imediato, sem rebuild:**
+
+1. No arquivo privado `curator/.env`, manter a chave OpenRouter existente e `CURATOR_OPENROUTER_MODEL=openrouter/free`.
+2. Deixar `CURATOR_GEMINI_API_KEY=` vazio e `CURATOR_GEMINI_FREE_TIER_CONFIRMED=false`. Fazer o mesmo para `CURATOR_GROQ_API_KEY=` e `CURATOR_GROQ_FREE_TIER_CONFIRMED=false`, a menos que já tenha verificado conta sem faturamento e modelo gratuito.
+3. Preservar `CURATOR_ENABLED=false`, `CURATOR_WRITE_DRAFTS=false` e `CURATOR_STRAPI_DRAFT_TOKEN=` vazio.
+4. Executar **somente** `docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run generate:preview`. O serviço Redis privado existente pode continuar ativo. **Não é necessário executar build novamente**, reiniciar o CMS nem remover volumes.
+5. Compartilhar apenas a saída do terminal **sem segredos**. O próximo gate é uma saída `draft_ready` da LLM gratuita com fonte e texto editorial verificável.
+
+O CI do commit `0496c74` ([workflow #42758177280](https://github.com/SladeSouzaSantos/ierc-rn/actions/runs/42758177280)) concluiu com **success**, incluindo os testes unitários e a conexão com Redis 7 real. A `main` e a automação de publicação continuam intocadas.
