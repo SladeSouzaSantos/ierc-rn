@@ -9,8 +9,9 @@ async function localCms(status, body, action){
   const requests=[];
   const server=createServer((req,res)=>{
     requests.push({method:req.method,url:req.url,authorization:req.headers.authorization});
-    res.writeHead(status,{'Content-Type':'application/json'});
-    res.end(body);
+    const response=typeof status==='function' ? status(req) : {status,body};
+    res.writeHead(response.status,{'Content-Type':'application/json'});
+    res.end(response.body);
   });
   server.listen(0,'127.0.0.1');
   await once(server,'listening');
@@ -65,5 +66,53 @@ test('cms:check 403 reports fixed category and status only, never token/server m
     assert.ok(!result.stderr.includes('test-token-123456'));
     assert.equal(requests.length,1);
     assert.equal(requests[0].method,'GET');
+  });
+});
+
+test('cms:check diagnoses 400 by testing isolated REST parameters, never performs POST',async()=>{
+  const privateInfo='secret-data-DO-NOT-LOG';
+  await localCms(req=>{
+    const url=new URL(req.url,'http://127.0.0.1');
+    // Simulate Strapi rejecting a filter field that is missing from a
+    // deployed schema, while other draft and pagination parameters work.
+    const filtered=url.searchParams.has('filters[dedupeKey][$eq]');
+    return filtered
+      ? {status:400,body:JSON.stringify({error:{message:privateInfo}})}
+      : {status:200,body:JSON.stringify({data:[]})};
+  },null,async(base,requests)=>{
+    const result=await runCheck(base);
+    assert.equal(result.code,1);
+    assert.equal(result.stdout,'');
+    const output=JSON.parse(result.stderr.trim());
+    assert.equal(output.status,'failed');
+    assert.equal(output.category,'invalid_query');
+    assert.equal(output.httpStatus,400);
+    assert.equal(output.readOnly,true);
+    assert.deepEqual(output.diagnosticChecks.map(x=>[x.step,x.httpStatus]),[
+      ['collection',200],['draft_status',200],['pagination',200],
+      ['dedupe_filter',400],['combined',400],
+    ]);
+    assert.equal(requests.length,6); // main check + five isolated GETs
+    assert.ok(requests.every(x=>x.method==='GET'));
+    assert.ok(requests.every(x=>x.authorization==='Bearer test-token-123456'));
+    assert.ok(!result.stderr.includes(privateInfo));
+    assert.ok(!result.stderr.includes('test-token-123456'));
+    assert.ok(!result.stderr.includes('0'.repeat(64)));
+    assert.ok(!result.stderr.includes('filters%5B'));
+  });
+});
+test('cms:check HTTP 400 diagnostics stop if permissions change to 403',async()=>{
+  let n=0;
+  await localCms(req=>++n===1
+    ? {status:400,body:JSON.stringify({error:{message:'secret'}})}
+    : {status:403,body:JSON.stringify({error:{message:'secret'}})}
+  ,null,async(base,requests)=>{
+    const result=await runCheck(base);
+    assert.equal(result.code,1);
+    const output=JSON.parse(result.stderr.trim());
+    assert.equal(output.httpStatus,400);
+    assert.equal(output.diagnosticChecks.length,1);
+    assert.equal(output.diagnosticChecks[0].httpStatus,403);
+    assert.ok(requests.every(x=>x.method==='GET'));
   });
 });
