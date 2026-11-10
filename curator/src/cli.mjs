@@ -6,28 +6,31 @@ import {cmsClient} from './editorial.mjs';
 import {runOnce} from './pipeline.mjs';
 
 const cmd=process.argv[2];
-if(!['preview','once','schedule'].includes(cmd)){
-  console.error('Use: node src/cli.mjs preview|once|schedule');
+if(!['preview','generate-preview','once','schedule'].includes(cmd)){
+  console.error('Use: node src/cli.mjs preview|generate-preview|once|schedule');
   process.exitCode=2;
 }else{
   const env=process.env;
-  if(cmd!=='preview'&&env.CURATOR_ENABLED!=='true') {
+  if(!['preview','generate-preview'].includes(cmd)&&env.CURATOR_ENABLED!=='true') {
     console.log('Curator disabled. Set CURATOR_ENABLED=true only after DEV homologation.');
     process.exit(0);
   }
-  if(cmd!=='preview'&&env.CURATOR_INSTANCE_KIND!=='dev')
+  if(!['preview'].includes(cmd)&&env.CURATOR_INSTANCE_KIND!=='dev')
     throw new Error('Automatic PROD ingestion is not approved');
   const settings=settingsFromEnv(env);
   const log=(event)=>console.log(JSON.stringify({ts:new Date().toISOString(),...event}));
-  const dryRun=cmd==='preview'||env.CURATOR_WRITE_DRAFTS!=='true';
+  // Explicit one-shot AI preview is independent of the write activation flags.
+  // Even CURATOR_WRITE_DRAFTS=true must not grant write access to this mode.
+  const aiPreview=cmd==='generate-preview';
+  const dryRun=cmd==='preview'||aiPreview||env.CURATOR_WRITE_DRAFTS!=='true';
   const redis=cmd==='preview'?null:new Redis(env.CURATOR_REDIS_URL||'redis://redis:6379',{
     enableOfflineQueue:false,maxRetriesPerRequest:1,
   });
   if(redis)redis.on('error',()=>{}); // Never expose credentials in logs.
   try{
     if(redis)await redis.ping();
-    const providers=dryRun?[]:providersFromEnv(env);
-    if(!dryRun&&!providers.length)throw new Error('At least one confirmed free provider is required');
+    const providers=dryRun&&!aiPreview?[]:providersFromEnv(env);
+    if((!dryRun||aiPreview)&&!providers.length)throw new Error('At least one confirmed free provider is required');
     const quota=redis?new RedisQuotaState(redis,settings):null;
     const router=redis?new FreeLlmRouter({providers,state:quota,settings,logger:log}):null;
     const cms=!dryRun?cmsClient({baseUrl:env.CURATOR_CMS_URL||'http://cms:1337',
@@ -39,9 +42,17 @@ if(!['preview','once','schedule'].includes(cmd)){
     const previewLimit=Number(env.CURATOR_PREVIEW_LIMIT||6);
     if(cmd==='preview'&&(!Number.isInteger(previewLimit)||previewLimit<1||previewLimit>30))
       throw new Error('CURATOR_PREVIEW_LIMIT must be 1..30');
-    const execute=async()=>runOnce({router,store:redis,cms,dryRun,logger:log,
-      maxAgeDays:cmd==='preview'?previewDays:45,
-      maxArticles:cmd==='preview'?previewLimit:3});
+    // AI previews consume the same Redis quotas/fallback as live generation,
+    // but NEVER construct a CMS client or pass the store for article persistence.
+    const aiPreviewLimit=Number(env.CURATOR_AI_PREVIEW_LIMIT||1);
+    const aiPreviewDays=Number(env.CURATOR_AI_PREVIEW_DAYS||45);
+    if(aiPreview&&(!Number.isInteger(aiPreviewLimit)||aiPreviewLimit<1||aiPreviewLimit>2))
+      throw new Error('CURATOR_AI_PREVIEW_LIMIT must be 1..2');
+    if(aiPreview&&(!Number.isInteger(aiPreviewDays)||aiPreviewDays<1||aiPreviewDays>120))
+      throw new Error('CURATOR_AI_PREVIEW_DAYS must be 1..120');
+    const execute=async()=>runOnce({router,store:aiPreview?null:redis,cms,dryRun,aiPreview,logger:log,
+      maxAgeDays:cmd==='preview'?previewDays:aiPreview?aiPreviewDays:45,
+      maxArticles:cmd==='preview'?previewLimit:aiPreview?aiPreviewLimit:3});
     const slot=()=>{
       const parts=new Intl.DateTimeFormat('en-GB',{
         timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit',
@@ -51,7 +62,7 @@ if(!['preview','once','schedule'].includes(cmd)){
       return {id:v.year+'-'+v.month+'-'+v.day+':'+v.hour,
         hour:v.hour,minute:v.minute};
     };
-    if(cmd==='preview'||cmd==='once'){
+    if(cmd==='preview'||cmd==='generate-preview'||cmd==='once'){
       const report=await execute();
       console.log(JSON.stringify(report));
     }else{
