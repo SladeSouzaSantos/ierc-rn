@@ -24,6 +24,7 @@ export type CmsArticle = {
   whyItMatters?: string;
   aiAssisted?: boolean;
   autoReviewed?: boolean;
+  autoReviewBasis?: "rss" | "full_article";
 };
 export type CmsEvent = {
   slug: string;
@@ -113,7 +114,12 @@ function mapNewsRecord(v: Json): CmsArticle {
     sourceLanguage: string(v.sourceLanguage, 15) || undefined,
     whyItMatters: string(v.whyItMatters, 1000) || undefined,
     aiAssisted: v.aiAssisted === true,
-    autoReviewed: typeof v.approvalReference === "string" && /^ai-rss-v1-[a-f0-9]{12}$/.test(v.approvalReference),
+    autoReviewed: typeof v.approvalReference === "string" &&
+      /^ai-(?:rss-v1|source-v2)-[a-f0-9]{12}$/.test(v.approvalReference),
+    autoReviewBasis: typeof v.approvalReference === "string" &&
+      /^ai-source-v2-[a-f0-9]{12}$/.test(v.approvalReference) ? "full_article" :
+      typeof v.approvalReference === "string" &&
+      /^ai-rss-v1-[a-f0-9]{12}$/.test(v.approvalReference) ? "rss" : undefined,
   };
 }
 function validNewsArticle(item: CmsArticle): boolean {
