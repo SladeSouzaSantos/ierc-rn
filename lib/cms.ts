@@ -23,6 +23,7 @@ export type CmsArticle = {
   sourceLanguage?: string;
   whyItMatters?: string;
   aiAssisted?: boolean;
+  autoReviewed?: boolean;
 };
 export type CmsEvent = {
   slug: string;
@@ -112,6 +113,7 @@ function mapNewsRecord(v: Json): CmsArticle {
     sourceLanguage: string(v.sourceLanguage, 15) || undefined,
     whyItMatters: string(v.whyItMatters, 1000) || undefined,
     aiAssisted: v.aiAssisted === true,
+    autoReviewed: typeof v.approvalReference === "string" && /^ai-rss-v1-[a-f0-9]{12}$/.test(v.approvalReference),
   };
 }
 function validNewsArticle(item: CmsArticle): boolean {
