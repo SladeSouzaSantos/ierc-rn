@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowUpRight, CalendarDays, HeartHandshake, Instagram, MapPin, ShoppingBag, Trophy, Users } from "lucide-react";
 import { PageHero } from "@/components/page-hero";
 import { getDisplayActivities, getCmsNews, getCmsEvents, getCmsAthletes } from "@/lib/cms";
-import { CmsNewsList, CmsEventsList, CmsAthletesList } from "@/components/cms-public";
+import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsAthletesList } from "@/components/cms-public";
 import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
 import { AthleteStories } from "@/components/athlete-stories";
 
@@ -98,6 +98,7 @@ export default async function ContentPage({ params }: RouteProps) {
         {slug === "noticias" && <>
           <div className="detail-intro"><p className="eyebrow">Acontece e aconteceu</p><h2>Fontes confiáveis para acompanhar o IERC.</h2><p>Reunimos notícias institucionais aprovadas e referências verificáveis sobre a participação esportiva e comunitária do IERC-RN. Reportagens sobre iniciativas de outras organizações ficam em uma área separada, o Radar da Inclusão.</p></div>
           <CmsNewsList items={cmsNews} />
+          <CmsIercPressList items={cmsNews} />
           <ExternalClippings />
           <section className="radar-teaser" aria-labelledby="radar-teaser-title">
             <div>
