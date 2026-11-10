@@ -1,0 +1,87 @@
+# Sprint 3.2 — Radar da Inclusão / Curadoria gratuita
+
+**Status: primeira implementação em DEV. Não ativada automaticamente; sem publicação em PROD.**
+
+## Arquitetura
+
+Worker próprio Node.js 22, independente do Strapi e do Next.js. Redis 7 privado com persistência AOF mantém orçamento global e por provedor, cooldown, URLs já vistas e locks. Três horários de verificação: 08h, 13h e 19h, sempre em America/Fortaleza.
+
+A primeira origem de coleta é o feed oficial [W3C/WAI](https://www.w3.org/WAI/news/subscribe/) (https://www.w3.org/WAI/feed.xml). Outras fontes (WBU, ICEVI, RNIB, IBSA, CPB, CBDV) serão adicionadas somente após confirmar RSS/API, permissão de coleta e qualidade. Não há rastreamento indiscriminado da web nem download de fotos.
+
+## Consumo de IA — regras ORBE reaproveitadas
+
+Ordem: **OpenRouter gratuito → Gemini gratuito confirmado → Groq gratuito confirmado → Ollama local opcional**.
+
+- OpenRouter: somente ID de modelo openrouter/free ou terminado em :free. Qualquer rota paga é rejeitada.
+- Gemini/Groq: somente se uma conta **sem faturamento ativo** e o modelo gratuito forem confirmados pelo operador; configuração exige variável FREE_TIER_CONFIRMED=true. A variável NÃO desliga cobranças no provedor — é responsabilidade do titular verificar isso. Se houver dúvida, deixe chaves vazias.
+- Ollama: opção local sem cobrança por API, mas com uso de CPU, RAM e energia; URL restrita a hostname interno.
+- Quota inicial: 30 tentativas globais por 24h, 10 por provedor por 24h, 4 tentativas máximas por notícia, 15s timeout por tentativa, cooldown inicial 60s até 24h.
+- Quotas Redis compartilhadas entre réplicas, com reserva atômica de contador global e individual antes de cada requisição; falhas e fallbacks gastam quota. Se Redis cair, não há chamada externa.
+- Fallback em HTTP 402 (crédito), 429 (rate limit), 5xx, timeout, rede e resposta inválida. 401/404 geram cooldown por configuração; 400/403/413/422 encerram a rodada por serem erros não resolvidos simplesmente mudando de modelo.
+- Logs registram provedor, categoria de erro e duração, nunca chaves, prompts, respostas ou corpo das notícias.
+
+## Fluxo editorial
+
+1. Consultar feed Atom/RSS público e validado (domínio HTTPS autorizado, limite de 700 KB, data e relevância).
+2. Normalizar URL e eliminar duplicatas, com dedupeKey SHA-256, lock Redis e consulta prévia aos rascunhos existentes no Strapi.
+3. Invocar IA **somente** para notícias candidatas não vistas; fornecer título + resumo curto, jamais o artigo integral. Solicitar síntese original em português, sem afirmações não respaldadas.
+4. Verificar campos estruturados, origem, idioma, data e seção "Por que isso importa para a inclusão no Brasil?".
+5. Criar no Strapi com POST /api/news-articles?status=draft e editorialStatus=em_revisao. O Strapi REST publica automaticamente um POST sem status=draft, portanto esse parâmetro é obrigatório.
+6. Não anexar imagens externas. Editor humano consulta a fonte, verifica tradução/fatos/direitos e decide publicar ou descartar.
+7. Portal mostra conteúdo externo aprovado como **Radar da Inclusão** e mantém comunicação institucional separada.
+
+## Prévia segura no Windows (não usa token nem IA)
+
+Na raiz do projeto, com Node.js 22 ou superior:
+
+    git switch dev
+    git pull --ff-only origin dev
+    npm install --prefix curator --no-audit --no-fund
+    npm run --prefix curator test
+    npm run --prefix curator preview
+
+A prévia consulta apenas o feed público W3C/WAI, sem Redis, Strapi nem APIs de IA. Pode retornar lista vazia se não houver notícias recentes. Não cria notícias no site.
+
+## Preparar DEV para futura homologação (não iniciar automaticamente)
+
+Copiar o arquivo de exemplo e guardar os segredos no computador:
+
+    Copy-Item curator/.env.example curator/.env
+
+O estado padrão contém CURATOR_ENABLED=false e CURATOR_WRITE_DRAFTS=false; o perfil Compose do worker chama-se curator e não sobe automaticamente.
+
+Para testar posteriormente a agenda sem IA, alterar apenas CURATOR_ENABLED=true e manter CURATOR_WRITE_DRAFTS=false. A instância exige Docker CMS DEV e a rede ierc-rn-cms_cms_private:
+
+    docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator up -d --build
+    docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator ps
+
+O Redis da curadoria não possui portas expostas e armazena dados em volume próprio. Não utilizar down -v ou volume prune.
+
+## Ativação de rascunhos reais — segunda etapa, não executar agora
+
+- Fazer backup do PostgreSQL e mídias atuais antes de atualizar a imagem CMS, pois novos campos foram adicionados ao modelo de Notícias.
+- Criar no Strapi DEV um API Token **Custom** com permissão mínima de consulta e criação de Notícias, separado da chave de leitura CMS_READ_TOKEN e sem Full Access. Guardar em CURATOR_STRAPI_DRAFT_TOKEN no arquivo curator/.env.
+- Configurar ao menos um provedor comprovadamente gratuito e verificar as políticas de utilização de dados desse provedor. Manter outras chaves vazias se não estiverem confirmadas.
+- Somente então ativar CURATOR_WRITE_DRAFTS=true e executar uma rodada controlada (não o agendador) para gerar rascunhos em DEV.
+- Conferir no Content Manager que os registros são rascunhos com editorialStatus em_revisao e publishedAt nulo. Conferir que o Next.js não os exibe antes da aprovação humana.
+- Não habilitar produção até validar revisões, autorizações, segurança, backups, limites e transparência institucional.
+
+## Verificações
+
+- [x] Roteamento gratuito com quotas por provedor/global, cooldown e fallback com limites.
+- [x] Feed internacional oficial W3C/WAI e deduplicação.
+- [x] Prévia sem IA e rascunhos Strapi explicitamente não publicados.
+- [x] Horários 08h/13h/19h em America/Fortaleza e worker opt-in.
+- [x] Conteúdo externo identificado separadamente no site.
+- [ ] Testes finais CI e primeira prévia local confirmada.
+- [ ] Expansão do catálogo de fontes nacionais/internacionais.
+- [ ] Homologação de falhas reais com provedores gratuitos, sem cobrança.
+- [ ] Validação da criação de rascunho em Strapi DEV com permissão mínima.
+- [ ] Acessibilidade do conteúdo externo aprovado e revisão editorial.
+- [ ] Aprovação institucional antes de qualquer cron em produção.
+
+Fontes técnicas: [OpenRouter free](https://openrouter.ai/collections/free-models),
+[Strapi REST status](https://docs.strapi.io/cms/api/rest/status),
+[Gemini OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai),
+[Groq API](https://console.groq.com/docs/api-reference),
+[W3C WAI Atom/RSS](https://www.w3.org/WAI/news/subscribe/).
