@@ -61,7 +61,7 @@ export function reviewDecision(source,draft,review){
   if(quotes.some(quote=>quote.length<12||quote.length>160||!reference.includes(quote))||
      new Set(quotes).size<2)
     return {approved:false,reason:'unverifiable_evidence_quotes'};
-  return {approved:true,reason:'rss_review_passed'};
+  return {approved:true,reason:'rss_review_passed',evidenceQuotes:q.slice(0,2)};
 }
 
 export async function reviewAiDraft(source,draft,{router,logger=()=>{}}){
@@ -85,7 +85,8 @@ export async function reviewAiDraft(source,draft,{router,logger=()=>{}}){
       validateOutput:validateReview,
     });
     const review=validateReview(answer.content);
-    return reviewDecision(source,draft,review);
+    const result=reviewDecision(source,draft,review);
+    return result.approved?{...result,reviewerProvider:answer.provider}:result;
   }catch(error){
     logger({event:'auto_review_unavailable',reason:
       error instanceof LlmExhaustedError?'free_provider_unavailable':'invalid_review'});
