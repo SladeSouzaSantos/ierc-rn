@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {SYSTEM,cmsClient,validateDraft,payloadFor,processArticle} from '../src/editorial.mjs';
+import {SYSTEM,canonicalCategory,cmsClient,validateDraft,payloadFor,processArticle} from '../src/editorial.mjs';
 const source={title:'New accessible device',summary:'A new tool for low vision has been described.',
   url:'https://www.w3.org/WAI/news/test',publishedAt:'2026-11-09T12:00:00Z',
   country:'Internacional',language:'en',source:'W3C WAI',dedupeKey:'a'.repeat(64)};
@@ -114,4 +114,18 @@ test('editorial prompt never infers absence of evidence or examples from an RSS 
  assert.match(SYSTEM,/skip:true em vez de especular/);
  // The LLM receives only source title + RSS summary; this tests prompt policy,
  // not stochastic model compliance. Human editorial approval remains mandatory.
+});
+
+test('Radar taxonomy standardizes sport and assistive categories without making factual claims',()=>{
+ assert.equal(canonicalCategory('esporte'), 'Esporte adaptado');
+ assert.equal(canonicalCategory('Esportes Adaptados'), 'Esporte adaptado');
+ assert.equal(canonicalCategory('esporte e lazer'), 'Esporte adaptado');
+ assert.equal(canonicalCategory('Braille'), 'Educação inclusiva');
+ assert.equal(canonicalCategory('tecnologia'), 'Tecnologia assistiva');
+ assert.equal(canonicalCategory('cidadania'), 'Direitos e acessibilidade');
+ assert.equal(canonicalCategory('livros e novidades'), 'Inclusão e acessibilidade');
+ assert.equal(canonicalCategory(undefined), 'Inclusão e acessibilidade');
+ assert.equal(validateDraft(JSON.stringify({...draft,category:'esporte'})).category,'Esporte adaptado');
+ assert.equal(payloadFor(source,{...draft,category:'esporte'},'openrouter').category,'Esporte adaptado');
+ assert.match(SYSTEM,/Classifique category com um destes rótulos/);
 });
