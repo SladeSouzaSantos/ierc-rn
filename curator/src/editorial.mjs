@@ -8,6 +8,8 @@ export const SYSTEM=[
   'Não traduza nem reproduza a reportagem inteira. Não sugira que o IERC adota tecnologias ou possui parcerias sem prova.',
   'Preserve corretamente nomes próprios e da instituição citada na fonte, sem colar palavras; revise grafia e espaços.',
   'Evite transformar uma possibilidade em resultado comprovado. No whyItMatters, formule implicações como reflexão contextual, não benefícios certos sem evidência no resumo.',
+  'Você NÃO leu a reportagem completa: ausência de detalhes no resumo RSS não significa ausência no artigo. Não afirme que a publicação não detalha modalidades, casos, pesquisas, dados ou resultados; limite-se ao que título e resumo confirmam.',
+  'Não substitua a síntese por ressalvas genéricas sobre falta de evidências. Se título e resumo não sustentarem uma notícia informativa, use skip:true em vez de especular.',
   'Se a fonte for insuficiente, responda apenas {"skip":true}.',
   'Caso contrário, responda apenas JSON com title, summary, body, whyItMatters e category.',
   'Mantenha title até 150 caracteres, summary até 250, body até 1000 e whyItMatters até 350.',
