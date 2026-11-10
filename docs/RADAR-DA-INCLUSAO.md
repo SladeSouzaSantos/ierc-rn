@@ -56,3 +56,14 @@ Referência de implementação: [Sprint 3.2 — Curadoria](CURADORIA-SPRINT3-2.m
 O catálogo dispõe agora de feeds da **Agência Brasil (EBC)** e da **Comissão Europeia**, com políticas públicas de reutilização registradas e uma etapa de autoria/condições por artigo antes de extrair textos. A geração de sínteses e revisão por IA fundamentadas na matéria integral só são elegíveis quando a política e o conteúdo da página forem confirmados; páginas de agências parceiras ou sem direitos ficam retidas. **Perkins/WAI continuam apenas como prévias/editorial sem autorização de publicação autônoma baseada em texto integral.** O indicador de IA distingue revisão humana de revisão automática com evidências.
 
 O comando `review:full-preview` consulta Redis/CMS para descartar duplicatas, examina apenas fontes elegíveis e valida blocos textuais sem gravar notícias. A automação de publicação ainda requer homologação na instância DEV, acesso separado de escrita, backup restaurável e decisão editorial expressa. Consulte [FONTE-INTEGRAL-REVIEW-DEV.md](FONTE-INTEGRAL-REVIEW-DEV.md) e a [issue #14](https://github.com/SladeSouzaSantos/ierc-rn/issues/14).
+
+
+## Ordem cronológica dos cartões — 10/11/2026
+
+Os seis registros da seção **Registros publicados sobre o IERC-RN** em `/noticias` são apresentados por `dateTime` no formato ISO, **mais recentes primeiro**: 05/11/2026, 18/08/2026, 18/07/2026, 15/04/2026, 27/03/2026, 16/09/2025. O comparador está em `lib/news-order.ts`; a lista original `clippings` não é alterada, e a ordenação é aplicada em `components/editorial-records.tsx`.
+
+O mesmo comparador é utilizado nas listas CMS em `components/cms-public.tsx`, separadamente para notícias institucionais, **IERC-RN na imprensa**, **Radar Brasil** e **Radar internacional**. Notícias com `date` inválida ou ausente ficam ao final da respectiva lista. Notícias na mesma data preservam a ordem de origem. Isso não altera a data original ou o fluxo de aprovação no Strapi.
+
+Proteções de regressão: `tests/sprint2-content.spec.ts` verifica as seis datas na ordem visual correta na rota `/noticias`; `tests/news-order.spec.ts` confere cronologia ISO, manutenção da lista original, datas faltantes e empates. Não é necessária migração do CMS nem alteração de conteúdos existentes.
+
+**Homologação da coleta expandida no Windows:** o operador aprovou **135/135 testes** e confirmou `feed_checked` com dez itens em cada um dos novos RSS EBC Justiça, Política, Saúde e Geral, sem notícias pertinentes nesses lotes (`no_matching_topics`), além da suspensão EU registrada por `source_paused`. Esta é uma validação de conectividade e de filtro, não uma varredura do arquivo histórico de 120 dias. A publicação automática segue desativada.
