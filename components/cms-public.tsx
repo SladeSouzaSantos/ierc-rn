@@ -20,6 +20,9 @@ function CmsNewsCard({ item, external = false }: { item: CmsArticle; external?: 
     {external && <p className="editorial-place">
       <strong>Fonte externa:</strong> {item.sourceName}{item.country ? " · " + item.country : ""}
     </p>}
+    {external && item.aiAssisted && <p className="radar-ai-note">
+      Síntese assistida por IA · aprovada pela revisão editorial
+    </p>}
     <Link className="editorial-source" href={"/noticias/" + item.slug}>
       {external ? "Ler síntese em português" : "Ler notícia"} <ArrowUpRight size={16} aria-hidden="true"/>
     </Link>
