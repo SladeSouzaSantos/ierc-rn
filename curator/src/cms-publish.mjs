@@ -17,6 +17,14 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
       if(!expected||!/^https:\/\//.test(expected.sourceUrl||'')||
          !/^[a-f0-9]{64}$/i.test(expected.dedupeKey||''))
         throw new Error('Invalid approved source');
+      const quotes=reviewEvidence?.evidenceQuotes;
+      if(!Array.isArray(quotes)||quotes.length!==2||
+         quotes.some(x=>typeof x!=='string'||x.length<12||x.length>160||
+           /[\r\n<>]/.test(x))||
+         reviewEvidence?.evidenceMode!=='full_article'||
+         !/^[a-f0-9]{64}$/.test(reviewEvidence?.evidenceDigest||'')||
+         !['openrouter','gemini','groq','ollama'].includes(reviewEvidence.reviewerProvider))
+        throw new Error('Publisher requires authorized full article evidence audit');
       // Production-worthy autonomous publishing is enabled only for an
       // explicitly documented reuse policy on the exact original publisher.
       const sourceHost=new URL(expected.sourceUrl).hostname;
@@ -28,14 +36,6 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
         reviewEvidence?.licenseReference==='https://commission.europa.eu/legal-notice_en'
       );
       if(!allowedPolicy)throw new Error('Publisher requires documented source reuse permission');
-      const quotes=reviewEvidence?.evidenceQuotes;
-      if(!Array.isArray(quotes)||quotes.length!==2||
-         quotes.some(x=>typeof x!=='string'||x.length<12||x.length>160||
-           /[\r\n<>]/.test(x))||
-         reviewEvidence?.evidenceMode!=='full_article'||
-         !/^[a-f0-9]{64}$/.test(reviewEvidence?.evidenceDigest||'')||
-         !['openrouter','gemini','groq','ollama'].includes(reviewEvidence.reviewerProvider))
-        throw new Error('Publisher requires authorized full article evidence audit');
       const audit=quotes.map(x=>x.replace(/\s+/g,' ').trim());
       const url=host.origin+'/api/news-articles/'+encodeURIComponent(documentId);
       // Authenticate against the exact draft just created by this worker.
