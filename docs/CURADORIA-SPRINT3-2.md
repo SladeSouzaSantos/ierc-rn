@@ -158,3 +158,61 @@ O resultado foi `preview=true, count=6`, com dois itens selecionados de cada ori
 **Validação:** `npm run --prefix curator test`: **48/48 testes locais aprovados**; [CI do commit b580696](https://github.com/SladeSouzaSantos/ierc-rn/actions/runs/42749324237) finalizado com **success**. A coleta e a prévia da Sprint 3.2 ficam tecnicamente homologadas para as fontes elegíveis e para a política de somente prévia das demais; **a Sprint 3.2 integral não está homologada para produção**.
 
 **Próximo gate prioritário:** voltar à Sprint 3.1 no CMS DEV existente, após a atualização planejada do Strapi 5.61 e proteção dos volumes, e confirmar que o Content Manager funciona sem o erro `invalidatesTags`, com autenticação, Author/Editor, rascunho, aprovação e teste de invisibilidade pública do conteúdo pendente. Sem isso, não ativar o worker de rascunhos ou realizar merge do PR #12.
+
+
+## Fase seguinte — gerar rascunho com IA gratuita sem gravar no CMS (10/11/2026)
+
+**Objetivo retomado:** o fluxo Author/Editor e a regra de publicação do CMS já foram testados pelo operador; o foco volta à **automação editorial**. A curadoria anterior tinha teste `preview` sem IA e o caminho `once` que só invocava a IA quando a escrita estava ativada. Isso acoplava a primeira chamada real ao provedor à criação de rascunhos no Strapi e dificultava revisar a qualidade das sínteses.
+
+Foi incluído um comando deliberadamente manual, `generate-preview`, que utiliza **o mesmo prompt e validador** do pipeline de rascunhos, mas **não instancia cliente do Strapi, não tem acesso de escrita CMS e não ativa a agenda**. É restrito ao ambiente `CURATOR_INSTANCE_KIND=dev`. Mesmo se `CURATOR_WRITE_DRAFTS=true`, este comando continua sem gravar no CMS. Somente W3C/WAI e Perkins são elegíveis, sem incorporar RNIB/IBSA/WBU às chamadas de LLM.
+
+### Como executar uma geração real, controlada, no Windows
+
+Primeiro garantir que a instância CMS DEV existente esteja acessível (ela já foi homologada; **não reconstruir nem reiniciar o PostgreSQL**), com o Docker Desktop em execução. Na raiz do repositório, no PowerShell:
+
+```powershell
+git switch dev
+git pull --ff-only origin dev
+npm run --prefix curator test
+
+# Cria arquivo ignorado pelo Git somente se ainda não existir.
+if (-not (Test-Path curator/.env)) {
+  Copy-Item curator/.env.example curator/.env
+}
+```
+
+Abrir **localmente** `curator/.env` e configurar apenas os valores necessários:
+- `CURATOR_INSTANCE_KIND=dev`
+- `CURATOR_ENABLED=false` e `CURATOR_WRITE_DRAFTS=false`: **deixar desativados**
+- `CURATOR_OPENROUTER_API_KEY`: chave já criada pelo operador para o plano/modelo comprovadamente gratuito; a chave jamais deve ir ao GitHub ou à conversa
+- `CURATOR_OPENROUTER_MODEL=openrouter/free` (ou modelo terminado em `:free`)
+- `CURATOR_AI_PREVIEW_LIMIT=1` (um rascunho original por teste; máximo 2)
+- `CURATOR_AI_PREVIEW_DAYS=45` (janela conservadora; máximo 120 só para este teste)
+- `CURATOR_STRAPI_DRAFT_TOKEN=` (deixar vazio nesta etapa)
+- Não preencher `CURATOR_GEMINI_API_KEY` nem `CURATOR_GROQ_API_KEY` sem comprovar que a conta e modelo são gratuitos e sem cobrança; Ollama local é opcional.
+
+```powershell
+# Constrói SOMENTE a imagem descartável do worker. Não sobe o agendador.
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator build worker
+
+# Inicializa Redis privado para medir cotas e executa UMA única geração.
+# run --rm encerra o worker após a prévia. Não publica e não cria registros.
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run generate:preview
+```
+
+O Compose pode iniciar automaticamente o serviço Redis (sem portas públicas), isolado do banco do Strapi. Se ainda não existir a rede externa `ierc-rn-cms_cms_private`, verificar `docker network ls` e o status da instância CMS DEV: **não modificar o nome do projeto CMS existente**. Não usar `docker compose up -d` para o worker nem executar `npm run schedule` nesse teste.
+
+O resultado contém `aiGenerated:true`, `preview:true` e uma única entrada com `status:draft_ready`, `provider`, `originalUrl`, `draft.title`, `draft.summary`, `draft.body`, `draft.whyItMatters` e `draft.category` caso o modelo produza JSON válido. O rascunho existe **apenas na saída do terminal**, não no Strapi. `status:insufficient_evidence` significa que o modelo recusou por falta de fatos; `invalid_draft` indica formato incompleto/inseguro; `llm_unavailable` significa limite, configuração ou falha após os fallbacks gratuitos. Os logs da chamada não contêm tokens/prompt/saída de modelo; **o resultado terminal apresenta propositalmente o texto gerado** para avaliação editorial. Não compartilhar arquivos de ambiente ou segredos.
+
+A chamada real utiliza a mesma contagem atômica Redis e os mesmos limites globais/por provedor que a futura escrita. **O modo `preview` original continua sem usar IA**; o modo `generate-preview` é explícito e consome quota gratuita, ainda que não gere rascunho válido.
+
+### Critérios para passar da prévia de IA à escrita supervisionada
+
+1. Produzir ao menos um `draft_ready` real de WAI/Perkins; registrar versão de modelo e categoria do provedor **sem expor a chave**.
+2. Inspecionar qualidade em pt-BR, não inventar fatos, não alegar vínculo institucional nem copiar integralmente material externo. Rejeitar automaticamente JSON inválido ou `skip:true`.
+3. Só após a revisão criar um token **Custom** do Strapi DEV com permissões mínimas de leitura/criação de Notícias (não o `CMS_READ_TOKEN` e nunca Full Access).
+4. Executar **uma única rodada controlada** que grava **somente Draft / `em_revisao`** no Strapi DEV, comparar conteúdo com a saída, verificar `publishedAt=null`, invisibilidade no portal, dedupe Redis e ausência de imagens automáticas.
+5. Avaliar fallback sob 402/429/5xx, timeout, indisponibilidade e cotas sem ativar a agenda.
+6. **Somente após homologação de qualidade, permissões, acessibilidade e aprovação institucional** considerar agendamento 08h/13h/19h em DEV. Publicação para visitantes permanece exclusivamente manual.
+
+**Status desta entrega:** implementação e testes determinísticos disponíveis em `dev`; geração com chave gratuita real no ambiente do operador ainda não executada, portanto nenhum rascunho criado nem garantia de qualidade até receber a saída do teste.
