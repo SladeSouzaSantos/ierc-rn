@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { LlmExhaustedError } from './router.mjs';
 import {reviewAiDraft} from './auto-review.mjs';
+import {cmsNewsReadOnly} from './duplicate-check.mjs';
 
 export const SYSTEM=[
   'Você escreve sínteses informativas ORIGINAIS em português do Brasil para um portal sobre inclusão de pessoas cegas e com baixa visão.',
@@ -87,26 +88,9 @@ export function cmsClient({baseUrl,token,fetchImpl=fetch}){
      (host.pathname!==''&&host.pathname!=='/'))throw new Error('CMS URL must be private');
   if(!token||token.length<10)throw new Error('Scoped CMS draft token required');
   const headers={Authorization:'Bearer '+token,Accept:'application/json'};
+  const lookup=cmsNewsReadOnly({baseUrl,token,fetchImpl});
   return {
-    async existing(dedupeKey){
-      const q=new URLSearchParams({status:'draft','filters[dedupeKey][$eq]':dedupeKey,'pagination[pageSize]':'1'});
-      let response;
-      try {
-        response=await fetchImpl(host.origin+'/api/news-articles?'+q,{
-          headers,redirect:'error',signal:AbortSignal.timeout(7000)});
-      } catch {
-        // No raw URL, exception details, server body or bearer token in logs.
-        throw new Error('Strapi draft lookup unreachable');
-      }
-      // The HTTP status alone is sufficient to distinguish token permissions
-      // from query/schema errors without leaking an API error body.
-      if(!response.ok)throw new Error('Strapi draft lookup failed (HTTP '+response.status+')');
-      let obj;
-      try { obj=await response.json(); }
-      catch { throw new Error('Invalid Strapi lookup response'); }
-      if(!Array.isArray(obj?.data))throw new Error('Invalid Strapi lookup response');
-      return obj.data.length>0;
-    },
+    existing:lookup.existing,
     async create(data){
       // Explicit status=draft prevents Strapi 5 REST's default IMMEDIATE PUBLICATION.
       const response=await fetchImpl(host.origin+'/api/news-articles?status=draft',{
