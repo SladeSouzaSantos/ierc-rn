@@ -394,3 +394,28 @@ A saída segura é `{"event":"cms_draft_lookup_check","status":"ok","readOnly":t
 | connection_or_configuration | Conferir rede Docker `cms_dev_private` e `cms` `healthy`, sem mover o CMS para URL pública |
 
 **Se `cms:check` passar**, executar **somente uma vez** o comando supervisionado `run --rm -T -e CURATOR_ENABLED=true -e CURATOR_WRITE_DRAFTS=true -e CURATOR_ONCE_LIMIT=1 -e CURATOR_GEMINI_API_KEY= -e CURATOR_GROQ_API_KEY= worker npm run once` já documentado na seção anterior. A execução só cria Draft; deve-se conferir `status=draft`, `editorialStatus=em_revisao`, `publishedAt=null` e ausência pública. Não ativar cron, publicar conteúdo automaticamente ou copiar chaves para relatórios.
+
+
+## Diagnóstico por parâmetro após HTTP 400 no Strapi DEV — 10/11/2026
+
+O operador mostrou o painel **Settings > API Tokens** com token **Custom** chamado `ierc-curator-dev-drafts`; em **News-article** somente `find` e `create` estão marcados, enquanto `findOne`, `update` e `delete` aparecem desmarcados. A imagem confirma a seleção visível, mas **não comprova que a última alteração foi salva no backend**. O campo `Token duration` aparece em `Select`, com legenda `Expiration date: Unlimited`; recomenda-se selecionar duração limitada (se disponível) e salvar as permissões.
+
+A prova Windows em `dev=5ce9f26` concluiu **66/66 testes locais**, rebuild do worker e `npm run cms:check`. A execução respondeu `{"event":"cms_draft_lookup_check","status":"failed","category":"invalid_query","httpStatus":400,"readOnly":true}`. O token passou pela validação inicial, mas não é possível inferir seu escopo efetivo só com isso. Um HTTP 400 indica rejeição de um parâmetro, dado ou validação da solicitação; não conceder Full Access nem permissões de atualização/exclusão para contornar.
+
+**Incremento `dev`**: o comando `cms:check`, apenas quando o GET completo recebe HTTP 400, realiza uma sequência adicional de cinco **GETs privados** com o mesmo token, e registra apenas `step`, `httpStatus` e `responseValid`: (1) `collection` sem parâmetro, (2) `draft_status`, (3) `pagination`, (4) `dedupe_filter` e (5) `combined`. São consultas sem criação de notícias, sem Redis e sem chamadas à IA. Não imprimem token, headers, URL ou conteúdo. Caso algum probe devolva 401/403, a sequência para. Testes de integração simulam um campo de filtro recusado e validam que todas as solicitações são GET.
+
+Se `dedupe_filter` e `combined` falharem com 400, enquanto `collection`, `draft_status` e `pagination` passarem, conferir se o **schema realmente em execução no contêiner CMS DEV** contém `dedupeKey` (definido em `cms/schemas.mjs`). Não confundir arquivo versionado com schema montado no contêiner. Se `draft_status` falhar isoladamente, verificar middleware/configuração de consulta e versão do Strapi; se `pagination` falhar, inspecionar validação de parâmetros. Não recriar banco nem alterar permissões preventivamente.
+
+No PowerShell, atualizar apenas `dev` e a imagem do **worker**, depois executar `cms:check`:
+
+```powershell
+git switch dev
+git pull --ff-only origin dev
+npm run --prefix curator test
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator build worker
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run cms:check
+```
+
+**Não executar `npm run once` ainda**. Somente após identificar o parâmetro rejeitado corrigir a causa, repetir `cms:check` e confirmar `status=ok` antes de permitir uma única criação Draft DEV. Preservar backup de 245848 bytes, PostgreSQL DEV, `main`, PR #12 Draft e agendador desligado.
+
+Referências: [Strapi 5 filtros](https://docs.strapi.io/cms/api/rest/filters), [status draft](https://docs.strapi.io/cms/api/rest/status), [validação de entrada](https://docs.strapi.io/cms/migration/v4-to-v5/breaking-changes/default-input-validation).
