@@ -9,7 +9,8 @@
     "once": "node src/cli.mjs once",
     "schedule": "node src/cli.mjs schedule",
     "check": "node --check src/router.mjs && node --check src/pipeline.mjs && node --check src/cli.mjs && node --check src/listings.mjs && node --check src/relevance.mjs",
-    "preview": "node src/cli.mjs preview"
+    "preview": "node src/cli.mjs preview",
+    "generate:preview": "node src/cli.mjs generate-preview"
   },
   "engines": {
     "node": ">=22 <27"
