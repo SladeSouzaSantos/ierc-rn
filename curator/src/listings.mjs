@@ -17,12 +17,37 @@ export function listingDate(raw) {
   return date.getTime();
 }
 
+/**
+ * Resolve ordinary relative links using the approved listing URL, without
+ * expanding the hostname or news path allowlist. No article pages are fetched.
+ */
+function articleLink(raw, source, stats) {
+  const href = typeof raw === 'string' ? raw.trim() : '';
+  if (!href) { stats.missingHref++; return null; }
+  let resolved;
+  try { resolved = new URL(href, source.feed); }
+  catch { stats.malformedHref++; return null; }
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(href)) stats.relativeHref++;
+  if (resolved.protocol !== 'https:') {
+    stats.unsafeScheme++; return null;
+  }
+  if (resolved.hostname !== source.hostname || resolved.username ||
+      resolved.password || resolved.port) {
+    stats.externalHost++; return null;
+  }
+  const canonical = canonicalLink(resolved.toString(), source);
+  if (!canonical || !new URL(canonical).pathname.startsWith(source.articlePath)) {
+    stats.wrongArticlePath++; return null;
+  }
+  return canonical;
+}
+
 function readCard(card, fields, source, now, ageDays, stats) {
   const title = plain(fields.title(card), 200);
-  const url = canonicalLink(fields.url(card), source);
+  const url = articleLink(fields.url(card), source, stats);
   const stamp = listingDate(fields.date(card));
   if (!title) { stats.invalidTitle++; return null; }
-  if (!url || !url.startsWith('https://' + source.hostname + source.articlePath)) {
+  if (!url) {
     stats.invalidLink++; return null;
   }
   if (stamp === null) { stats.invalidDate++; return null; }
@@ -43,7 +68,9 @@ export function parseListing(body, source, now = Date.now(), ageDays = 45, stats
   if (source.mode !== 'html' || source.previewOnly !== true)
     throw new Error('HTML listings must remain preview-only');
   Object.assign(stats, {detectedCards:0,invalidTitle:0,invalidLink:0,
-    invalidDate:0,outsideWindow:0,accepted:0});
+    invalidDate:0,outsideWindow:0,accepted:0,missingHref:0,malformedHref:0,
+    relativeHref:0,unsafeScheme:0,externalHost:0,wrongArticlePath:0,
+    listingState:'no_cards'});
   const $ = load(body);
   const cards = [];
   const record = (card, fields) => {
@@ -71,5 +98,8 @@ export function parseListing(body, source, now = Date.now(), ageDays = 45, stats
   } else {
     throw new Error('Unsupported HTML source: no custom parser');
   }
+  stats.listingState = stats.detectedCards > 0 ? 'cards_detected' :
+    (source.id === 'ibsa' && /Loading news(?:\\.{3}|…)/i.test(body)
+      ? 'client_render_pending' : 'no_cards');
   return cards.filter(Boolean);
 }
