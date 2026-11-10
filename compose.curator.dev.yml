@@ -1,0 +1,31 @@
+# Only a DEV deployment. Requires existing compose.cms.yml and its network.
+# No service is automatically started during git pull or CMS upgrades.
+name: ierc-rn-curator-dev
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server","--appendonly","yes","--maxmemory-policy","noeviction"]
+    volumes:
+      - curator_redis:/data
+    healthcheck:
+      test: ["CMD","redis-cli","ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [worker_private]
+  worker:
+    build: {context: ./curator, dockerfile: Dockerfile}
+    restart: unless-stopped
+    env_file: ./curator/.env
+    depends_on:
+      redis: {condition: service_healthy}
+    networks: [worker_private,cms_dev_private]
+    # No public ports or credentials in the image.
+networks:
+  worker_private: {}
+  cms_dev_private:
+    external: true
+    name: ierc-rn-cms_cms_private
+volumes:
+  curator_redis: {}
