@@ -60,3 +60,38 @@ test('counter diagnostics distinguish empty listing, invalid dates and foreign l
  assert.equal(parseListing(rnibHtml.replace('https://www.rnib.org.uk/news/','https://evil.example/news/'),rnib,now,45,link).length,0);
  assert.equal(link.invalidLink,1);
 });
+
+test('RNIB relative links remain preview-only and reject foreign origins', () => {
+  const original = 'https://www.rnib.org.uk/news/report-finds-nhs-app-falls-short-on-accessibility/';
+  const relative = rnibHtml.replace(original, '/news/report-finds-nhs-app-falls-short-on-accessibility/');
+  const accepted = {};
+  const articles = parseListing(relative, rnib, now, 45, accepted);
+  assert.equal(articles.length, 1);
+  assert.equal(articles[0].url, original.slice(0, -1));
+  assert.equal(articles[0].summary, '');
+  assert.equal(accepted.relativeHref, 1);
+  assert.equal(accepted.invalidLink, 0);
+  assert.equal(accepted.listingState, 'cards_detected');
+
+  const badHost = {};
+  assert.equal(parseListing(relative.replace('/news/report-finds-nhs-app', '//evil.example/news/report-finds-nhs-app'),
+    rnib, now, 45, badHost).length, 0);
+  assert.equal(badHost.externalHost, 1);
+  const badPath = {};
+  assert.equal(parseListing(relative.replace('/news/report-finds-nhs-app', '/admin/report-finds-nhs-app'),
+    rnib, now, 45, badPath).length, 0);
+  assert.equal(badPath.wrongArticlePath, 1);
+  const badScheme = {};
+  assert.equal(parseListing(rnibHtml.replace(original, 'javascript:alert(1)'),
+    rnib, now, 45, badScheme).length, 0);
+  assert.equal(badScheme.unsafeScheme, 1);
+});
+
+test('IBSA client-rendered placeholder gets a distinct safe diagnosis', () => {
+  const stats = {};
+  const articles = parseListing('<html><main>Loading news...</main></html>', ibsa, now, 120, stats);
+  assert.equal(articles.length, 0);
+  assert.equal(stats.detectedCards, 0);
+  assert.equal(stats.listingState, 'client_render_pending');
+  assert.ok(!JSON.stringify(stats).includes('https://'));
+});
