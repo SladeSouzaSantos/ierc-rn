@@ -11,8 +11,10 @@ if(!['preview','once','schedule'].includes(cmd)){
   process.exitCode=2;
 }else{
   const env=process.env;
-  if(cmd!=='preview'&&env.CURATOR_ENABLED!=='true')
-    throw new Error('CURATOR_ENABLED=true required for live or scheduled execution');
+  if(cmd!=='preview'&&env.CURATOR_ENABLED!=='true') {
+    console.log('Curator disabled. Set CURATOR_ENABLED=true only after DEV homologation.');
+    process.exit(0);
+  }
   if(cmd!=='preview'&&env.CURATOR_INSTANCE_KIND!=='dev')
     throw new Error('Automatic PROD ingestion is not approved');
   const settings=settingsFromEnv(env);
