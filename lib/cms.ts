@@ -112,12 +112,6 @@ export async function getCmsNews(): Promise<CmsArticle[]> {
     sourceLanguage: string(v.sourceLanguage, 15) || undefined,
     whyItMatters: string(v.whyItMatters, 1000) || undefined,
     aiAssisted: v.aiAssisted === true,
-    originType: v.originType === "externa" ? "externa" as const : "institucional" as const,
-    scope: v.scope === "internacional" ? "internacional" as const : v.scope === "brasil" ? "brasil" as const : "local" as const,
-    country: string(v.country, 80) || undefined,
-    sourceLanguage: string(v.sourceLanguage, 15) || undefined,
-    whyItMatters: string(v.whyItMatters, 1000) || undefined,
-    aiAssisted: v.aiAssisted === true,
   })).filter(v => /^[a-z0-9-]{1,90}$/.test(v.slug) && v.title.length > 0 && v.summary.length > 0);
 }
 export async function getCmsNewsBySlug(slug: string): Promise<CmsArticle | null> {
@@ -129,6 +123,12 @@ export async function getCmsNewsBySlug(slug: string): Promise<CmsArticle | null>
       date: string(v.date, 40) || undefined,
       sourceName: string(v.sourceName, 100) || undefined,
       sourceUrl: url(v.sourceUrl),
+      originType: v.originType === "externa" ? "externa" as const : "institucional" as const,
+      scope: v.scope === "internacional" ? "internacional" as const : v.scope === "brasil" ? "brasil" as const : "local" as const,
+      country: string(v.country, 80) || undefined,
+      sourceLanguage: string(v.sourceLanguage, 15) || undefined,
+      whyItMatters: string(v.whyItMatters, 1000) || undefined,
+      aiAssisted: v.aiAssisted === true,
     }))
     .find(v => v.slug === slug && v.title && v.summary);
   return matching ?? null;
