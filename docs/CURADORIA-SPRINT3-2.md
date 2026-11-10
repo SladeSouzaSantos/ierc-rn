@@ -349,3 +349,48 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml --profile cura
 ```
 
 **Atenção:** esse último comando **escreve** no Strapi DEV: não executá-lo até confirmar o backup recente e as permissões mínimas do token. Deve criar no máximo **um** documento com `status=draft`, `editorialStatus=em_revisao`, `aiAssisted=true` e `imageRightsStatus=pendente`. Verificar no Content Manager que `publishedAt=null`, texto correto e ausência da notícia no portal público. Após o teste, desativar ou revogar o token temporário e descartar ou manter o rascunho de teste conforme a decisão editorial. Se houver `llm_unavailable`, `invalid_draft`, `insufficient_evidence` ou `already_in_cms`, o resultado **não demonstra criação de rascunho**. Não habilitar agendamento, PROD nem publicação automática.
+
+
+## Primeira escrita Strapi DEV bloqueada na consulta de duplicidade — 10/11/2026
+
+O operador realizou backup antes de qualquer escrita com `pg_dump -Fc` no PostgreSQL DEV e `docker cp` para `cms-backups/ierc-before-curator.dump`. A cópia local foi confirmada com **245848 bytes**. Esse arquivo foi criado/copied corretamente; **restauração não foi testada**. Não sobrescrever, zerar volumes ou reiniciar o banco por causa deste erro.
+
+Em seguida, com `dev=4801b93`, 61/61 testes locais aprovados, worker rebuild e execução manual `CURATOR_ONCE_LIMIT=1 npm run once`, o Redis estava `healthy` e os feeds W3C/WAI/Perkins foram lidos. Após validar as fontes, o cliente Strapi falhou no passo de deduplicação, **antes da LLM e antes do POST**:
+
+```text
+Error: Strapi draft lookup failed
+    at cmsClient.existing (curator/src/editorial.mjs)
+```
+
+O token está presente com tamanho suficiente para passar pela validação inicial, **mas isso não comprova sua autenticidade**. O código anterior ocultava o status HTTP e não era possível distinguir 400, 401, 403, 404 ou 5xx; não presumir automaticamente que é 403. A API Strapi 5 documenta `GET /api/news-articles?status=draft` com filtros, e tokens Custom podem ter permissões restritas de `find` e `create`: [REST status](https://docs.strapi.io/cms/api/rest/status), [API tokens](https://docs.strapi.io/cms/features/api-tokens).
+
+**Correção na `dev`**: o método `cmsClient.existing()` agora preserva **apenas** `HTTP NNN` em erros de consulta; erros de transporte e formato são categorizados sem incluir chaves, URL, corpo da resposta ou dados da notícia. Testes de regressão garantem que HTTP 403 interrompe o fluxo **antes de qualquer chamada LLM/POST** e libera o lock Redis. Foi adicionado o comando `cms:check`, que testa exclusivamente o mesmo GET privado, com uma chave de deduplicação sintética, sem IA, sem Redis, sem publicação e sem escrita.
+
+### Diagnóstico antes de tentar criar um Draft novamente
+
+No PowerShell, partindo da raiz:
+
+```powershell
+git switch dev
+git pull --ff-only origin dev
+npm run --prefix curator test
+
+# Reconstrói apenas a imagem do curador. Não recria CMS/Redis.
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator build worker
+
+# Verifica somente consulta de rascunhos; não usa IA ou Redis:
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run cms:check
+```
+
+A saída segura é `{"event":"cms_draft_lookup_check","status":"ok","readOnly":true}` quando a consulta autenticada responde com corpo válido. Em erro, o programa informa somente `httpStatus` e uma categoria fixa. Interpretação:
+
+| Código | Próxima ação |
+| --- | --- |
+| 401 / authentication | Conferir se o token Content API foi copiado integralmente para `CURATOR_STRAPI_DRAFT_TOKEN` no `curator/.env` privado, sem espaços/aspas e sem estar expirado; regenerar se necessário |
+| 403 / permission | No Strapi DEV em `Settings > Global settings > API Tokens`, conferir token **Custom** com permissão `find` para `news-article` (Notícias), além de `create`; não habilitar Public nem Full Access |
+| 400 / invalid_query | Conferir se a API do CMS DEV atual expõe o campo `dedupeKey` e aceita `status=draft` com os filtros usados; revisar logs sanitizados do CMS; não conceder permissões extras |
+| 404 / endpoint_missing | Conferir rede do worker, rota `/api/news-articles` e instância CMS DEV correta |
+| 5xx / cms_server_error | Investigar logs do CMS e seu estado sem resetar dados |
+| connection_or_configuration | Conferir rede Docker `cms_dev_private` e `cms` `healthy`, sem mover o CMS para URL pública |
+
+**Se `cms:check` passar**, executar **somente uma vez** o comando supervisionado `run --rm -T -e CURATOR_ENABLED=true -e CURATOR_WRITE_DRAFTS=true -e CURATOR_ONCE_LIMIT=1 -e CURATOR_GEMINI_API_KEY= -e CURATOR_GROQ_API_KEY= worker npm run once` já documentado na seção anterior. A execução só cria Draft; deve-se conferir `status=draft`, `editorialStatus=em_revisao`, `publishedAt=null` e ausência pública. Não ativar cron, publicar conteúdo automaticamente ou copiar chaves para relatórios.
