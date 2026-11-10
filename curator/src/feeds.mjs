@@ -18,6 +18,15 @@ const EBC=(id,section)=>Object.freeze({
   fullTextAccess:EBC_REUSE_POLICY,
 });
 export const SOURCES = Object.freeze([
+  // European Commission-owned editorial news: CC BY 4.0 with attribution and
+  // changes disclosed; third-party material excluded at the article level.
+  {id:'eu-commission-news',mode:'rss',name:'Comissão Europeia',
+   country:'União Europeia',language:'en',hostname:'commission.europa.eu',
+   feed:'https://commission.europa.eu/news/feed_en',previewOnly:false,
+   readiness:'feed_indexed_runtime_validation_pending',
+   fullTextAccess:{status:'approved',basis:'cc-by-4.0-public-notice',
+     reference:'https://commission.europa.eu/legal-notice_en',
+     verifiedDate:'2026-11-10',usage:'attributed-adaptation'}},
   EBC('agencia-brasil-direitos','direitos-humanos'),
   EBC('agencia-brasil-educacao','educacao'),
   EBC('agencia-brasil-esportes','esportes'),
