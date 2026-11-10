@@ -10,12 +10,16 @@ export const EBC_REUSE_POLICY=Object.freeze({
 });
 // Published Agência Brasil RSS feed categories; the full-text reader still
 // rejects partner agencies/Reuters, rights warnings and missing EBC bylines.
-const EBC=(id,section)=>Object.freeze({
+const EBC=(id,section,{discoveryOnly=false}={})=>Object.freeze({
   id,section,mode:'rss',name:'Agência Brasil (EBC)',
   country:'Brasil',language:'pt-BR',hostname:'agenciabrasil.ebc.com.br',
   feed:'https://agenciabrasil.ebc.com.br/rss/'+section+'/feed.xml',
-  previewOnly:false,readiness:'feed_official_endpoint_runtime_validation_pending',
-  fullTextAccess:EBC_REUSE_POLICY,
+  // More official topical sections are discovered in preview first.
+  // An unverified section does not get LLM generation or publication rights.
+  previewOnly:discoveryOnly,
+  readiness:discoveryOnly?'official_rss_discovery_live_validation_pending':
+    'feed_official_endpoint_runtime_validation_pending',
+  ...(discoveryOnly?{}:{fullTextAccess:EBC_REUSE_POLICY}),
 });
 export const SOURCES = Object.freeze([
   // European Commission-owned editorial news: CC BY 4.0 with attribution and
@@ -34,6 +38,12 @@ export const SOURCES = Object.freeze([
   EBC('agencia-brasil-educacao','educacao'),
   EBC('agencia-brasil-esportes','esportes'),
   EBC('agencia-brasil-internacional','internacional'),
+  // Listed on the official Agência Brasil RSS directory. No generation or
+  // automated publishing until real Docker feed and rights screening passes.
+  EBC('agencia-brasil-justica','justica',{discoveryOnly:true}),
+  EBC('agencia-brasil-politica','politica',{discoveryOnly:true}),
+  EBC('agencia-brasil-saude','saude',{discoveryOnly:true}),
+  EBC('agencia-brasil-geral','geral',{discoveryOnly:true}),
   {id:'w3c-wai',mode:'rss',name:'W3C Web Accessibility Initiative',
    country:'Internacional',language:'en',feed:'https://www.w3.org/WAI/feed.xml',
    hostname:'www.w3.org',previewOnly:false,readiness:'feed_verified'},
