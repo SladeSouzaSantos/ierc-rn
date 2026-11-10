@@ -124,3 +124,14 @@ As páginas RNIB e IBSA foram observadas com cards no navegador, mas a execuçã
 O coletor admite apenas **um redirecionamento HTTPS** mantendo domínio e caminho canônico (ex.: `/feed/` → `/feed`), rejeitando outros destinos. O RSS oficial WBU pode ser válido e não possuir nenhuma notícia — agora isso é distinguido de resposta HTML inesperada ou falha de transporte, com categorias fixas no log.
 
 Teste local seguro: `npm run --prefix curator test` e `npm run --prefix curator preview`. Sem IA, Redis nem criação de rascunhos.
+
+
+### Homologação de 46 testes e diagnóstico detalhado — 10/11/2026
+
+A execução local no Windows com `3e66fd5` confirmou **46/46 testes**, seis resultados na prévia (W3C/WAI e Perkins), dez cartões RNIB com `invalidLink=10`, zero cartões IBSA e RSS WBU sem itens. O CI desse commit concluiu com sucesso nos três jobs; o resultado de feeds em rede ainda exige nova prévia após os ajustes seguintes.
+
+A validação de cartões HTML agora separa falhas em contadores sem registrar URLs: `missingHref`, `malformedHref`, `relativeHref`, `unsafeScheme`, `externalHost` e `wrongArticlePath`. O parser aceita endereços relativos **somente quando resolvidos no HTTPS, hostname e prefixo de artigos já autorizados**. URLs estrangeiras, esquemas inseguros e caminhos externos à seção continuam rejeitados. Isso permite diagnosticar diferenças entre HTML do navegador e do Node.js sem revelar links ou flexibilizar publicação.
+
+Na IBSA, um HTML que só contém o placeholder `Loading news...` é classificado como `listingState=client_render_pending`, diferentemente de `no_cards` e `cards_detected`. É um diagnóstico: **não habilitar navegador automatizado nem rota interna não autorizada para contornar a renderização dinâmica**. A fonte permanece exclusivamente `previewOnly`; nenhuma síntese do texto de origem ou cópia de imagens é realizada.
+
+Nova homologação segura: `git pull --ff-only origin dev`, `npm run --prefix curator test` e `npm run --prefix curator preview`. Avaliar os contadores RNIB e `listingState` IBSA. Manter `CURATOR_ENABLED=false` e `CURATOR_WRITE_DRAFTS=false`; `main` sem alterações.
