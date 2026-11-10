@@ -239,3 +239,16 @@ Em `/admin`, verificar *Settings → Administration panel → Roles*:
 4. Não compartilhar credenciais, criar identidades fictícias com e-mails de terceiros nem promover contas a Super Admin para contornar uma negativa.
 
 **Ainda pendente após esses testes:** acessibilidade operacional do painel por teclado e leitor de telas, zoom 200%/400%, backup/restore e autorizações de mídia. Apenas após homologação conjunta considerar o fechamento do PR #12 e a ativação posterior da curadoria em DEV.
+
+
+### Evidência de execução Windows e correção de encerramento (10/11/2026)
+
+O operador atualizou sua cópia local até `4c8cb63`, executou **6/6 testes do verificador** com sucesso e criou o backup do PostgreSQL com `pg_dump -Fc`: arquivo `cms-backups/ierc-before-editorial-gate.dump`, cópia reportada de aproximadamente 246 KiB. A cópia existe segundo o comando `docker cp`; restauração **não** foi testada, portanto isso não substitui validação de recuperação.
+
+Com o `CMS_READ_TOKEN` local, o teste `homologacao-cms-dev absent` retornou `OK: ... publicados_aprovados=0`. A execução prematura de `homologacao-cms-dev visible` retornou `FALHA: esperado=visible, publicados_aprovados=0`, seguida do erro nativo Windows/Node `UV_HANDLE_CLOSING`. **É um resultado negativo normal do verificador se nenhum registro foi publicado com status `aprovado`**; não significa que o CMS falhou ou que o rascunho foi publicado. A mensagem `UV_HANDLE_CLOSING` é separada e pode ocorrer ao chamar `process.exit(1)` enquanto requisições `fetch` ainda possuem handles ativos.
+
+Correção aplicada apenas na `dev`: `cms/scripts/verify-editorial-read.mjs` utiliza `process.exitCode = await main()` e encerramento natural (sem `process.exit` abrupto), mantendo os mesmos códigos de retorno (0 para êxito, 1 para teste negativo/erro de API, 2 para configuração inválida). Teste de regressão cobre o cenário real `visible` com zero registros, rejeição esperada e ausência de mensagens de aborto. Os 6 testes foram reexecutados e passaram em Node 22 Linux antes do CI; **a confirmação Windows da ausência de assertion ainda depende da repetição no PowerShell**.
+
+**Próximo teste local:** atualizar `dev`, executar os seis testes e repetir `absent` — ainda deve retornar `OK`. No painel local, conferir a existência do item `homologacao-cms-dev`. Se ainda não foi criado, criar e salvar em **Draft / em_preparacao**; se já existe, confirmar que está Draft. Não executar `visible` até o registro ser intencionalmente **Published e aprovado** no CMS DEV. Um `visible` com zero itens é uma reprovação esperada, mas a execução deve encerrar sem assertion nativa.
+
+Ainda pendentes: verificação do estado real do documento no painel, publicação e despublicação controladas, RBAC Author/Editor e teste de acessibilidade. Nenhuma alteração ao CMS instalado, PostgreSQL, `main` ou PR #12 foi executada pela correção de código.
