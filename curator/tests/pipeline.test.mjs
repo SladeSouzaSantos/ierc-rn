@@ -161,3 +161,41 @@ test('AI preview returns explicit lack of evidence, never a fabricated published
   assert.equal(result.results[0].status,'insufficient_evidence');
   assert.equal(result.results[0].draft,undefined);
 });
+
+
+test('one-shot acceptance never creates more than one CMS draft in DEV',async()=>{
+  const draft={
+    title:'Esporte adaptado e inclusao escolar como tema de debate',
+    summary:'Uma fonte oficial discute oportunidades esportivas para criancas com deficiencia e abordagens de aprendizagem e participacao inclusiva.',
+    body:'O resumo publicado pela fonte trata das atividades esportivas acessiveis para criancas e de sua relacao com aprendizagem, convivencia e inclusao. O material requer revisao humana antes de qualquer divulgacao.',
+    whyItMatters:'O debate pode apoiar reflexoes sobre esporte adaptado e acesso a atividades escolares no Brasil.',
+    category:'Esporte adaptado'
+  };
+  let created=0;
+  const cms={
+    async existing(){return false;},
+    async create(payload){
+      created++;
+      assert.equal(payload.editorialStatus,'em_revisao');
+      assert.equal(payload.aiAssisted,true);
+      assert.equal(payload.imageRightsStatus,'pendente');
+      assert.equal(payload.publishedAt,undefined);
+      return 'document-mock-'+created;
+    },
+  };
+  const store={
+    async set(){return 'OK';},
+    async exists(){return 0;},
+    async eval(){return 1;},
+  };
+  let modelCalls=0;
+  const result=await runOnce({
+    sources:[source],now:Date.parse('2026-11-10T12:00:00Z'),
+    fetchImpl:async()=>new Response(atom.replace('</feed>', '<entry><title>Blind sport and adapted games</title><link href="https://www.w3.org/WAI/news/another"/><updated>2026-11-09T15:00:00Z</updated><summary>Children with disabilities participate in adapted sports and accessible games.</summary></entry></feed>')),
+    maxArticles:1,dryRun:false,cms,store,
+    router:{async complete(){modelCalls++;return {provider:'openrouter',content:JSON.stringify(draft)}}},
+  });
+  assert.equal(created,1);
+  assert.equal(modelCalls,1);
+  assert.equal(result.results.filter(r=>r.status==='draft_created').length,1);
+});
