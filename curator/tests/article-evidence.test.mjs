@@ -78,3 +78,49 @@ test('oversize content or too many text blocks fails closed, not a partial suppo
    sourceUrl:'https://example.org/full',sourceId:'fixture',
  }),/article_text_incomplete/);
 });
+
+
+const ebc=SOURCES.find(x=>x.id==='agencia-brasil-esportes');
+const ebcUrl='https://agenciabrasil.ebc.com.br/esportes/noticia/2026-09/brasil-e-heptacampeao-do-futebol-de-cegos';
+const ebcBody='<div class="conteudo-noticia">'+
+ '<p>A seleção brasileira de futebol de cegos disputou um torneio continental e participou da etapa decisiva com atletas de diferentes regiões do país. A reportagem apresenta o contexto do esporte adaptado e a competição.</p>'+
+ '<p>O trabalho das equipes foi descrito por profissionais de esporte paralímpico, que destacaram a importância de proporcionar acesso ao esporte e oportunidades de participação de pessoas com deficiência visual.</p>'+
+ '<p>Jogadores brasileiros compartilharam experiências de preparação para a competição e relataram o papel da modalidade na promoção de novas oportunidades para atletas e jovens.</p></div>';
+const ebcHtml=(byline='Agência Brasil',suffix='')=>
+ '<html><body><h1>Brasil é campeão de futebol de cegos</h1><div class="autor-noticia">'+byline+'</div>'+
+ ebcBody+suffix+'</body></html>';
+test('official Agência Brasil syndication policy allows EBC-owned full-text reporting only',async()=>{
+ assert.equal(ebc.fullTextAccess.basis,'published-reproduction-policy');
+ const result=await fetchArticleEvidence(ebc,{url:ebcUrl},{
+   fetchImpl:async(_,opts)=>{
+     assert.equal(opts.method,'GET');
+     return new Response(ebcHtml(),{status:200,headers:{'content-type':'text/html; charset=utf-8'}});
+   }});
+ assert.equal(result.verified,true);
+ assert.equal(result.mode,'full_article');
+ assert.equal(result.licenseReference,'https://agenciabrasil.ebc.com.br/sobre');
+ assert.equal(result.blocks.length,3);
+ assert.equal(result.blocks.some(x=>x.text.includes('seleção brasileira')),true);
+});
+test('partner agencies, prohibited republication and missing EBC byline are held before AI',async()=>{
+ for(const html of [
+   ebcHtml('Alan Baldwin - Reuters','<p>*É proibida a reprodução deste conteúdo.</p>'),
+   ebcHtml('Redação de outra agência'),
+   ebcHtml('Agência Brasil','<div class="conteudo-noticia"><p>*É proibida a reprodução deste conteúdo.</p></div>'),
+ ]){
+   await assert.rejects(fetchArticleEvidence(ebc,{url:ebcUrl},{
+     fetchImpl:async()=>new Response(html,{headers:{'content-type':'text/html'}}),
+   }),/article_rights_unverified/);
+ }
+});
+test('EBC public license cannot be broadened to arbitrary hosts or categories',async()=>{
+ const forged={...ebc,hostname:'www.perkins.org',feed:'https://www.perkins.org/feed/'};
+ let called=0;
+ await assert.rejects(fetchArticleEvidence(forged,{url:'https://www.perkins.org/new-story'},{
+   fetchImpl:async()=>{called++;return new Response(ebcHtml());}
+ }),/source_permission_pending/);
+ assert.equal(called,0);
+ await assert.rejects(fetchArticleEvidence(ebc,{url:'https://agenciabrasil.ebc.com.br/politica/noticia/2026-11/outro-tema'},{
+   fetchImpl:async()=>new Response(ebcHtml(),{headers:{'content-type':'text/html'}}),
+ }),/article_rights_unverified/);
+});
