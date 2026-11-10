@@ -40,6 +40,23 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  curator-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install curator dependencies (no external AI calls)
+        run: npm install --prefix curator --no-audit --no-fund
+      - name: Check curator syntax
+        run: npm run --prefix curator check
+      - name: Run deterministic fallback, quota and draft safety tests
+        run: npm run --prefix curator test
+
   cms-build:
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
