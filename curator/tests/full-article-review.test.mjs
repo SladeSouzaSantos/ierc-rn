@@ -6,6 +6,7 @@ import {generateFullArticleDraft,reviewFullArticleDraft,verifyFullArticleReview,
 const article={source:'Perkins',title:'Accessible classroom materials for blind students',
   publishedAt:'2026-11-08T12:00:00Z',language:'en',url:'https://www.perkins.org/test-accessibility'};
 const evidence={verified:true,mode:'full_article',sourceUrl:article.url,
+  licenseReference:'https://www.perkins.org/written-permission-example',
   digest:'f'.repeat(64),blocks:[
     {id:'E01',text:'An educational team shares an accessible classroom report with teachers, families, and staff to improve understanding of student access requirements in everyday lessons.'},
     {id:'E02',text:'Short slide presentations use pictures and brief statements from the report to help educators identify practical adaptations in the learning environment.'},
@@ -38,6 +39,7 @@ test('source-anchored full article quotes must match distinct blocks and source 
  assert.deepEqual(verifyFullArticleReview(article,draft,evidence,review),{
    approved:true,reason:'full_article_review_passed',
    evidenceQuotes:quotes,evidenceMode:'full_article',evidenceDigest:evidence.digest,
+   licenseReference:evidence.licenseReference,
  });
  assert.equal(verifyFullArticleReview(article,draft,evidence,{
    ...review,evidenceQuotes:['An educational team shares','student access requirements in everyday lessons'],
