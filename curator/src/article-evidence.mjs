@@ -60,13 +60,17 @@ function verifyArticleRights(html,source,access){
   if(access.agencyBrasil){
     const author=$('.autor-noticia').first().text().replace(/\s+/g,' ').trim();
     const body=$('.conteudo-noticia').first().text().replace(/\s+/g,' ').trim();
+    // A page can carry a separately rendered rights notice outside the main
+    // article. Scan both the body and any explicitly marked restriction.
+    const rightsText=$('.conteudo-noticia, .aviso-direitos, .copyright-notice, .direitos-reproducao')
+      .text().replace(/\s+/g,' ').trim();
     const prefix='/'+source.section+'/noticia/';
     if(!path.pathname.startsWith(prefix)||
        !/^\d{4}-\d{2}\/[a-z0-9-]+\/?$/.test(path.pathname.slice(prefix.length))||
        !body||body.length<400||
        !/(?:Ag[eê]ncia Brasil|Rep[oó]rter(?:a)? da (?:EBC|Ag[eê]ncia Brasil)|EBC - Empresa Brasil de Comunica[cç][aã]o)/i.test(author)||
        /\b(?:Reuters|Associated Press|AFP|AP News|Ansa|EFE)\b/i.test(author)||
-       /[eé]\s+proibida\s+a\s+reprodu[cç][aã]o\s+deste\s+conte[uú]do/i.test(body))
+       /[eé]\s+proibida\s+a\s+reprodu[cç][aã]o\s+deste\s+conte[uú]do/i.test(rightsText))
       deny('article_rights_unverified');
   }
   if(access.euCommission){
