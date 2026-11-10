@@ -56,10 +56,21 @@ export function validateDraft(raw){
     throw new Error('Unsafe draft markup');
   return article;
 }
-export const slugFor=(source)=>'radar-'+source.dedupeKey.slice(0,18);
+/** Friendly, stable and collision-resistant slug from the approved draft title.
+ * Keep the source key suffix so recurring titles from separate articles cannot collide.
+ */
+export function slugFor(source,title=source?.title){
+  const key=typeof source?.dedupeKey==='string'?source.dedupeKey:'';
+  if(!/^[a-f0-9]{64}$/i.test(key))throw new Error('Invalid source fingerprint');
+  const base=(typeof title==='string'?title:'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'').slice(0,68).replace(/-+$/,'');
+  return (base||'radar-da-inclusao')+'-'+key.slice(0,10);
+}
 export function payloadFor(source,draft,provider){
   return {
-    title:draft.title,slug:slugFor(source),summary:draft.summary,body:draft.body,
+    title:draft.title,slug:slugFor(source,draft.title),summary:draft.summary,body:draft.body,
     category:canonicalCategory(draft.category),date:source.publishedAt,
     editorialStatus:'em_revisao',sourceName:source.source,sourceUrl:source.url,
     originType:'externa',scope:'internacional',country:source.country,
