@@ -9,7 +9,7 @@ const approved={
   CURATOR_AUTO_PUBLISH_ENABLED:'true',
   CURATOR_AUTO_PUBLISH_ACK:'FULL_ARTICLE_REVIEW_ACCEPTED',
   CURATOR_FULL_ARTICLE_REVIEW_ENABLED:'true',
-  CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES:'perkins',
+  CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES:'agencia-brasil-esportes',
 };
 const configure=(overrides={},cmd='once',dryRun=false)=>
   autoPublishSettingsFromEnv({...approved,...overrides},cmd,{dryRun});
@@ -44,16 +44,17 @@ test('PROD and unsupported commands cannot activate automatic publication',()=>{
 });
 
 test('source allowlist must be explicit, trusted and duplicate-free',()=>{
-  for(const list of ['', 'rnib', 'ibsa', 'wbu','perkins,rnib','perkins,perkins']){
+  for(const list of ['', 'rnib','ibsa','wbu','perkins','w3c-wai',
+    'agencia-brasil-esportes,rnib','agencia-brasil-esportes,agencia-brasil-esportes']){
     assert.throws(()=>configure({CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES:list}),
       /Explicit verified source allowlist/);
   }
 });
 
 test('explicitly authorized DEV allows only known RSS sources and bounded schedule',()=>{
-  assert.deepEqual(configure(),{autoPublish:true,allowedSources:['perkins']});
-  assert.deepEqual(configure({CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES:'perkins,w3c-wai'},'schedule'),{
-    autoPublish:true,allowedSources:['perkins','w3c-wai'],
+  assert.deepEqual(configure(),{autoPublish:true,allowedSources:['agencia-brasil-esportes']});
+  assert.deepEqual(configure({CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES:'agencia-brasil-esportes,eu-commission-news'},'schedule'),{
+    autoPublish:true,allowedSources:['agencia-brasil-esportes','eu-commission-news'],
   });
 });
 
