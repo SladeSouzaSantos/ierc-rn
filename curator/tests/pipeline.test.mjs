@@ -217,13 +217,13 @@ test('live scan with already-seen sources does not claim AI generation',async()=
 
 
 test('auto publication refuses preview, batch >1 and missing allowlisted sources',async()=>{
-  await assert.rejects(runOnce({autoPublish:true,dryRun:true,publisher:{},
+  await assert.rejects(runOnce({autoPublish:true,articleReader:async()=>{throw Error('not called');},dryRun:true,publisher:{},
     autoPublishSources:['perkins'],maxArticles:1}),/live mode/);
-  await assert.rejects(runOnce({autoPublish:true,dryRun:false,publisher:{},
+  await assert.rejects(runOnce({autoPublish:true,articleReader:async()=>{throw Error('not called');},dryRun:false,publisher:{},
     autoPublishSources:['perkins'],maxArticles:3}),/one-item batch/);
-  await assert.rejects(runOnce({autoPublish:true,dryRun:false,publisher:{},
+  await assert.rejects(runOnce({autoPublish:true,articleReader:async()=>{throw Error('not called');},dryRun:false,publisher:{},
     autoPublishSources:['unknown'],maxArticles:1}),/source allowlist/);
-  await assert.rejects(runOnce({autoPublish:true,dryRun:false,publisher:{},
+  await assert.rejects(runOnce({autoPublish:true,articleReader:async()=>{throw Error('not called');},dryRun:false,publisher:{},
     autoPublishSources:[],maxArticles:1}),/source allowlist/);
 });
 test('auto mode cannot publish a source excluded by the explicit allowlist',async()=>{
@@ -247,6 +247,7 @@ test('auto mode cannot publish a source excluded by the explicit allowlist',asyn
   const out=await runOnce({sources:[source],fetchImpl:async()=>new Response(content),
     now:Date.parse('2026-11-10T12:00:00Z'),maxArticles:1,dryRun:false,store,cms,router,
     autoPublish:true,autoPublishSources:['perkins'],
+    articleReader:async()=>{throw Error('Reader not called for excluded source');},
     publisher:{async publishApprovedDraft(){throw Error('unlisted source published');}}});
   assert.equal(out.count,1);
   assert.equal(out.results[0].status,'draft_created');
@@ -351,4 +352,58 @@ test('review preview has no fallback to unverified duplicates, and no LLM when a
  assert.equal(out.count,0);assert.equal(out.aiGenerated,false);
  assert.deepEqual(out.skippedPreviouslyProcessed,{redis:0,cms:1});
  assert.deepEqual(out.results,[]);
+});
+
+
+test('full-article preview refuses unlicensed source before either model call',async()=>{
+ const {ArticleEvidenceError}=await import('../src/article-evidence.mjs');
+ let modelCalls=0,readerCalls=0;
+ const report=await runOnce({sources:[source],
+   fetchImpl:async()=>new Response(atom,{status:200}),
+   now:Date.parse('2026-11-10T12:00:00Z'),maxArticles:1,
+   dryRun:true,aiPreview:true,reviewPreview:true,fullArticlePreview:true,
+   previewLookup:{async check(){return null;}},
+   articleReader:async()=>{
+     readerCalls++;throw new ArticleEvidenceError('source_permission_pending');
+   },
+   router:{async complete(){modelCalls++;throw Error('Should not call model');}}});
+ assert.equal(readerCalls,1);assert.equal(modelCalls,0);
+ assert.equal(report.results[0].status,'article_evidence_unavailable');
+ assert.equal(report.results[0].evidenceReason,'source_permission_pending');
+ assert.equal(report.reviewBasis,'full_article');assert.equal(report.aiGenerated,false);
+});
+test('full-article preview generates and reviews only when evidence has verified source blocks',async()=>{
+ const articleUrl='https://www.w3.org/WAI/news/example';
+ const evidence={verified:true,mode:'full_article',sourceUrl:articleUrl,
+   digest:'e'.repeat(64),blocks:[
+     {id:'E01',text:'A new accessibility activity helps students with visual disabilities participate in classroom learning with accessible materials and guidance.'},
+     {id:'E02',text:'Teachers use inclusive learning activities and screen reader tools to make school material accessible for students with low vision.'},
+     {id:'E03',text:'Accessible classroom practices and assistive tools help students join educational groups and classroom exercises.'},
+   ]};
+ const draft={title:'Iniciativas acessíveis auxiliam estudantes com deficiência visual',
+   summary:'Uma organização apresenta atividades inclusivas e ferramentas de acessibilidade voltadas para estudantes com deficiência visual na escola.',
+   body:'Educadores utilizam materiais acessíveis e ferramentas de leitura de tela em atividades educacionais inclusivas. As orientações abordam práticas escolares e oportunidades de participação dos alunos no ambiente de aprendizagem.',
+   whyItMatters:'A experiência ajuda a refletir sobre a presença de recursos acessíveis na educação inclusiva.',
+   category:'educacao'};
+ let calls=0;
+ const out=await runOnce({sources:[source],fetchImpl:async()=>new Response(atom,{status:200}),
+   now:Date.parse('2026-11-10T12:00:00Z'),maxArticles:1,
+   dryRun:true,aiPreview:true,reviewPreview:true,fullArticlePreview:true,
+   previewLookup:{async check(){return null;}},articleReader:async()=>evidence,
+   router:{async complete(){
+     calls++;return {provider:'openrouter',content:JSON.stringify(calls===1?draft:{
+       decision:'approve',factualSupport:'fully_supported',
+       evidenceQuotes:['A new accessibility activity helps students',
+         'Teachers use inclusive learning activities and screen reader tools'],
+       unsupportedClaims:[],issues:[],
+     })};
+   }}});
+ assert.equal(calls,2);assert.equal(out.count,1);
+ assert.equal(out.results[0].status,'review_approved_preview');
+ assert.equal(out.results[0].reviewBasis,'full_article');
+ assert.equal(out.reviewBasis,'full_article');
+});
+test('full-article mode rejects an unconfigured evidence reader',async()=>{
+ await assert.rejects(runOnce({reviewPreview:true,aiPreview:true,fullArticlePreview:true,
+   previewLookup:{async check(){return null;}}}),/full article reader/);
 });
