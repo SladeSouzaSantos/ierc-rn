@@ -16,7 +16,7 @@ const creds={baseUrl:'http://cms:1337',token:'publisher-demo-12345',draftToken:'
 const reviewed={evidenceQuotes:[
   'Accessible adaptive sports programs',
   'structured group activities and participation opportunities',
-],reviewerProvider:'openrouter'};
+],reviewerProvider:'openrouter',evidenceMode:'full_article',evidenceDigest:'f'.repeat(64)};
 
 test('auto publisher uses separate token and checks exact unpublished draft before PUT',async()=>{
  const seen=[];
@@ -27,9 +27,9 @@ test('auto publisher uses separate token and checks exact unpublished draft befo
    const {data}=JSON.parse(options.body);
    assert.deepEqual(Object.keys(data).sort(),['approvalNote','approvalReference','editorialStatus'].sort());
    assert.equal(data.editorialStatus,'aprovado');
-   assert.match(data.approvalReference,/^ai-rss-v1-[a-f0-9]{12}$/);
-   assert.match(data.approvalNote,/Revisão automática por IA/);
-   assert.match(data.approvalNote,/Evidências literais/);
+   assert.match(data.approvalReference,/^ai-source-v2-[a-f0-9]{12}$/);
+   assert.match(data.approvalNote,/Revisão IA/);
+   assert.match(data.approvalNote,/Evidências internas/);
    assert.match(data.approvalNote,/Accessible adaptive sports programs/);
    return new Response(JSON.stringify({data:{...stored,...data,publishedAt:'2026-11-10T16:00:00Z'}}),{status:200});
  }});
@@ -77,7 +77,9 @@ test('publisher refuses to report success if PUT response does not confirm publi
 test('publisher requires two fixed-size review quotes, never blind publish',async()=>{
  let network=0;
  const api=cmsPublisher({...creds,fetchImpl:async()=>{network++;return new Response('{}');}});
- await assert.rejects(api.publishApprovedDraft(doc,expected),/verified AI review audit/);
- await assert.rejects(api.publishApprovedDraft(doc,expected,{...reviewed,evidenceQuotes:['only one']}),/verified AI review audit/);
+ await assert.rejects(api.publishApprovedDraft(doc,expected),/full article evidence audit/);
+ await assert.rejects(api.publishApprovedDraft(doc,expected,{...reviewed,evidenceQuotes:['only one']}),/full article evidence audit/);
+ await assert.rejects(api.publishApprovedDraft(doc,expected,{...reviewed,evidenceMode:'rss'}),/full article evidence audit/);
+ await assert.rejects(api.publishApprovedDraft(doc,expected,{...reviewed,evidenceDigest:null}),/full article evidence audit/);
  assert.equal(network,0);
 });
