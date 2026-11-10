@@ -5,6 +5,8 @@ test('source catalog declares publication policy and exact official HTTPS origin
   assert.deepEqual(SOURCES.map(x=>x.id),[
     'eu-commission-news','agencia-brasil-direitos','agencia-brasil-educacao',
     'agencia-brasil-esportes','agencia-brasil-internacional',
+    'agencia-brasil-justica','agencia-brasil-politica',
+    'agencia-brasil-saude','agencia-brasil-geral',
     'w3c-wai','perkins','rnib','ibsa','wbu']);
   assert.equal(new Set(SOURCES.map(x=>x.id)).size, SOURCES.length);
   for(const source of SOURCES) {
@@ -15,6 +17,15 @@ test('source catalog declares publication policy and exact official HTTPS origin
   }
   assert.equal(SOURCES.filter(x=>!x.previewOnly).length,7);
   assert.equal(SOURCES.filter(x=>x.fullTextAccess?.status==='approved').length,5);
+  const discovery=['justica','politica','saude','geral'].map(x=>
+    SOURCES.find(s=>s.id==='agencia-brasil-'+x));
+  for(const entry of discovery){
+    assert.ok(entry);
+    assert.equal(entry.previewOnly,true);
+    assert.equal(entry.fullTextAccess,undefined);
+    assert.equal(entry.readiness,'official_rss_discovery_live_validation_pending');
+    assert.equal(new URL(entry.feed).pathname,'/rss/'+entry.section+'/feed.xml');
+  }
   assert.equal(SOURCES.filter(x=>['perkins','w3c-wai'].includes(x.id))
     .every(x=>x.fullTextAccess===undefined),true);
   const eu=SOURCES.find(x=>x.id==='eu-commission-news');
