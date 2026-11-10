@@ -35,6 +35,14 @@ test("notícias exibem clippings de terceiros com links e datas", async ({ page 
   await expect(page.locator('.editorial-section:has(#clippings-title) .editorial-news a[target="_blank"]')).toHaveCount(6);
   await expect(page.getByRole("heading", {name:/IERC-RN é citado em seleção de entidades/i})).toBeVisible();
   await expect(page.getByRole("heading", {name:/Tribuna do Norte destaca autonomia/i})).toBeVisible();
+  // Clippings keep their own publication date, not their insertion order.
+  // Newest items must appear first regardless of when they were added to the archive.
+  const dates = await page.locator(".editorial-section:has(#clippings-title) .editorial-news time[datetime]")
+    .evaluateAll(nodes => nodes.map(node => node.getAttribute("datetime")));
+  expect(dates).toEqual([
+    "2026-11-05", "2026-08-18", "2026-07-18",
+    "2026-04-15", "2026-03-27", "2025-09-16",
+  ]);
   await expect(page.getByText(/Não foram criadas notícias fictícias/)).toBeVisible();
 });
 
