@@ -22,7 +22,7 @@ test('only recent items from a verified host are parsed with date and URL',()=>{
 test('discard stale records and malicious cross-site links',()=>{
  const stale=parseFeed(atom,source,Date.parse('2027-03-01T12:00:00Z'));
  assert.equal(stale.length,0);
- const evil=parseFeed(atom.replace('www.w3.org','evil.example'),source,Date.parse('2026-11-09T15:00:00Z'));
+ const evil=parseFeed(atom.replace('https://www.w3.org/WAI/news','https://evil.example/WAI/news'),source,Date.parse('2026-11-09T15:00:00Z'));
  assert.equal(evil.length,0);
 });
 test('RSS format and lack of relevance are handled',()=>{
