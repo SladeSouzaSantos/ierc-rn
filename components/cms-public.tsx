@@ -50,9 +50,25 @@ export function CmsNewsList({ items }: { items: CmsArticle[] }) {
   </section>;
 }
 
+export function CmsIercPressList({ items }: { items: CmsArticle[] }) {
+  const mentions=items.filter(item => item.originType === "externa" &&
+    item.scope === "local" && !!item.sourceName &&
+    !!item.sourceUrl?.startsWith("https://"));
+  if(!mentions.length)return null;
+  return <section className="editorial-section" aria-labelledby="ierc-press-heading">
+    <p className="eyebrow">IERC-RN na imprensa</p>
+    <h2 id="ierc-press-heading" className="interior-subtitle">Reportagens externas sobre o Instituto</h2>
+    <p className="editorial-intro">Sínteses de notícias publicadas por outros veículos que mencionam explicitamente o IERC-RN. Os fatos e a autoria são atribuídos à fonte; estas notícias não representam comunicados institucionais.</p>
+    <div className="editorial-panels editorial-panels-three">
+      {mentions.map(item=><CmsNewsCard key={item.slug} item={item} external/>)}
+    </div>
+  </section>;
+}
+
 /** Only published, editorially approved stories with an attributable external source. */
 export function CmsRadarList({ items }: { items: CmsArticle[] }) {
   const external = items.filter(item => item.originType === "externa" &&
+    item.scope !== "local" &&
     !!item.sourceName && !!item.sourceUrl && item.sourceUrl.startsWith("https://"));
   if (!external.length) {
     return <section className="radar-empty" aria-labelledby="radar-empty-heading">
