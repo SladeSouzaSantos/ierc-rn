@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {SOURCES,parseFeed,relevant,canonicalLink} from '../src/feeds.mjs';
-const source=SOURCES[0];
+const source=SOURCES.find(s=>s.id==='w3c-wai');
 const atom='<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">'+
   '<entry><title>Accessibility for low vision learners</title>'+
   '<link href="https://www.w3.org/WAI/news/example?utm_source=campaign"/>'+
@@ -68,4 +68,35 @@ test('safe one-hop slash redirect works, external and extra redirects are blocke
   return new Response(null,{status:302,headers:{Location:'https://wbu.ngo/feed'}});
  }),/Unsafe source redirect/);
  assert.equal(attempts,2);
+});
+
+
+test('official Agency Brasil editorial RSS feeds parse as Portuguese source candidates',()=>{
+ const ebc=SOURCES.find(s=>s.id==='agencia-brasil-esportes');
+ assert.equal(ebc.fullTextAccess.reference,'https://agenciabrasil.ebc.com.br/sobre');
+ const xml='<rss><channel><item>'+
+ '<title>Brasil lança projetos de educação inclusiva e braille para estudantes com deficiência visual</title>'+
+ '<link>https://agenciabrasil.ebc.com.br/esportes/noticia/2026-11/educacao-inclusiva-de-estudantes-cegos</link>'+
+ '<pubDate>Tue, 10 Nov 2026 12:00:00 GMT</pubDate>'+
+ '<description>Uma iniciativa de acessibilidade promove esporte adaptado e educação inclusiva entre jovens cegos.</description>'+
+ '</item></channel></rss>';
+ const items=parseFeed(xml,ebc,Date.parse('2026-11-10T15:00:00Z'));
+ assert.equal(items.length,1);assert.equal(items[0].source,'Agência Brasil (EBC)');
+ assert.equal(items[0].language,'pt-BR');
+ assert.equal(relevant(items[0]),true);
+ assert.match(items[0].dedupeKey,/^[a-f0-9]{64}$/);
+ assert.equal(canonicalLink('https://other.example.com/story',ebc),null);
+});
+test('EU Commission RSS can supply international accessibility policy coverage',()=>{
+ const eu=SOURCES.find(s=>s.id==='eu-commission-news');
+ assert.equal(eu.fullTextAccess.basis,'cc-by-4.0-public-notice');
+ const feed='<rss><channel><item>'+
+ '<title>EU programme improves accessibility and independent living for persons with disabilities</title>'+
+ '<link>https://commission.europa.eu/news-and-media/news/eu-improves-accessibility-and-independent-living-2026-11-10_en</link>'+
+ '<pubDate>Tue, 10 Nov 2026 12:00:00 GMT</pubDate>'+
+ '<description>New EU plans focus on accessible transport, assistive technology and equal opportunities for people with disabilities.</description>'+
+ '</item></channel></rss>';
+ const items=parseFeed(feed,eu,Date.parse('2026-11-10T15:00:00Z'));
+ assert.equal(items.length,1);
+ assert.equal(relevant(items[0]),true);
 });
