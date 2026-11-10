@@ -9,13 +9,14 @@ function dateLabel(value?: string) {
 }
 
 /** News published by the Institute is deliberately separate from external editorial synthesis. */
-function CmsNewsCard({ item, external = false }: { item: CmsArticle; external?: boolean }) {
+function CmsNewsCard({ item, external = false, grouped = false }:
+  { item: CmsArticle; external?: boolean; grouped?: boolean }) {
   const date = dateLabel(item.date);
   return <article className="detail-card editorial-news" key={item.slug}>
     <span>{item.category || (external ? "Inclusão" : "Notícia")}
       {date && item.date && <> · <time dateTime={item.date}>{date}</time></>}
     </span>
-    <h3>{item.title}</h3>
+    {grouped ? <h4>{item.title}</h4> : <h3>{item.title}</h3>}
     <p>{item.summary}</p>
     {external && <p className="editorial-place">
       <strong>Fonte externa:</strong> {item.sourceName}{item.country ? " · " + item.country : ""}
@@ -79,13 +80,23 @@ export function CmsRadarList({ items }: { items: CmsArticle[] }) {
       </Link>
     </section>;
   }
+  const national=external.filter(item=>item.scope==="brasil");
+  const international=external.filter(item=>item.scope!=="brasil");
   return <section className="editorial-section" aria-labelledby="radar-list-heading">
     <p className="eyebrow">Conteúdos verificados · Brasil e mundo</p>
     <h2 id="radar-list-heading" className="interior-subtitle">Sínteses de fontes externas</h2>
     <p className="editorial-intro">Cada síntese identifica a publicação de origem e oferece acesso ao texto original. Não representa uma ação, parceria ou comunicado do IERC-RN.</p>
-    <div className="editorial-panels editorial-panels-three">
-      {external.map(item => <CmsNewsCard key={item.slug} item={item} external/>)}
-    </div>
+    {[
+      {id:"radar-brasil-heading",title:"Iniciativas e direitos no Brasil",items:national},
+      {id:"radar-mundo-heading",title:"Experiências internacionais",items:international},
+    ].filter(group=>group.items.length>0).map(group=>
+      <section className="radar-group" aria-labelledby={group.id} key={group.id}>
+        <h3 id={group.id}>{group.title}</h3>
+        <div className="editorial-panels editorial-panels-three">
+          {group.items.map(item=><CmsNewsCard key={item.slug} item={item} external grouped/>)}
+        </div>
+      </section>
+    )}
   </section>;
 }
 
