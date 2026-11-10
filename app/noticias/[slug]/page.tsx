@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { getCmsNewsBySlug } from "@/lib/cms";
 
@@ -16,6 +16,7 @@ export default async function NewsDetail({ params }: Props) {
   const { slug } = await params;
   const entry = await getCmsNewsBySlug(slug);
   if (!entry) notFound();
+  if(entry.slug!==slug)permanentRedirect("/noticias/"+entry.slug);
   return <article className="container interior-body cms-detail">
     <nav aria-label={entry.originType === "externa" ? "Voltar ao Radar da Inclusão" : "Voltar à lista de notícias"}>
       <Link className="inline-link" href={entry.originType === "externa" ? "/radar-da-inclusao" : "/noticias"}>
