@@ -21,7 +21,8 @@ export default async function NewsDetail({ params }: Props) {
       <Link className="inline-link" href="/noticias"><ArrowLeft size={18} aria-hidden="true"/> Voltar às notícias</Link>
     </nav>
     <header className="detail-intro">
-      <p className="eyebrow">{entry.category || "Notícias do IERC-RN"}</p>
+      <p className="eyebrow">{entry.originType === "externa" ? "Radar da Inclusão · Panorama internacional" : (entry.category || "Notícias do IERC-RN")}</p>
+      {entry.originType === "externa" && <p>Resumo original em português baseado em fonte externa{entry.country ? " · " + entry.country : ""}. Não representa comunicado ou parceria do IERC-RN.</p>}
       <h1>{entry.title}</h1>
       <p>{entry.summary}</p>
       {entry.date && !Number.isNaN(Date.parse(entry.date)) && <time dateTime={entry.date}>
@@ -29,6 +30,10 @@ export default async function NewsDetail({ params }: Props) {
       </time>}
     </header>
     {entry.body && <div className="cms-article-body">{entry.body}</div>}
+    {entry.originType === "externa" && entry.whyItMatters && <section aria-labelledby="cms-impact-title">
+      <h2 id="cms-impact-title">Por que isso importa para a inclusão no Brasil?</h2>
+      <p>{entry.whyItMatters}</p>
+    </section>}
     {entry.sourceUrl && <p className="cms-source">
       <a className="editorial-source" href={entry.sourceUrl} target="_blank" rel="noopener noreferrer">
         {entry.sourceName || "Fonte documental"} <ArrowUpRight size={16} aria-hidden="true"/>
