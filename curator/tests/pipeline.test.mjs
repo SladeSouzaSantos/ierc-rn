@@ -35,6 +35,30 @@ test('valid feeds with no matching inclusion topic report editorial filtering, n
  assert.equal(events.some(x=>x.event==='feed_unavailable'),false);
 });
 
+test('repeated syndicated articles are evaluated once across multiple official feeds',async()=>{
+  const same='<rss><channel><item>'+
+    '<title>Educação inclusiva e braille beneficiam estudantes cegos</title>'+
+    '<link>https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/educacao-inclusiva</link>'+
+    '<pubDate>Tue, 10 Nov 2026 12:00:00 GMT</pubDate>'+
+    '<description>Projeto de acessibilidade para estudantes com deficiência visual.</description>'+
+    '</item></channel></rss>';
+  const feeds=['educacao','geral'].map(sec=>({
+    id:'agencia-brasil-'+sec,mode:'rss',name:'Agência Brasil',
+    country:'Brasil',language:'pt-BR',hostname:'agenciabrasil.ebc.com.br',
+    feed:'https://agenciabrasil.ebc.com.br/rss/'+sec+'/feed.xml',
+    previewOnly:true,
+  }));
+  const events=[];
+  const value=await runOnce({sources:feeds,dryRun:true,
+    fetchImpl:async()=>new Response(same,{status:200}),
+    maxArticles:6,now:Date.parse('2026-11-10T15:00:00Z'),
+    logger:e=>events.push(e)});
+  assert.equal(value.count,1);
+  assert.equal(value.results[0].coverageTrack,'brasil');
+  assert.equal(events.filter(e=>e.event==='feed_checked').length,2);
+  assert.equal(events.filter(e=>e.event==='cross_feed_duplicate_skipped').length,1);
+});
+
 test('new EBC topical discovery sections are read-only previews and never enter AI/live ingestion',async()=>{
   const {SOURCES}=await import('../src/feeds.mjs');
   const types=['justica','politica','saude','geral'];
