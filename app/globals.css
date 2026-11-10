@@ -861,6 +861,8 @@ html[data-high-contrast="true"] .athlete-story-sources li a { color: #300954; }
 .radar-teaser .button { text-align: center; white-space: normal; justify-content: center; }
 .editorial-news .editorial-place { display: block; line-height: 1.65; color: #3c5060; }
 .editorial-news .editorial-place strong { color: #264841; }
+.radar-ai-note { font-size: .86rem; font-weight: 750; color: #4e3476; line-height: 1.55; }
+html[data-high-contrast="true"] .radar-ai-note { color: #210b49; }
 @media (max-width: 760px) {
   .radar-teaser { grid-template-columns: 1fr; }
   .radar-teaser .button { justify-self: start; }
