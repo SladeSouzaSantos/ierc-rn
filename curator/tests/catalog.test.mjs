@@ -17,5 +17,8 @@ test('source catalog declares publication policy and exact official HTTPS origin
   assert.equal(SOURCES.filter(x=>x.fullTextAccess?.status==='approved').length,5);
   assert.equal(SOURCES.filter(x=>['perkins','w3c-wai'].includes(x.id))
     .every(x=>x.fullTextAccess===undefined),true);
+  const eu=SOURCES.find(x=>x.id==='eu-commission-news');
+  assert.equal(eu.feed,'https://commission.europa.eu/node/29665/rss_en');
+  assert.equal(eu.readiness,'official_rss_link_verified_runtime_check_pending');
   assert.equal(SOURCES.find(x=>x.id==='wbu').readiness,'feed_verified_empty');
 });
