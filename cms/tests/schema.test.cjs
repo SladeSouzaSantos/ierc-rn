@@ -51,3 +51,13 @@ test('favicon provisório existe e é um PNG válido antes do boot', () => {
   const buffer = readFileSync(favicon);
   assert.deepEqual(Array.from(buffer.subarray(0, 8)), [137, 80, 78, 71, 13, 10, 26, 10]);
 });
+
+test('Radar da Inclusão exige origem externa e não afeta as noticias institucionais', () => {
+  const schema=JSON.parse(readFileSync(path.join(root,'src/api/news-article/content-types/news-article/schema.json'),'utf8'));
+  assert.equal(schema.attributes.originType.default,'institucional');
+  assert.deepEqual(schema.attributes.originType.enum,['institucional','externa']);
+  assert.deepEqual(schema.attributes.scope.enum,['local','brasil','internacional']);
+  assert.equal(schema.attributes.aiAssisted.default,false);
+  assert.equal(schema.attributes.dedupeKey.unique,true);
+  assert.ok(schema.attributes.whyItMatters);
+});
