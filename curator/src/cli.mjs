@@ -45,13 +45,17 @@ if(!['preview','generate-preview','once','schedule'].includes(cmd)){
     // but NEVER construct a CMS client or pass the store for article persistence.
     const aiPreviewLimit=Number(env.CURATOR_AI_PREVIEW_LIMIT||1);
     const aiPreviewDays=Number(env.CURATOR_AI_PREVIEW_DAYS||45);
+    // One-off DEV acceptance can cap writing to a single draft without enabling cron.
+    const onceLimit=Number(env.CURATOR_ONCE_LIMIT||3);
+    if(cmd==='once'&&(!Number.isInteger(onceLimit)||onceLimit<1||onceLimit>3))
+      throw new Error('CURATOR_ONCE_LIMIT must be 1..3');
     if(aiPreview&&(!Number.isInteger(aiPreviewLimit)||aiPreviewLimit<1||aiPreviewLimit>2))
       throw new Error('CURATOR_AI_PREVIEW_LIMIT must be 1..2');
     if(aiPreview&&(!Number.isInteger(aiPreviewDays)||aiPreviewDays<1||aiPreviewDays>120))
       throw new Error('CURATOR_AI_PREVIEW_DAYS must be 1..120');
     const execute=async()=>runOnce({router,store:aiPreview?null:redis,cms,dryRun,aiPreview,logger:log,
       maxAgeDays:cmd==='preview'?previewDays:aiPreview?aiPreviewDays:45,
-      maxArticles:cmd==='preview'?previewLimit:aiPreview?aiPreviewLimit:3});
+      maxArticles:cmd==='preview'?previewLimit:aiPreview?aiPreviewLimit:cmd==='once'?onceLimit:3});
     const slot=()=>{
       const parts=new Intl.DateTimeFormat('en-GB',{
         timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit',
