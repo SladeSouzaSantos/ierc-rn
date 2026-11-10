@@ -214,3 +214,42 @@ test('live scan with already-seen sources does not claim AI generation',async()=
  assert.equal(out.aiGenerated,false);
  assert.equal(out.results[0].status,'seen');
 });
+
+
+test('auto publication refuses preview, batch >1 and missing allowlisted sources',async()=>{
+  await assert.rejects(runOnce({autoPublish:true,dryRun:true,publisher:{},
+    autoPublishSources:['perkins'],maxArticles:1}),/live mode/);
+  await assert.rejects(runOnce({autoPublish:true,dryRun:false,publisher:{},
+    autoPublishSources:['perkins'],maxArticles:3}),/one-item batch/);
+  await assert.rejects(runOnce({autoPublish:true,dryRun:false,publisher:{},
+    autoPublishSources:['unknown'],maxArticles:1}),/source allowlist/);
+  await assert.rejects(runOnce({autoPublish:true,dryRun:false,publisher:{},
+    autoPublishSources:[],maxArticles:1}),/source allowlist/);
+});
+test('auto mode cannot publish a source excluded by the explicit allowlist',async()=>{
+  const content='<feed><entry><title>Blind sport and adapted games for children</title>'+
+    '<link href="https://www.w3.org/WAI/news/example"/>'+
+    '<updated>2026-11-09T15:00:00Z</updated>'+
+    '<summary>Children with disabilities participate in adapted sports and accessible games. The program offers inclusive activities, group play, opportunities to join peers and to take part in accessible physical education lessons.</summary></entry></feed>';
+  let attempts=0;
+  const cms={async existing(){return false;},async create(){
+    return 'a1b2c3d4e5f6g7h8i9j0klmn';}};
+  const store={async set(){return 'OK';},async exists(){return 0;},async eval(){return 1;}};
+  const router={async complete(){attempts++;
+    return {provider:'openrouter',content:JSON.stringify({
+      title:'Atividades de esporte adaptado para crianças com deficiência',
+      summary:'Uma instituição apresenta atividades de esporte adaptado para crianças com deficiência e oportunidades de participação em grupos.',
+      body:'O programa oferece práticas esportivas acessíveis, atividades em grupo e participação em aulas de educação física com colegas. Essas ações são descritas na comunicação original da instituição.',
+      whyItMatters:'O tema permite refletir sobre acesso ao esporte adaptado, educação inclusiva e participação de crianças com deficiência visual no Brasil.',
+      category:'esporte',
+    })};
+  }};
+  const out=await runOnce({sources:[source],fetchImpl:async()=>new Response(content),
+    now:Date.parse('2026-11-10T12:00:00Z'),maxArticles:1,dryRun:false,store,cms,router,
+    autoPublish:true,autoPublishSources:['perkins'],
+    publisher:{async publishApprovedDraft(){throw Error('unlisted source published');}}});
+  assert.equal(out.count,1);
+  assert.equal(out.results[0].status,'draft_created');
+  assert.equal(out.aiGenerated,true);
+  assert.equal(attempts,1);
+});
