@@ -5,6 +5,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    profiles: [curator]
     command: ["redis-server","--appendonly","yes","--maxmemory-policy","noeviction"]
     volumes:
       - curator_redis:/data
@@ -16,7 +17,8 @@ services:
     networks: [worker_private]
   worker:
     build: {context: ./curator, dockerfile: Dockerfile}
-    restart: unless-stopped
+    restart: on-failure
+    profiles: [curator]
     env_file: ./curator/.env
     depends_on:
       redis: {condition: service_healthy}
