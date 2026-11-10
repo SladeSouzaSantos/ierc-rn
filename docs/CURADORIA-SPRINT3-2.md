@@ -216,3 +216,15 @@ A chamada real utiliza a mesma contagem atômica Redis e os mesmos limites globa
 6. **Somente após homologação de qualidade, permissões, acessibilidade e aprovação institucional** considerar agendamento 08h/13h/19h em DEV. Publicação para visitantes permanece exclusivamente manual.
 
 **Status desta entrega:** implementação e testes determinísticos disponíveis em `dev`; geração com chave gratuita real no ambiente do operador ainda não executada, portanto nenhum rascunho criado nem garantia de qualidade até receber a saída do teste.
+
+
+### Resultado de testes do incremento generate-preview
+
+O job `curator-unit` do [CI #42756184288](https://github.com/SladeSouzaSantos/ierc-rn/actions/runs/42756184288) passou com **53 testes aprovados, zero falhas** (após os 48 anteriores). Cobertura adicionada:
+- LLM recebe apenas título/resumo RSS das fontes aprovadas, retorna síntese validada em português; a prévia não chama cliente Strapi nem usa chaves de escrita.
+- Fontes `previewOnly` são ignoradas no modo de geração por IA, mesmo quando seus títulos aparecem na prévia simples.
+- Modo de IA não pode ser invocado diretamente com `dryRun=false` ou com cliente CMS fornecido.
+- `{"skip":true}` não inventa um texto e termina sem forçar fallback.
+- JSON de notícia incompleto, mesmo vindo de HTTP 200, provoca fallback para o próximo provedor **gratuito**, com consumo de quota e cooldown.
+
+**Importante:** esses testes são determinísticos/mocados. A primeira geração real com OpenRouter `openrouter/free` ainda requer a chave do operador e o comando manual documentado acima; não informar sucesso de criação de notícia no CMS sem execução local.
