@@ -92,11 +92,19 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
 
   let remaining = maxArticles;
   const results = [];
+  const processedInRun=new Set();
   const skippedPreviouslyProcessed={redis:0,cms:0};
   while (remaining > 0 && buckets.some(bucket => bucket.cursor < bucket.articles.length)) {
     for (const bucket of buckets) {
       if (remaining <= 0 || bucket.cursor >= bucket.articles.length) continue;
       const article = bucket.articles[bucket.cursor++];
+      // A story can appear in multiple official categories. Avoid duplicate
+      // previews and extra AI calls within a single run, without Redis writes.
+      if(processedInRun.has(article.dedupeKey)){
+        logger({event:'cross_feed_duplicate_skipped',source:bucket.source.id});
+        continue;
+      }
+      processedInRun.add(article.dedupeKey);
       // The track is derived from source evidence, not from AI speculation.
       // It never turns an external news item into an IERC announcement.
       if(reviewPreview){
