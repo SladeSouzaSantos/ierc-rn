@@ -573,3 +573,35 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml --profile cura
 ```
 
 O resultado obrigatório é `{"event":"cms_draft_lookup_check","status":"ok","readOnly":true}`. A partir daí, com revisão humana e backup preservado, retomar a única escrita supervisionada como **Draft** (limite `CURATOR_ONCE_LIMIT=1`) já documentada acima. Agendador, PROD, `main` e PR #12 continuam inativos/intocados.
+
+
+## Migração aditiva CMS DEV concluída e consulta do curador aprovada — 10/11/2026
+
+**Evidência da execução Windows do operador:**
+- Backup local `cms-backups/ierc-before-curator.dump` conferido com **245848 bytes**; `pg_restore -l /tmp/ierc-before-curator.dump` terminou com código 0. **Ainda não é um teste de restauração**.
+- `docker compose --env-file cms/.env -f compose.cms.yml build cms` completou; `up -d --no-deps cms` recriou somente o CMS DEV. `cms` e PostgreSQL 17 (`db`) aparecem `healthy`; o contêiner DB mantinha 13h de funcionamento.
+- Schema dentro do novo contêiner reportou `dedupeKeyPresent=true`. Inspeção `information_schema.columns` confirmou **9 colunas adicionadas** à `public.ierc_news_articles`: `origin_type`, `scope`, `country`, `source_language`, `original_title`, `original_published_at`, `why_it_matters`, `ai_assisted` e `dedupe_key`.
+- `COUNT(*)` na tabela Notícias permaneceu **2 linhas antes e depois** do deploy (são versões físicas, não necessariamente dois documentos distintos). O operador ainda deve verificar os dois registros no Content Manager e o funcionamento do login/admin, pois contagens não provam integridade semântica.
+- `docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run cms:check` retornou **`{"event":"cms_draft_lookup_check","status":"ok","readOnly":true}`**. A autenticação e a consulta com `status=draft`, filtro `dedupeKey` e paginação estão funcionais. **O antigo HTTP 400 foi resolvido.**
+- Nenhuma chamada LLM ou POST de notícia foi realizada nesta etapa.
+
+**Gate concluído:** sincronização aditiva do schema CMS DEV e consulta de deduplicação do curador homologadas. **Gate pendente:** criação de um único Draft real via IA com avaliação humana. O token `CMS_READ_TOKEN` em `.env.local` permanece exclusivamente para o Next.js. A chave Custom com `find/create` para Notícias permanece em `CURATOR_STRAPI_DRAFT_TOKEN` privado, distinta da de leitura do portal.
+
+### Homologação seguinte: um Draft supervisionado, sem agendamento
+
+No navegador, confirmar que os conteúdos anteriores estão visíveis no Content Manager DEV e que não há trabalho editorial em curso. Preservar o dump de backup e as flags em disco `CURATOR_ENABLED=false`, `CURATOR_WRITE_DRAFTS=false`; somente uma execução manual com overrides efêmeros:
+
+```powershell
+# Um único lote de um item; não inicia schedule.
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T `
+  -e CURATOR_ENABLED=true `
+  -e CURATOR_WRITE_DRAFTS=true `
+  -e CURATOR_ONCE_LIMIT=1 `
+  -e CURATOR_GEMINI_API_KEY= `
+  -e CURATOR_GROQ_API_KEY= `
+  worker npm run once
+```
+
+O POST do worker **inclui explicitamente `?status=draft`** conforme a [documentação oficial do Strapi 5](https://docs.strapi.io/cms/api/rest/status), exigindo `publishedAt=null` na resposta antes de registrar `draft_created`. Confirmar no Content Manager que o novo documento tem `editorialStatus=em_revisao`, `aiAssisted=true`, `imageRightsStatus=pendente`, `publishedAt=null` e não está visível para visitantes do portal. **Não considerar `draft_created` sem essa validação**, não ativar cron, não publicar conteúdo automaticamente e revogar o token temporário após a homologação. Se a geração LLM falhar, o status poderá ser `llm_unavailable` sem escrita; se ocorrer 400/403 no POST, investigar permissões/atributos sem aumentar para Full Access.
+
+A branch `main`, PR #12 Draft, publicação automática e instância PROD permanecem inalteradas.
