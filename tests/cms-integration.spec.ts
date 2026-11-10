@@ -9,7 +9,7 @@ test("portal continua funcional sem configurar ou executar o CMS", async ({ page
 
 test("noticias e eventos preservam arquivo historico quando CMS esta desligado", async ({ page }) => {
   await page.goto("/noticias");
-  await expect(page.locator(".editorial-news")).toHaveCount(3);
+  await expect(page.locator(".editorial-section:has(#clippings-title) .editorial-news")).toHaveCount(6);
   await expect(page.getByRole("heading", { name: "Registros publicados sobre o IERC-RN" })).toBeVisible();
   await page.goto("/eventos");
   await expect(page.locator(".editorial-event")).toHaveCount(2);
