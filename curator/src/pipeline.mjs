@@ -82,5 +82,8 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
       if (!['seen', 'already_in_cms', 'locked'].includes(result.status)) remaining--;
     }
   }
-  return { results, preview: dryRun, aiGenerated: aiPreview, count: results.length };
+  // Report actual completed AI drafts, not the mode selector. A supervised
+  // once run uses aiPreview=false but still generates and saves a draft.
+  const aiGenerated=results.some(({status})=>status==='draft_ready'||status==='draft_created');
+  return { results, preview: dryRun, aiGenerated, count: results.length };
 }
