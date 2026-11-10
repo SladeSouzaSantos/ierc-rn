@@ -10,11 +10,13 @@ import { processArticle, generateAiDraft } from './editorial.mjs';
  */
 export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, store, cms,
   now = Date.now(), maxArticles = 3, maxAgeDays = 45, dryRun = true,
-  aiPreview = false, autoPublish = false, publisher = null, logger = () => {} }) {
+  aiPreview = false, autoPublish = false, publisher = null, autoPublishSources = [], logger = () => {} }) {
   if (aiPreview && (!dryRun || cms || autoPublish || publisher))
     throw new Error('AI preview cannot write to CMS or run in live mode');
-  if(autoPublish && (dryRun || !publisher || maxArticles > 1))
-    throw new Error('Auto publication requires live mode, scoped publisher and one-item batch');
+  if(autoPublish && (dryRun || !publisher || maxArticles > 1 ||
+     !Array.isArray(autoPublishSources)||autoPublishSources.length===0 ||
+     !autoPublishSources.every(id=>['perkins','w3c-wai'].includes(id))))
+    throw new Error('Auto publication requires live mode, source allowlist, scoped publisher and one-item batch');
   if (!Number.isInteger(maxAgeDays) || maxAgeDays < 1 || maxAgeDays > 365)
     throw new Error('Invalid article age window');
   if (!Number.isInteger(maxArticles) || maxArticles < 1 || maxArticles > 30)
@@ -63,7 +65,8 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
       const article = bucket.articles[bucket.cursor++];
       const result = aiPreview
         ? await generateAiDraft(article, {router,logger})
-        : await processArticle(article, { router, store, cms, dryRun, logger, autoPublish, publisher });
+        : await processArticle(article, { router, store, cms, dryRun, logger,
+          autoPublish:autoPublish&&autoPublishSources.includes(bucket.source.id), publisher });
       results.push({
         source: bucket.source.id,
         status: result.status,
