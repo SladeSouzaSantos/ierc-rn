@@ -23,8 +23,7 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
     throw new Error('Review preview requires read-only AI preview');
   if(fullArticlePreview && (!reviewPreview||!aiPreview))
     throw new Error('Full-article preview requires read-only editorial preview');
-  if((fullArticlePreview||autoPublish) && typeof articleReader!=='function')
-    throw new Error('Permission-gated full article reader is required');
+
   if(reviewPreview && (!previewLookup || typeof previewLookup.check!=='function'))
     throw new Error('Review preview requires a read-only Redis and CMS duplicate preflight');
   if(!reviewPreview && previewLookup)
@@ -33,6 +32,8 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
      !Array.isArray(autoPublishSources)||autoPublishSources.length===0 ||
      !autoPublishSources.every(id=>['perkins','w3c-wai'].includes(id))))
     throw new Error('Auto publication requires live mode, source allowlist, scoped publisher and one-item batch');
+  if((fullArticlePreview||autoPublish) && typeof articleReader!=='function')
+    throw new Error('Permission-gated full article reader is required');
   if (!Number.isInteger(maxAgeDays) || maxAgeDays < 1 || maxAgeDays > 365)
     throw new Error('Invalid article age window');
   if (!Number.isInteger(maxArticles) || maxArticles < 1 || maxArticles > 30)
@@ -93,7 +94,7 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
         }
       }
       let evidence=null;
-      if(fullArticlePreview||autoPublish){
+      if(fullArticlePreview||(autoPublish&&autoPublishSources.includes(bucket.source.id))){
         try{
           evidence=await articleReader(bucket.source,article,{fetchImpl});
           if(evidence?.verified!==true||evidence?.mode!=='full_article'||evidence?.sourceUrl!==article.url)
