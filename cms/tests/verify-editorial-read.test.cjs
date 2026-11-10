@@ -73,7 +73,9 @@ test('HTTP 401 ou 403 nao gera falso sucesso de rascunho ausente', async () => {
   assert.equal(result.calls, 1);
 });
 
-test('Conteudo indevido nunca passa como visivel', async () => {
+test('Conteudo indevido nunca passa como visivel e falha sem aborto do runtime', async () => {
   const result = await exercise('visible', []);
-  assert.equal(result.code, 1);
+  assert.equal(result.code, 1, result.stderr);
+  assert.match(result.stderr, /esperado=visible, publicados_aprovados=0/);
+  assert.doesNotMatch(result.stderr, /Assertion failed|UV_HANDLE_CLOSING|node::Abort/);
 });
