@@ -1,0 +1,20 @@
+{
+  "name": "ierc-rn-news-curator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Coleta editorial e fallback de IA gratuita do IERC-RN",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "once": "node src/cli.mjs once",
+    "schedule": "node src/cli.mjs schedule",
+    "check": "node --check src/router.mjs && node --check src/pipeline.mjs && node --check src/cli.mjs"
+  },
+  "engines": {
+    "node": ">=22 <27"
+  },
+  "dependencies": {
+    "fast-xml-parser": "4.5.3",
+    "ioredis": "5.4.2"
+  }
+}
