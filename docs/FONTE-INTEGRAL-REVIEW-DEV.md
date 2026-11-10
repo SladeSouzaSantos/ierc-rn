@@ -59,3 +59,39 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml --profile cura
 **Não utilizar** `CURATOR_AUTO_PUBLISH_ENABLED=true` nem iniciar o `schedule` antes de: CI aprovado, smoke local dos feeds, conferência da extração de autoria e direitos de um artigo real, backup PostgreSQL restaurável, token de publicação separado e execução supervisionada em DEV isolado. Nenhum desses passos autoriza PROD ou merge na `main`.
 
 Veja também [issue #14](https://github.com/SladeSouzaSantos/ierc-rn/issues/14), [Curadoria 3.2](CURADORIA-SPRINT3-2.md) e [Política de publicação](REVISAO-IA-PUBLICACAO-DEV.md).
+
+
+## 5. Diagnóstico do RSS europeu no Windows e Docker (10/11/2026)
+
+O Windows do operador tentou acessar \`https://commission.europa.eu/node/29665/rss_en\` com \`curl.exe --max-time 20\`: \`curl: (28)\`, \`HTTP=000\`, \`0 bytes received\`, aproximadamente 20,0 s. Isso comprova apenas que **essa requisição no host Windows expirou**. O primeiro teste Docker não chegou a executar \`fetch\`: o PowerShell alterou as aspas de \`node -e\` ao repassar argumentos, provocando \`SyntaxError: Unexpected token ':'\`. Não registrar o Docker como indisponível sem um segundo teste válido.
+
+Repetir com **here-string + stdin** do Node, sem dependência de escaping entre PowerShell/Docker:
+
+\`\`\`powershell
+$diagnostico = @'
+const url = "https://commission.europa.eu/node/29665/rss_en";
+fetch(url, { redirect: "manual", signal: AbortSignal.timeout(20000) })
+  .then(async response => {
+    const text = await response.text();
+    console.log(JSON.stringify({
+      status: response.status,
+      location: response.headers.get("location"),
+      contentType: response.headers.get("content-type"),
+      characters: text.length
+    }));
+  })
+  .catch(error => {
+    console.log(JSON.stringify({
+      error: error.name,
+      cause: error.cause?.code ?? "unknown"
+    }));
+    process.exitCode = 1;
+  });
+'@
+
+$diagnostico | docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker node -
+\`\`\`
+
+Interpretar: \`status:200\` e XML com corpo indica acesso; \`301/302/307/308\` exige avaliação de \`Location\` antes de qualquer alteração na política de redirects; \`TimeoutError\` significa expiração real do teste Docker; \`TypeError\` com \`cause\` exige distinguir DNS, IPv4/IPv6, TLS ou falha de rede. Se Windows **e** Docker expirarem, não concluir automaticamente que o feed está fora do ar para todos; manter como fonte degradada e permitir que as demais fontes continuem operando. Não ampliar timeout indiscriminadamente, não usar proxies não aprovados, não ativar publicação automática.
+
+O arquivo \`next-env.d.ts\` pode ser atualizado automaticamente pelo Next.js durante o desenvolvimento; sua diferença de cabeçalho ou referência de rotas não se relaciona ao curador. Conferir \`git diff -- next-env.d.ts\` e decidir separadamente sobre essa mudança.
