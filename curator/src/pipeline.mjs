@@ -10,9 +10,11 @@ import { processArticle, generateAiDraft } from './editorial.mjs';
  */
 export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, store, cms,
   now = Date.now(), maxArticles = 3, maxAgeDays = 45, dryRun = true,
-  aiPreview = false, logger = () => {} }) {
-  if (aiPreview && (!dryRun || cms))
+  aiPreview = false, autoPublish = false, publisher = null, logger = () => {} }) {
+  if (aiPreview && (!dryRun || cms || autoPublish || publisher))
     throw new Error('AI preview cannot write to CMS or run in live mode');
+  if(autoPublish && (dryRun || !publisher || maxArticles > 1))
+    throw new Error('Auto publication requires live mode, scoped publisher and one-item batch');
   if (!Number.isInteger(maxAgeDays) || maxAgeDays < 1 || maxAgeDays > 365)
     throw new Error('Invalid article age window');
   if (!Number.isInteger(maxArticles) || maxArticles < 1 || maxArticles > 30)
@@ -61,7 +63,7 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
       const article = bucket.articles[bucket.cursor++];
       const result = aiPreview
         ? await generateAiDraft(article, {router,logger})
-        : await processArticle(article, { router, store, cms, dryRun, logger });
+        : await processArticle(article, { router, store, cms, dryRun, logger, autoPublish, publisher });
       results.push({
         source: bucket.source.id,
         status: result.status,
@@ -84,6 +86,7 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
   }
   // Report actual completed AI drafts, not the mode selector. A supervised
   // once run uses aiPreview=false but still generates and saves a draft.
-  const aiGenerated=results.some(({status})=>status==='draft_ready'||status==='draft_created');
+  const aiGenerated=results.some(({status})=>['draft_ready','draft_created',
+    'draft_created_review_pending','draft_created_publish_failed','draft_published'].includes(status));
   return { results, preview: dryRun, aiGenerated, count: results.length };
 }
