@@ -53,6 +53,7 @@ function feedLink(value) {
 export function parseFeed(body,source,now=Date.now(),ageDays=45) {
   if(typeof body!=='string'||body.length>700000)throw new Error('Feed too large');
   const doc=xml.parse(body);
+  if(!doc?.rss?.channel && !doc?.feed) throw new Error('Invalid RSS/Atom document');
   const rss=doc?.rss?.channel?.item;
   const atom=doc?.feed?.entry;
   const entries=Array.isArray(rss)?rss:Array.isArray(atom)?atom:rss?[rss]:atom?[atom]:[];
@@ -75,24 +76,43 @@ export function parseFeed(body,source,now=Date.now(),ageDays=45) {
 export { relevanceAssessment, rankArticles } from './relevance.mjs';
 import { relevanceAssessment } from './relevance.mjs';
 export function relevant(item){return relevanceAssessment(item).relevant;}
-export async function fetchSource(source, fetchImpl = fetch) {
+// Allow at most one HTTPS redirect preserving the approved host and feed path.
+const feedPath = url => url.pathname.replace(/\/+$/, '') || '/';
+export async function fetchSource(source, fetchImpl=fetch) {
   const isHtml = source.mode === 'html';
   if (isHtml && source.previewOnly !== true)
     throw new Error('HTML listings require explicit preview-only policy');
   const limit = isHtml ? 1300000 : 700000;
-  const response = await fetchImpl(source.feed, {
-    method: 'GET',
-    headers: {
-      Accept: isHtml ? 'text/html' :
-        'application/atom+xml, application/rss+xml, application/xml, text/xml',
-      'User-Agent': 'IERC-RN-Editorial-Curator/0.1',
-    },
-    redirect: 'error', signal: AbortSignal.timeout(12000),
-  });
-  if (!response.ok) throw new Error('Source HTTP ' + response.status);
-  if (Number(response.headers.get('content-length') || 0) > limit)
+  const approved = new URL(source.feed);
+  if (approved.protocol !== 'https:' || approved.hostname !== source.hostname ||
+      approved.username || approved.password || approved.port)
+    throw new Error('Invalid source configuration');
+  let requestUrl=approved.toString();
+  let response;
+  for (let hop=0; hop<2; hop++) {
+    response=await fetchImpl(requestUrl,{
+      method:'GET',headers:{
+        Accept:isHtml?'text/html':'application/atom+xml, application/rss+xml, application/xml, text/xml',
+        'User-Agent':'IERC-RN-Editorial-Curator/0.1',
+      },redirect:'manual',signal:AbortSignal.timeout(12000),
+    });
+    if(![301,302,303,307,308].includes(response.status)) break;
+    if(hop>0) throw new Error('Unsafe source redirect');
+    const location=response.headers.get('location');
+    if(!location) throw new Error('Unsafe source redirect');
+    let next;
+    try {next=new URL(location,requestUrl);} catch {throw new Error('Unsafe source redirect');}
+    if(next.protocol!=='https:' || next.hostname!==source.hostname ||
+       next.username || next.password || next.port ||
+       feedPath(next)!==feedPath(approved) ||
+       next.search!==approved.search || next.hash)
+      throw new Error('Unsafe source redirect');
+    requestUrl=next.toString();
+  }
+  if(!response.ok)throw new Error('Source HTTP '+response.status);
+  if(Number(response.headers.get('content-length')||0)>limit)
     throw new Error('Source exceeds size limit');
-  const body = await response.text();
-  if (body.length > limit) throw new Error('Source exceeds size limit');
+  const body=await response.text();
+  if(body.length>limit)throw new Error('Source exceeds size limit');
   return body;
 }
