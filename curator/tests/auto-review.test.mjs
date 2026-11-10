@@ -44,6 +44,7 @@ test('strict review accepts only source-grounded quotes with no unsupported clai
   assert.equal(reviewDecision({...source,summary:'Very short'},draft,approved).reason,'insufficient_rss_evidence');
   assert.equal(reviewDecision({...source,url:'http://127.0.0.1/internal'},draft,approved).reason,'source_not_verified');
   assert.equal(reviewDecision({...source,title:'New cure for cancer in disabled children'},draft,approved).reason,'sensitive_claims');
+  assert.equal(reviewDecision(source,{...draft,body:'A publicação não apresenta evidências concretas dos efeitos do esporte adaptado.'},approved).reason,'unsupported_absence_claim');
 });
 test('second model call returns approval only for supported RSS claims',async()=>{
   const calls=[];
