@@ -113,3 +113,51 @@ test('external redirects log only a fixed reason without private URLs',async()=>
  assert.equal(events[0].reason,'redirect_blocked');
  assert.ok(!JSON.stringify(events).includes('evil.example'));
 });
+
+
+test('one-shot AI preview generates original draft without CMS/Redis writes, even with preview-only sources',async()=>{
+  const {SOURCES}=await import('../src/feeds.mjs');
+  const approved=SOURCES.find(s=>s.id==='w3c-wai');
+  const restricted=SOURCES.find(s=>s.id==='rnib');
+  const events=[];const calls=[];
+  const draft={
+    title:'Uma nova oportunidade para a inclusao digital e acessibilidade',
+    summary:'Uma iniciativa sobre educacao inclusiva e leitores de tela foi comunicada em canal oficial, com potencial para discussao educativa.',
+    body:'O canal oficial descreve iniciativas de acessibilidade e tecnologias de leitura de tela para estudantes cegos. Este texto e uma sintese preliminar baseada no titulo e no resumo, sujeita a verificacao editorial.',
+    whyItMatters:'O tema pode contribuir com o debate sobre acessibilidade na educacao brasileira.',
+    category:'Tecnologia assistiva',
+  };
+  const router={async complete({system,prompt}){
+    calls.push(JSON.parse(prompt));
+    assert.match(system,/DADOS NÃO CONFIÁVEIS/);
+    return {content:JSON.stringify(draft),provider:'openrouter'};
+  }};
+  const result=await runOnce({
+    sources:[approved,restricted],now:Date.parse('2026-11-10T01:00:00Z'),
+    fetchImpl:async url=>{assert.equal(url,approved.feed);return new Response(atom,{status:200});},
+    router,store:null,cms:null,dryRun:true,aiPreview:true,maxArticles:1,
+    logger:x=>events.push(x),
+  });
+  assert.equal(result.preview,true);
+  assert.equal(result.aiGenerated,true);
+  assert.equal(result.count,1);
+  assert.equal(result.results[0].status,'draft_ready');
+  assert.equal(result.results[0].provider,'openrouter');
+  assert.deepEqual(result.results[0].draft,draft);
+  assert.equal(result.results[0].originalUrl,'https://www.w3.org/WAI/news/example');
+  assert.equal(result.results[0].previewOnly,false);
+  assert.equal(calls.length,1);
+  assert.ok(events.some(x=>x.event==='source_skipped_by_policy'&&x.source==='rnib'));
+});
+test('AI preview refuses a configured CMS writer and live mode',async()=>{
+  await assert.rejects(runOnce({aiPreview:true,dryRun:true,cms:{create(){}}}),/cannot write/);
+  await assert.rejects(runOnce({aiPreview:true,dryRun:false,cms:null}),/cannot write/);
+});
+test('AI preview returns explicit lack of evidence, never a fabricated published item',async()=>{
+  const result=await runOnce({sources:[source],fetchImpl:async()=>new Response(atom,{status:200}),
+    now:Date.parse('2026-11-10T01:00:00Z'),maxArticles:1,
+    dryRun:true,aiPreview:true,router:{async complete(){return {content:'{"skip":true}',provider:'openrouter'};}}});
+  assert.equal(result.count,1);
+  assert.equal(result.results[0].status,'insufficient_evidence');
+  assert.equal(result.results[0].draft,undefined);
+});
