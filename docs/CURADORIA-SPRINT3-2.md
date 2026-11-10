@@ -54,7 +54,7 @@ Na raiz do projeto, com Node.js 22 ou superior:
     npm run --prefix curator test
     npm run --prefix curator preview
 
-A prévia consulta apenas o feed público W3C/WAI, sem Redis, Strapi nem APIs de IA. O modo preview examina **120 dias** por padrão e apresenta até **6 resultados distribuídos entre fontes**; o worker real mantém **45 dias** e no máximo 3 rascunhos processados por rodada, preservando atualidade. O campo validLastYear informa quantos itens válidos existem no feed em 365 dias; withinWindow informa quantos passaram pelo filtro de recência; candidates corresponde aos que também passaram pelo tema. Não cria notícias no site.
+A prévia consulta os RSS oficiais W3C/WAI, Perkins e WBU (este último para diagnóstico), além das listagens HTML RNIB e IBSA, que permanecem **somente para prévia**, sem Redis, Strapi nem APIs de IA. O modo preview examina **120 dias** por padrão e apresenta até **6 resultados distribuídos entre fontes**; o worker real mantém **45 dias** e no máximo 3 rascunhos processados por rodada, preservando atualidade. O campo validLastYear informa quantos itens válidos existem no feed em 365 dias; withinWindow informa quantos passaram pelo filtro de recência; candidates corresponde aos que também passaram pelo tema. Não cria notícias no site.
 
 Para simular outra janela somente na prévia, no PowerShell:
 
