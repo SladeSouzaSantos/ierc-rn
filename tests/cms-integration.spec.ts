@@ -50,9 +50,7 @@ test("Radar da Inclusão tem rota própria, explica a origem externa e não exp�
 test("Radar é navegável no celular e atende às verificações automáticas WCAG A/AA", async ({ page }) => {
   await page.goto("/radar-da-inclusao");
   await expect(page.getByRole("main")).toBeVisible();
-  await expect(page.getByRole("link", { name: /Consultar notícias do IERC-RN/i })).toHaveCount(
-    process.env.CMS_ENABLED === "true" ? 0 : 1
-  );
+  await expect(page.getByRole("link", { name: /Ver notícias institucionais/i })).toHaveAttribute("href", "/noticias");
   const results = await new AxeBuilder({ page }).withTags([
     "wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa",
   ]).analyze();
