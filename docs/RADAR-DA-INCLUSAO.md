@@ -4,13 +4,13 @@
 
 O Radar da Inclusão é uma área separada do portal IERC-RN destinada a **sínteses originais, em português, de publicações externas** sobre deficiência visual, educação inclusiva, tecnologia assistiva, acessibilidade e esporte adaptado. Não representa notícias, eventos, projetos, parcerias nem resultados do Instituto.
 
-**Status (DEV, 10/11/2026):** a primeira geração real de IA criou **um** registro como `Draft` na coleção `News-article`; as capturas confirmaram `editorialStatus=em_revisao`, `aiAssisted=true`, `imageRightsStatus=pendente`, fonte, URL original e chave de deduplicação. A página pública exibida não mostrou o rascunho. Ele segue **não publicado** e depende de edição/revisão humana.
+**Status (DEV, 10/11/2026):** a primeira notícia da Perkins foi gerada como Draft, revisada e **publicada manualmente pelo operador**. A branch `dev` adicionou três frentes distintas: reportagens diretamente sobre o IERC-RN, notícias nacionais de inclusão e iniciativas internacionais. Novos exemplos externos verificados são atribuídos à fonte e não simulam comunicados do Instituto. A publicação automática permanece desativada, pendente de homologação local dos feeds, análise de direitos por artigo, backup e token segregado.
 
 ## Rotas e fonte dos dados
 
-- `/noticias`: comunicados institucionais do CMS (origem diferente de `externa`) e recortes externos **sobre o IERC-RN**, cujo vínculo com o Instituto é explicitado e documentado; apresenta chamada para o Radar.
-- `/radar-da-inclusao`: exclusivamente `news-article` com `originType=externa`, **publicado**, `editorialStatus=aprovado`, `sourceName` e `sourceUrl` HTTPS. Não mescla a fonte externa à identidade institucional.
-- `/noticias/[slug]`: detalhe que só é retornado quando o mesmo contrato de publicação e aprovação é cumprido. Se a origem for externa, identifica-a como Radar, mostra a origem e, se `aiAssisted=true`, informa o uso assistido de IA; o link de retorno vai para `/radar-da-inclusao`.
+- `/noticias`: notícias institucionais do CMS, uma seção separada **“IERC-RN na imprensa”** para reportagens externas com `scope=local` que mencionem explicitamente o Instituto, e seis referências históricas verificáveis de terceiros. Apresenta chamada para o Radar.
+- `/radar-da-inclusao`: somente artigos externos com `scope=brasil` ou `scope=internacional`, **publicados e editorialmente aprovados**, com fonte identificada e `sourceUrl` HTTPS; grupos visuais “Iniciativas e direitos no Brasil” e “Experiências internacionais”. A origem de terceiros nunca é convertida em ação do IERC-RN.
+- `/noticias/[slug]`: detalhe publicado/aprovado, identifica a origem e o processo de IA. Notícias `scope=local` voltam para `/noticias`; notícias nacionais e internacionais voltam ao Radar.
 - `lib/cms.ts`: `find()` consulta o Strapi **somente no servidor** com `status=published` e `filters[editorialStatus][$eq]=aprovado`, e revalida o status após receber os dados. Sem credenciais ou com falha, retorna lista vazia, não mostra drafts e não expõe `CMS_READ_TOKEN`.
 - `components/cms-public.tsx`: cartões do Radar incluem título, resumo, categoria, data quando disponível, **fonte externa identificada**, link para síntese e para publicação original; `aiAssisted` é explicitado. Quando não há material aprovado, exibe estado editorial vazio, sem notícias fictícias.
 
@@ -49,3 +49,10 @@ Visitar `http://localhost:3000/noticias` e `http://localhost:3000/radar-da-inclu
 Antes de encerrar a Sprint 3.2, revisar o primeiro rascunho da Perkins, validar links, política de uso e fontes e criar backup pós-migração do PostgreSQL (preservando `cms-backups/ierc-before-curator.dump`). Considerar revogar o token Custom temporário após concluir a homologação.
 
 Referência de implementação: [Sprint 3.2 — Curadoria](CURADORIA-SPRINT3-2.md), issue [#13](https://github.com/SladeSouzaSantos/ierc-rn/issues/13). `main` e o Draft PR #12 permanecem inalterados.
+
+
+## Atualização de fontes e revisão integral — 10/11/2026
+
+O catálogo dispõe agora de feeds da **Agência Brasil (EBC)** e da **Comissão Europeia**, com políticas públicas de reutilização registradas e uma etapa de autoria/condições por artigo antes de extrair textos. A geração de sínteses e revisão por IA fundamentadas na matéria integral só são elegíveis quando a política e o conteúdo da página forem confirmados; páginas de agências parceiras ou sem direitos ficam retidas. **Perkins/WAI continuam apenas como prévias/editorial sem autorização de publicação autônoma baseada em texto integral.** O indicador de IA distingue revisão humana de revisão automática com evidências.
+
+O comando `review:full-preview` consulta Redis/CMS para descartar duplicatas, examina apenas fontes elegíveis e valida blocos textuais sem gravar notícias. A automação de publicação ainda requer homologação na instância DEV, acesso separado de escrita, backup restaurável e decisão editorial expressa. Consulte [FONTE-INTEGRAL-REVIEW-DEV.md](FONTE-INTEGRAL-REVIEW-DEV.md) e a [issue #14](https://github.com/SladeSouzaSantos/ierc-rn/issues/14).
