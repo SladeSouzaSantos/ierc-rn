@@ -3,6 +3,7 @@ import {RedisQuotaState} from './quota.mjs';
 import {providersFromEnv,settingsFromEnv} from './providers.mjs';
 import {FreeLlmRouter} from './router.mjs';
 import {cmsClient} from './editorial.mjs';
+import {cmsPublisher} from './cms-publish.mjs';
 import {runOnce} from './pipeline.mjs';
 
 const cmd=process.argv[2];
@@ -23,6 +24,19 @@ if(!['preview','generate-preview','once','schedule'].includes(cmd)){
   // Even CURATOR_WRITE_DRAFTS=true must not grant write access to this mode.
   const aiPreview=cmd==='generate-preview';
   const dryRun=cmd==='preview'||aiPreview||env.CURATOR_WRITE_DRAFTS!=='true';
+  const autoPublish=env.CURATOR_AUTO_PUBLISH_ENABLED==='true';
+  if(autoPublish){
+    if(env.CURATOR_INSTANCE_KIND!=='dev'||dryRun||
+       !['once','schedule'].includes(cmd)||
+       env.CURATOR_AUTO_PUBLISH_ACK!=='RSS_ONLY_REVIEW_ACCEPTED')
+      throw new Error('Auto publication requires explicit DEV RSS-only review acknowledgment and live write mode');
+  }
+  const allowedSources=autoPublish?(env.CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES||'')
+    .split(',').map(x=>x.trim()).filter(Boolean):[];
+  if(autoPublish&&(!allowedSources.length||
+     !allowedSources.every(x=>['perkins','w3c-wai'].includes(x))||
+     new Set(allowedSources).size!==allowedSources.length))
+    throw new Error('Explicit verified source allowlist required for auto publication');
   // Wait for a fully ready Redis BEFORE using any quota-bearing operation.
   // No model calls are made if the connection cannot be established.
   const redis=cmd==='preview'?null:await connectQuotaRedis(
@@ -34,6 +48,11 @@ if(!['preview','generate-preview','once','schedule'].includes(cmd)){
     const router=redis?new FreeLlmRouter({providers,state:quota,settings,logger:log}):null;
     const cms=!dryRun?cmsClient({baseUrl:env.CURATOR_CMS_URL||'http://cms:1337',
       token:env.CURATOR_STRAPI_DRAFT_TOKEN}):null;
+    const publisher=autoPublish?cmsPublisher({
+      baseUrl:env.CURATOR_CMS_URL||'http://cms:1337',
+      token:env.CURATOR_STRAPI_PUBLISH_TOKEN,
+      draftToken:env.CURATOR_STRAPI_DRAFT_TOKEN,
+    }):null;
     // A longer HISTORY window is for preview only. Live worker keeps 45-day recency.
     const previewDays=Number(env.CURATOR_PREVIEW_DAYS||120);
     if(cmd==='preview'&&(!Number.isInteger(previewDays)||previewDays<1||previewDays>365))
@@ -53,9 +72,11 @@ if(!['preview','generate-preview','once','schedule'].includes(cmd)){
       throw new Error('CURATOR_AI_PREVIEW_LIMIT must be 1..2');
     if(aiPreview&&(!Number.isInteger(aiPreviewDays)||aiPreviewDays<1||aiPreviewDays>120))
       throw new Error('CURATOR_AI_PREVIEW_DAYS must be 1..120');
-    const execute=async()=>runOnce({router,store:aiPreview?null:redis,cms,dryRun,aiPreview,logger:log,
+    const execute=async()=>runOnce({router,store:aiPreview?null:redis,cms,dryRun,aiPreview,
+      autoPublish,publisher,autoPublishSources:allowedSources,logger:log,
       maxAgeDays:cmd==='preview'?previewDays:aiPreview?aiPreviewDays:45,
-      maxArticles:cmd==='preview'?previewLimit:aiPreview?aiPreviewLimit:cmd==='once'?onceLimit:3});
+      // Auto mode never processes more than one candidate per run.
+      maxArticles:autoPublish?1:cmd==='preview'?previewLimit:aiPreview?aiPreviewLimit:cmd==='once'?onceLimit:3});
     const slot=()=>{
       const parts=new Intl.DateTimeFormat('en-GB',{
         timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit',
@@ -70,7 +91,7 @@ if(!['preview','generate-preview','once','schedule'].includes(cmd)){
       console.log(JSON.stringify(report));
     }else{
       const hours=['08','13','19'];
-      log({event:'schedule_started',timezone:'America/Fortaleza',hours,writeDrafts:!dryRun});
+      log({event:'schedule_started',timezone:'America/Fortaleza',hours,writeDrafts:!dryRun,autoPublish});
       const tick=async()=>{
         const current=slot();
         if(!hours.includes(current.hour)||Number(current.minute)>2)return;
