@@ -872,3 +872,10 @@ html[data-high-contrast="true"] .radar-about { background: #fff; border: 2px sol
 html[data-high-contrast="true"] .radar-about p { color: #000; }
 html[data-high-contrast="true"] .radar-teaser { background: #000; border: 2px solid #fff; }
 html[data-high-contrast="true"] .radar-teaser p:not(.eyebrow) { color: #fff; }
+
+
+/* Separate national and international Radar without changing institutional news. */
+.radar-group { margin-top: clamp(30px, 4vw, 54px); }
+.radar-group > h3 { color: var(--deep); font-size: clamp(1.4rem, 2.6vw, 1.9rem); margin: 0 0 22px; }
+.radar-group .detail-card h4 { font-size: 1.4rem; margin-bottom: 15px; }
+html[data-high-contrast="true"] .radar-group > h3 { color: #000; }
