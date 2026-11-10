@@ -11,12 +11,19 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
     throw new Error('Separate scoped CMS publisher token required');
   const headers={Authorization:'Bearer '+token,Accept:'application/json'};
   return {
-    async publishApprovedDraft(documentId,expected){
+    async publishApprovedDraft(documentId,expected,reviewEvidence){
       if(!/^[a-zA-Z0-9]{12,90}$/.test(documentId))
         throw new Error('Invalid CMS document ID');
       if(!expected||!/^https:\/\//.test(expected.sourceUrl||'')||
          !/^[a-f0-9]{64}$/i.test(expected.dedupeKey||''))
         throw new Error('Invalid approved source');
+      const quotes=reviewEvidence?.evidenceQuotes;
+      if(!Array.isArray(quotes)||quotes.length!==2||
+         quotes.some(x=>typeof x!=='string'||x.length<12||x.length>160||
+           /[\r\n<>]/.test(x))||
+         !['openrouter','gemini','groq','ollama'].includes(reviewEvidence.reviewerProvider))
+        throw new Error('Publisher requires a verified AI review audit');
+      const audit=quotes.map(x=>x.replace(/\s+/g,' ').trim());
       const url=host.origin+'/api/news-articles/'+encodeURIComponent(documentId);
       // Authenticate against the exact draft just created by this worker.
       // This is not a bulk publish operation or an approval of existing drafts.
@@ -47,7 +54,9 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
           body:JSON.stringify({data:{
             editorialStatus:'aprovado',
             approvalReference:reference,
-            approvalNote:'Revisão automática por IA restrita ao título e resumo RSS. Fonte original identificada; sem validação humana.',
+            approvalNote:'Revisão automática por IA ('+reviewEvidence.reviewerProvider+
+              '), baseada apenas em título/resumo RSS; sem validação humana. Evidências literais: "'+
+              audit[0]+'" | "'+audit[1]+'".',
           }}),
           redirect:'error',signal:AbortSignal.timeout(9000),
         });
