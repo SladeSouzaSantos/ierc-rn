@@ -7,12 +7,12 @@ import {cmsPublisher} from './cms-publish.mjs';
 import {runOnce} from './pipeline.mjs';
 
 const cmd=process.argv[2];
-if(!['preview','generate-preview','once','schedule'].includes(cmd)){
-  console.error('Use: node src/cli.mjs preview|generate-preview|once|schedule');
+if(!['preview','generate-preview','review-preview','once','schedule'].includes(cmd)){
+  console.error('Use: node src/cli.mjs preview|generate-preview|review-preview|once|schedule');
   process.exitCode=2;
 }else{
   const env=process.env;
-  if(!['preview','generate-preview'].includes(cmd)&&env.CURATOR_ENABLED!=='true') {
+  if(!['preview','generate-preview','review-preview'].includes(cmd)&&env.CURATOR_ENABLED!=='true') {
     console.log('Curator disabled. Set CURATOR_ENABLED=true only after DEV homologation.');
     process.exit(0);
   }
@@ -22,7 +22,8 @@ if(!['preview','generate-preview','once','schedule'].includes(cmd)){
   const log=(event)=>console.log(JSON.stringify({ts:new Date().toISOString(),...event}));
   // Explicit one-shot AI preview is independent of the write activation flags.
   // Even CURATOR_WRITE_DRAFTS=true must not grant write access to this mode.
-  const aiPreview=cmd==='generate-preview';
+  const aiPreview=cmd==='generate-preview'||cmd==='review-preview';
+  const reviewPreview=cmd==='review-preview';
   const dryRun=cmd==='preview'||aiPreview||env.CURATOR_WRITE_DRAFTS!=='true';
   const autoPublish=env.CURATOR_AUTO_PUBLISH_ENABLED==='true';
   if(autoPublish){
@@ -72,7 +73,7 @@ if(!['preview','generate-preview','once','schedule'].includes(cmd)){
       throw new Error('CURATOR_AI_PREVIEW_LIMIT must be 1..2');
     if(aiPreview&&(!Number.isInteger(aiPreviewDays)||aiPreviewDays<1||aiPreviewDays>120))
       throw new Error('CURATOR_AI_PREVIEW_DAYS must be 1..120');
-    const execute=async()=>runOnce({router,store:aiPreview?null:redis,cms,dryRun,aiPreview,
+    const execute=async()=>runOnce({router,store:aiPreview?null:redis,cms,dryRun,aiPreview,reviewPreview,
       autoPublish,publisher,autoPublishSources:allowedSources,logger:log,
       maxAgeDays:cmd==='preview'?previewDays:aiPreview?aiPreviewDays:45,
       // Auto mode never processes more than one candidate per run.
@@ -86,7 +87,7 @@ if(!['preview','generate-preview','once','schedule'].includes(cmd)){
       return {id:v.year+'-'+v.month+'-'+v.day+':'+v.hour,
         hour:v.hour,minute:v.minute};
     };
-    if(cmd==='preview'||cmd==='generate-preview'||cmd==='once'){
+    if(cmd==='preview'||cmd==='generate-preview'||cmd==='review-preview'||cmd==='once'){
       const report=await execute();
       console.log(JSON.stringify(report));
     }else{
