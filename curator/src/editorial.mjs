@@ -53,10 +53,20 @@ export function cmsClient({baseUrl,token,fetchImpl=fetch}){
   return {
     async existing(dedupeKey){
       const q=new URLSearchParams({status:'draft','filters[dedupeKey][$eq]':dedupeKey,'pagination[pageSize]':'1'});
-      const response=await fetchImpl(host.origin+'/api/news-articles?'+q,{
-        headers,redirect:'error',signal:AbortSignal.timeout(7000)});
-      if(!response.ok)throw new Error('Strapi draft lookup failed');
-      const obj=await response.json();
+      let response;
+      try {
+        response=await fetchImpl(host.origin+'/api/news-articles?'+q,{
+          headers,redirect:'error',signal:AbortSignal.timeout(7000)});
+      } catch {
+        // No raw URL, exception details, server body or bearer token in logs.
+        throw new Error('Strapi draft lookup unreachable');
+      }
+      // The HTTP status alone is sufficient to distinguish token permissions
+      // from query/schema errors without leaking an API error body.
+      if(!response.ok)throw new Error('Strapi draft lookup failed (HTTP '+response.status+')');
+      let obj;
+      try { obj=await response.json(); }
+      catch { throw new Error('Invalid Strapi lookup response'); }
       if(!Array.isArray(obj?.data))throw new Error('Invalid Strapi lookup response');
       return obj.data.length>0;
     },
