@@ -4,6 +4,7 @@ import {providersFromEnv,settingsFromEnv} from './providers.mjs';
 import {FreeLlmRouter} from './router.mjs';
 import {cmsClient} from './editorial.mjs';
 import {cmsPublisher} from './cms-publish.mjs';
+import {cmsNewsReadOnly,previewDeduper} from './duplicate-check.mjs';
 import {autoPublishSettingsFromEnv} from './auto-config.mjs';
 import {runOnce} from './pipeline.mjs';
 
@@ -39,6 +40,16 @@ if(!['preview','generate-preview','review-preview','once','schedule'].includes(c
     const router=redis?new FreeLlmRouter({providers,state:quota,settings,logger:log}):null;
     const cms=!dryRun?cmsClient({baseUrl:env.CURATOR_CMS_URL||'http://cms:1337',
       token:env.CURATOR_STRAPI_DRAFT_TOKEN}):null;
+    // Only review:preview sees the duplicate gate. Its CMS adapter exposes
+    // GET-only methods; Redis is used here solely for EXISTS (LLM quota
+    // metering independently updates Redis counters as designed).
+    const previewLookup=reviewPreview?previewDeduper({
+      redis,
+      cms:cmsNewsReadOnly({
+        baseUrl:env.CURATOR_CMS_URL||'http://cms:1337',
+        token:env.CURATOR_STRAPI_READ_TOKEN||env.CURATOR_STRAPI_DRAFT_TOKEN,
+      }),
+    }):null;
     const publisher=autoPublish?cmsPublisher({
       baseUrl:env.CURATOR_CMS_URL||'http://cms:1337',
       token:env.CURATOR_STRAPI_PUBLISH_TOKEN,
@@ -64,7 +75,7 @@ if(!['preview','generate-preview','review-preview','once','schedule'].includes(c
     if(aiPreview&&(!Number.isInteger(aiPreviewDays)||aiPreviewDays<1||aiPreviewDays>120))
       throw new Error('CURATOR_AI_PREVIEW_DAYS must be 1..120');
     const execute=async()=>runOnce({router,store:aiPreview?null:redis,cms,dryRun,aiPreview,reviewPreview,
-      autoPublish,publisher,autoPublishSources:allowedSources,logger:log,
+      previewLookup,autoPublish,publisher,autoPublishSources:allowedSources,logger:log,
       maxAgeDays:cmd==='preview'?previewDays:aiPreview?aiPreviewDays:45,
       // Auto mode never processes more than one candidate per run.
       maxArticles:autoPublish?1:cmd==='preview'?previewLimit:aiPreview?aiPreviewLimit:cmd==='once'?onceLimit:3});
