@@ -5,6 +5,7 @@ import { processArticle, generateAiDraft } from './editorial.mjs';
 import { reviewAiDraft } from './auto-review.mjs';
 import {generateFullArticleDraft,reviewFullArticleDraft} from './full-article-review.mjs';
 import {sanitizeArticleEvidenceError} from './article-evidence.mjs';
+import {AUTO_PUBLISH_LICENSED_SOURCES} from './auto-config.mjs';
 
 /**
  * Preview: all verified source listings, including sources held for policy review.
@@ -30,7 +31,7 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
     throw new Error('Read-only duplicate preflight is exclusive to review preview');
   if(autoPublish && (dryRun || !publisher || maxArticles > 1 ||
      !Array.isArray(autoPublishSources)||autoPublishSources.length===0 ||
-     !autoPublishSources.every(id=>['perkins','w3c-wai'].includes(id))))
+     !autoPublishSources.every(id=>AUTO_PUBLISH_LICENSED_SOURCES.includes(id))))
     throw new Error('Auto publication requires live mode, source allowlist, scoped publisher and one-item batch');
   if((fullArticlePreview||autoPublish) && typeof articleReader!=='function')
     throw new Error('Permission-gated full article reader is required');
