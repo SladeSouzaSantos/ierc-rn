@@ -32,7 +32,12 @@ if(!['preview','once','schedule'].includes(cmd)){
     const router=redis?new FreeLlmRouter({providers,state:quota,settings,logger:log}):null;
     const cms=!dryRun?cmsClient({baseUrl:env.CURATOR_CMS_URL||'http://cms:1337',
       token:env.CURATOR_STRAPI_DRAFT_TOKEN}):null;
-    const execute=async()=>runOnce({router,store:redis,cms,dryRun,logger:log});
+    // A longer HISTORY window is for preview only. Live worker keeps 45-day recency.
+    const previewDays=Number(env.CURATOR_PREVIEW_DAYS||120);
+    if(cmd==='preview'&&(!Number.isInteger(previewDays)||previewDays<1||previewDays>365))
+      throw new Error('CURATOR_PREVIEW_DAYS must be 1..365');
+    const execute=async()=>runOnce({router,store:redis,cms,dryRun,logger:log,
+      maxAgeDays:cmd==='preview'?previewDays:45});
     const slot=()=>{
       const parts=new Intl.DateTimeFormat('en-GB',{
         timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit',
