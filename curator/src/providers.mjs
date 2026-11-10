@@ -11,10 +11,11 @@ export function settingsFromEnv(env = process.env) {
   const windowMs = positive(env.CURATOR_WINDOW_MS, 86400000, 2678400000);
   const maxAttempts = positive(env.CURATOR_MAX_ATTEMPTS, 4, 4);
   const timeoutMs = positive(env.CURATOR_ATTEMPT_TIMEOUT_MS, 15000, 60000);
+  const outputMaxTokens = positive(env.CURATOR_MAX_OUTPUT_TOKENS, 1600, 4096);
   const cooldownMs = positive(env.CURATOR_COOLDOWN_MS, 60000, 2678400000);
   const maxCooldownMs = positive(env.CURATOR_MAX_COOLDOWN_MS, 86400000, 2678400000);
   if (maxCooldownMs < cooldownMs) throw new Error('Invalid cooldown interval');
-  return {globalMax,windowMs,maxAttempts,timeoutMs,cooldownMs,maxCooldownMs};
+  return {globalMax,windowMs,maxAttempts,timeoutMs,outputMaxTokens,cooldownMs,maxCooldownMs};
 }
 export function providersFromEnv(env = process.env) {
   const out = [];
@@ -27,8 +28,17 @@ export function providersFromEnv(env = process.env) {
     const model = (env.CURATOR_OPENROUTER_MODEL || 'openrouter/free').trim();
     if (model !== 'openrouter/free' && !model.endsWith(':free'))
       throw new Error('OpenRouter paid models are blocked; use :free or openrouter/free');
+    const reasoningEnv=env.CURATOR_OPENROUTER_REASONING_ENABLED;
+    if(reasoningEnv && !['true','false'].includes(reasoningEnv))
+      throw new Error('CURATOR_OPENROUTER_REASONING_ENABLED must be true or false');
     add('openrouter','openai','https://openrouter.ai/api/v1/chat/completions',
       env.CURATOR_OPENROUTER_API_KEY,model,env.CURATOR_OPENROUTER_MAX_CALLS);
+    // This exact NVIDIA model defaults to reasoning, which can exhaust a short
+    // editorial JSON token budget. Disable unless explicitly re-enabled.
+    if (reasoningEnv==='false' ||
+        (!reasoningEnv && model==='nvidia/nemotron-3.5-super-vl:free'))
+      out[out.length-1].reasoningEnabled=false;
+    if (reasoningEnv==='true')out[out.length-1].reasoningEnabled=true;
   }
   const gated = [
     ['gemini','https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'],
