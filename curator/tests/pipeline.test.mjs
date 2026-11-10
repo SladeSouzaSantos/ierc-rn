@@ -65,7 +65,8 @@ test('preview balances WAI, Perkins, RNIB and IBSA without publishing preview-on
     reads.push(url);
     return new Response(bodyByUrl[url],{status:200});
   };
-  const out=await runOnce({sources:SOURCES,fetchImpl:fetched,
+  const historic=SOURCES.filter(x=>['w3c-wai','perkins','rnib','ibsa','wbu'].includes(x.id));
+  const out=await runOnce({sources:historic,fetchImpl:fetched,
     now:Date.parse('2026-11-10T12:00:00Z'),maxArticles:6,dryRun:true,
     router:null,store:null,cms:null});
   assert.equal(out.count,4);
@@ -83,7 +84,8 @@ test('live ingestion excludes all preview-only HTML sources and empty WBU feed',
     '<link>https://www.perkins.org/braille-literacy-for-blind-students/</link>' +
     '<pubDate>Thu, 05 Nov 2026 15:00:00 +0000</pubDate>' +
     '<description>New materials help inclusive education.</description></item></channel></rss>';
-  const result=await runOnce({sources:SOURCES,
+  const historic=SOURCES.filter(x=>['w3c-wai','perkins','rnib','ibsa','wbu'].includes(x.id));
+  const result=await runOnce({sources:historic,
     fetchImpl:async url=>{
       reads.push(url);
       return new Response(url.includes('perkins.org')?perkins:atom,{status:200});
