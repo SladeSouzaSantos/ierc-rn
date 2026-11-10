@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import {connectQuotaRedis, closeQuotaRedis} from './redis-connection.mjs';
 import {RedisQuotaState} from './quota.mjs';
 import {providersFromEnv,settingsFromEnv} from './providers.mjs';
 import {FreeLlmRouter} from './router.mjs';
@@ -23,12 +23,11 @@ if(!['preview','generate-preview','once','schedule'].includes(cmd)){
   // Even CURATOR_WRITE_DRAFTS=true must not grant write access to this mode.
   const aiPreview=cmd==='generate-preview';
   const dryRun=cmd==='preview'||aiPreview||env.CURATOR_WRITE_DRAFTS!=='true';
-  const redis=cmd==='preview'?null:new Redis(env.CURATOR_REDIS_URL||'redis://redis:6379',{
-    enableOfflineQueue:false,maxRetriesPerRequest:1,
-  });
-  if(redis)redis.on('error',()=>{}); // Never expose credentials in logs.
+  // Wait for a fully ready Redis BEFORE using any quota-bearing operation.
+  // No model calls are made if the connection cannot be established.
+  const redis=cmd==='preview'?null:await connectQuotaRedis(
+    env.CURATOR_REDIS_URL||'redis://redis:6379');
   try{
-    if(redis)await redis.ping();
     const providers=dryRun&&!aiPreview?[]:providersFromEnv(env);
     if((!dryRun||aiPreview)&&!providers.length)throw new Error('At least one confirmed free provider is required');
     const quota=redis?new RedisQuotaState(redis,settings):null;
@@ -83,6 +82,6 @@ if(!['preview','generate-preview','once','schedule'].includes(cmd)){
       setInterval(()=>tick().catch(()=>log({event:'schedule_error'})),30000);
     }
   }finally{
-    if(cmd!=='schedule'&&redis)await redis.quit();
+    if(cmd!=='schedule')await closeQuotaRedis(redis);
   }
 }
