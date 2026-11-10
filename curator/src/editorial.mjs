@@ -84,6 +84,7 @@ export async function generateAiDraft(source,{router,logger=()=>{}}){
       prompt:JSON.stringify({source:source.source,date:source.publishedAt,
         originalLanguage:source.language,title:source.title,summary:source.summary,
         originalUrl:source.url}),
+      validateOutput:validateDraft,
     });
   }catch(error){
     logger({event:'llm_unavailable',category:error instanceof LlmExhaustedError?error.message:'other'});
