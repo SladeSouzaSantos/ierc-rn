@@ -183,3 +183,59 @@ docker compose --env-file cms/.env -f compose.cms.yml exec cms npm ls @reduxjs/t
 ```
 
 A investigação permanece em DEV e o PR #12 em Draft até a confirmação de navegação, criação/edição de notícia, revisão de permissões e testes acessíveis. Nunca publique o admin do CMS externamente apenas para reproduzir esse bug.
+
+
+## Gate editorial local — visibilidade e RBAC (10/11/2026)
+
+**Evidências de início:** o operador confirmou a abertura funcional de `/admin/content-manager` e acesso à coleção Notícias no Strapi **5.61.0**; PostgreSQL/CMS estavam `healthy`, e `/_health` retornou HTTP 204. Não confundir isso com aprovação dos fluxos de publicação e papéis, que continuam pendentes até sua execução.
+
+O fluxo de homologação deve ocorrer **somente na instância Docker DEV existente** (`127.0.0.1:1337`). O arquivo `cms/.env`, volumes, conta administrativa, `main` e PR #12 permanecem preservados. Não habilitar o worker da curadoria, usar `unsafe-eval`, executar `docker compose down -v` ou tornar o CMS público.
+
+### Verificador somente leitura
+
+Foi acrescentado `cms/scripts/verify-editorial-read.mjs`: consulta **apenas GET** em `/api/news-articles`, com `status=published`, `filters[editorialStatus][$eq]=aprovado` e filtro por `slug`. Aceita somente URLs de CMS com host local (loopback), verifica a resposta, não solicita rascunhos, **não imprime tokens ou conteúdo** e falha se o token de leitura estiver ausente, sem aceitar HTTP 401 como sucesso. A suíte em `cms/tests/verify-editorial-read.test.cjs` usa API local simulada; não cria registros. Testes unitários não substituem homologação com o Strapi real.
+
+Na raiz do repositório, configurar localmente `.env.local` com `CMS_API_URL=http://127.0.0.1:1337`, `CMS_READ_TOKEN` de tipo **Read-only** criado em *Settings → API Tokens*, e `CMS_ENABLED=true` se o Next.js também for usado. Não enviar token, arquivo de ambiente, cookies ou capturas da aba Network que contenham `Authorization` para chats ou commits.
+
+Após `git switch dev` e `git pull --ff-only origin dev`, executar no PowerShell:
+
+```powershell
+node --test cms/tests/verify-editorial-read.test.cjs
+node --env-file=.env.local cms/scripts/verify-editorial-read.mjs homologacao-cms-dev absent
+```
+
+O segundo comando **só funciona com token de leitura válido** e confirma o conteúdo filtrado no CMS real; não dá acesso ao painel admin. Sempre usar `absent` antes de publicar/aprovar, e `visible` apenas no momento da publicação de homologação aprovada. Se a leitura retornar HTTP 401/403, resolver primeiro as permissões de token; não ampliar para Full Access.
+
+### Cenários supervisionados no Content Manager
+
+Criar **um único registro de homologação** em *Content Manager → Collection types → Notícias*, usando apenas dados fictícios claramente identificados, sem imagem, pessoa real, vínculo institucional, inscrição ou serviço inventado:
+
+- `title`: **TESTE INTERNO - NAO PUBLICAR (CMS DEV)**
+- `slug`: **homologacao-cms-dev**
+- `summary`: **Registro sintético exclusivo da validação do fluxo editorial local.**
+- `editorialStatus`: inicialmente **em_preparacao**
+- `originType`: **institucional** (o registro não é uma notícia externa)
+- Demais campos obrigatórios conforme o formulário; nenhuma mídia.
+
+| Passo | Estado no Strapi | Expectativa do verificador |
+| --- | --- | --- |
+| 1 | Salvo como **Draft**, `em_preparacao` | `absent` |
+| 2 | **Draft**, `em_revisao` | `absent` |
+| 3 | **Published**, mas ainda `em_revisao` (somente no CMS DEV isolado) | `absent` |
+| 4 | `aprovado`, salvar e **Publish** a revisão (apenas DEV) | `visible` |
+| 5 | **Unpublish** o documento e confirmar ausência | `absent` |
+
+O passo 3 é deliberado: **publicar no Strapi não equivale a aprovação editorial no site**. Confirmar que a notícia continua ausente da lista e do detalhe `/noticias/homologacao-cms-dev` no portal Next.js **local com CMS conectado** (não é a mesma coisa que um portal Vercel DEV sem acesso a esse banco local). No passo 4 a notícia de teste poderá aparecer momentaneamente **somente nesse portal local**; retirar publicação imediatamente após a verificação. Deixar o registro sintético como rascunho para auditoria ou excluí-lo manualmente após registrar o resultado, conforme a política da equipe.
+
+Para rodar `visible`, usar o mesmo comando anterior substituindo `absent` por `visible`. O script nunca efetua *Publish* ou *Unpublish*: são ações humanas no painel local.
+
+### Validação RBAC real
+
+Em `/admin`, verificar *Settings → Administration panel → Roles*:
+
+1. **Author**: permissão de criar, ler e editar **conteúdo próprio**, sem `Publish` em Notícias e sem gestão de usuários, tokens ou papéis.
+2. **Editor**: ler/editar conteúdo de Notícias e `Publish` conforme o fluxo de revisão; acesso a configurações sensíveis somente quando necessário.
+3. Se houver **contas de teste já autorizadas**, entrar separadamente como Author e Editor e comprovar que Author consegue salvar rascunho mas **não consegue publicar**, enquanto Editor consegue revisar e publicar. Ver apenas as caixas de permissão, usando Super Admin, não comprova o enforcement.
+4. Não compartilhar credenciais, criar identidades fictícias com e-mails de terceiros nem promover contas a Super Admin para contornar uma negativa.
+
+**Ainda pendente após esses testes:** acessibilidade operacional do painel por teclado e leitor de telas, zoom 200%/400%, backup/restore e autorizações de mídia. Apenas após homologação conjunta considerar o fechamento do PR #12 e a ativação posterior da curadoria em DEV.
