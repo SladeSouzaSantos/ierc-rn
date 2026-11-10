@@ -1,5 +1,8 @@
 # Revisão automatizada e publicação controlada — Radar da Inclusão (DEV)
 
+> **Atualização de segurança — 10/11/2026:** a arquitetura de publicação automática baseada exclusivamente em RSS descrita historicamente abaixo **não é mais permitida para publicar**. A versão atual exige permissão escrita por fonte e evidências do texto integral. Consulte obrigatoriamente [FONTE-INTEGRAL-REVIEW-DEV.md](FONTE-INTEGRAL-REVIEW-DEV.md). O comando antigo com `RSS_ONLY_REVIEW_ACCEPTED` é rejeitado pelo código. **Nenhuma fonte atual possui autorização de extração integral no catálogo; não habilitar agendamento ou publicação.**
+
+
 **Estado da implementação:** disponível na branch `dev` como funcionalidade **opt-in**, desativada por padrão. `main` e o PR #12 Draft não foram alterados. A IA é usada na geração **e numa segunda etapa de revisão**. Nenhuma configuração de publicação foi aplicada automaticamente ao CMS local.
 
 ## 1. Fluxo e limitações de evidência
@@ -36,6 +39,7 @@ Os valores abaixo precisam ser definidos **manualmente e somente no ambiente DEV
 
 ```dotenv
 CURATOR_INSTANCE_KIND=dev
+CURATOR_FULL_ARTICLE_REVIEW_ENABLED=false
 CURATOR_AUTO_PUBLISH_ENABLED=false
 CURATOR_AUTO_PUBLISH_ACK=
 CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES=
@@ -64,7 +68,7 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml --profile cura
 
 `review:preview` faz a geração e a segunda avaliação com as mesmas cotas Redis e provedores gratuitos. **Não escreve no Strapi**. Pode retornar `review_approved_preview` ou `review_pending_preview`, com `reviewReason`, além de `llm_unavailable` ou `insufficient_evidence`. Isso não significa que qualquer notícia tenha sido publicada. Se o modelo esgotar a cota, não repetir chamadas em sequência.
 
-### Gate B — publicação real, somente após aprovação do teste em DEV
+### Gate B — publicação real, BLOQUEADO até autorização de texto integral em DEV
 
 Gerar um backup PostgreSQL **pós-migração** e validar a restauração num banco isolado. Criar um **novo token temporário Custom**, concedendo apenas `findOne` e `update` em News-article, e armazenar em `CURATOR_STRAPI_PUBLISH_TOKEN` no arquivo `curator/.env`.
 
@@ -75,14 +79,15 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml --profile cura
   -e CURATOR_ENABLED=true `
   -e CURATOR_WRITE_DRAFTS=true `
   -e CURATOR_AUTO_PUBLISH_ENABLED=true `
-  -e CURATOR_AUTO_PUBLISH_ACK=RSS_ONLY_REVIEW_ACCEPTED `
+  -e CURATOR_AUTO_PUBLISH_ACK=FULL_ARTICLE_REVIEW_ACCEPTED `
+  -e CURATOR_FULL_ARTICLE_REVIEW_ENABLED=true `
   -e CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES=perkins `
   -e CURATOR_GEMINI_API_KEY= `
   -e CURATOR_GROQ_API_KEY= `
   worker npm run once
 ```
 
-**O comando do Gate B PUBLICA automaticamente** se houver candidato com evidências suficientes, revisão IA favorável e permissão de atualização no token. Ele não serve como teste de leitura. Recomenda-se executá-lo primeiro em uma instância Strapi DEV isolada de homologação com conteúdo de teste e verificar explicitamente a postagem.
+**Não execute o comando do Gate B nas fontes atuais.** O código barra publicação sem autorização de fonte integral, mesmo com token de update. Em uma futura fonte especificamente autorizada, o comando poderá publicar uma notícia real se todos os gates passarem. Ele não serve como teste de leitura. Recomenda-se executá-lo primeiro em uma instância Strapi DEV isolada de homologação com conteúdo de teste e verificar explicitamente a postagem.
 
 Resultados esperados:
 - `draft_published`: draft salvo e publicado automaticamente (apenas após todas as verificações).
@@ -136,3 +141,8 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml --profile cura
 ```
 
 Não necessita de token de publicação (`CURATOR_STRAPI_PUBLISH_TOKEN`), nenhuma habilitação `CURATOR_ENABLED=true`, nem mudança do arquivo `curator/.env` além de eventualmente fornecer o token opcional de leitura. `main`, publicação automática e agendamento permanecem sem alterações. A existência de uma aprovação de prévia **não autoriza publicação** da nova matéria sem homologação separada.
+
+
+### Modo novo: verificação de reportagem integral (ainda não autorizado nas fontes atuais)
+
+Execute `npm run --prefix curator review:full-preview` ou `worker npm run review:full-preview` no ambiente Docker DEV para verificar os bloqueios sem gravar notícias. Sem licença documentada, o modo retorna `article_evidence_unavailable` com `evidenceReason=source_permission_pending`, **sem chamadas à IA ou ao site**. O uso de `review:preview` permanece limitado ao RSS e nunca pode autorizar publicação automática. O status e a trilha de verificação integral estão documentados em [FONTE-INTEGRAL-REVIEW-DEV.md](FONTE-INTEGRAL-REVIEW-DEV.md).
