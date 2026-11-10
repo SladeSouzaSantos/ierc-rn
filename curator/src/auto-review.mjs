@@ -59,7 +59,7 @@ export function reviewDecision(source,draft,review){
   const reference=normalize(source.title+' '+source.summary);
   const quotes=q.map(normalize);
   if(quotes.some(quote=>quote.length<12||quote.length>160||!reference.includes(quote))||
-     new Set(quotes).size<2)
+     q.some(quote=>/[\r\n<>]/.test(quote))||new Set(quotes).size<2)
     return {approved:false,reason:'unverifiable_evidence_quotes'};
   return {approved:true,reason:'rss_review_passed',evidenceQuotes:q.slice(0,2)};
 }
