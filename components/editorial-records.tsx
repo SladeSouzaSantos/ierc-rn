@@ -1,5 +1,6 @@
 import { ArrowUpRight, MapPin } from "lucide-react";
 import { sources, timeline, clippings, pastEvents, serieAFeminina2026, verifiedAddress, type SourceId } from "@/lib/editorial-data";
+import { sortNewsNewestFirst } from "@/lib/news-order";
 
 /** Registros editoriais renderizados no servidor; sem integração externa em tempo de execução. */
 export function SourceLink({ source, label }: { source: SourceId; label?: string }) {
@@ -54,7 +55,7 @@ export function ExternalClippings() {
     <h2 id="clippings-title" className="interior-subtitle">Registros publicados sobre o IERC-RN</h2>
     <p className="editorial-intro">São resumos de publicações verificáveis de terceiros, não notícias criadas pelo Instituto nem comunicados sobre eventos futuros.</p>
     <div className="editorial-panels editorial-panels-three">
-      {clippings.map(item => <article className="detail-card editorial-news" key={item.dateTime + item.source}>
+      {sortNewsNewestFirst(clippings, item => item.dateTime).map(item => <article className="detail-card editorial-news" key={item.dateTime + item.source}>
         <span>{item.category} · <time dateTime={item.dateTime}>{item.date}</time></span>
         <h3>{item.title}</h3><p>{item.summary}</p>
         <SourceLink source={item.source} label="Ler publicação original"/>
