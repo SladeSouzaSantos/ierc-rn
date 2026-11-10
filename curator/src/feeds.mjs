@@ -3,8 +3,23 @@ import { createHash } from 'node:crypto';
 
 // Only curated, public RSS/Atom endpoints. Never crawl arbitrary article URLs.
 export const SOURCES = Object.freeze([
-  {id:'w3c-wai',name:'W3C Web Accessibility Initiative',country:'Internacional',
-   language:'en',feed:'https://www.w3.org/WAI/feed.xml',hostname:'www.w3.org'},
+  {id:'w3c-wai',mode:'rss',name:'W3C Web Accessibility Initiative',
+   country:'Internacional',language:'en',feed:'https://www.w3.org/WAI/feed.xml',
+   hostname:'www.w3.org',previewOnly:false,readiness:'feed_verified'},
+  // Explicitly preview-only: RNIB terms prohibit republication without written consent.
+  {id:'rnib',mode:'html',name:'RNIB — Royal National Institute of Blind People',
+   country:'Reino Unido',language:'en',feed:'https://www.rnib.org.uk/news/',
+   hostname:'www.rnib.org.uk',articlePath:'/news/',previewOnly:true,
+   readiness:'listing_verified_reuse_permission_pending'},
+  // Public listing has titles/dates but no verified synopsis suitable for AI publication.
+  {id:'ibsa',mode:'html',name:'IBSA — International Blind Sports Federation',
+   country:'Internacional',language:'en',feed:'https://ibsasport.org/news/',
+   hostname:'ibsasport.org',articlePath:'/news/',previewOnly:true,
+   readiness:'listing_verified_summary_pending'},
+  // Genuine RSS 200 confirmed, currently zero <item> entries.
+  {id:'wbu',mode:'rss',name:'World Blind Union',
+   country:'Internacional',language:'en',feed:'https://wbu.ngo/feed/',
+   hostname:'wbu.ngo',previewOnly:true,readiness:'feed_verified_empty'},
 ]);
 const xml = new XMLParser({ignoreAttributes:false, attributeNamePrefix:'@_',textNodeName:'#text',processEntities:true});
 const asText=(value)=>typeof value==='string'?value:
@@ -53,14 +68,28 @@ export function parseFeed(body,source,now=Date.now(),ageDays=45) {
   }
   return accepted;
 }
-const topics=/\b(accessib(?:le|ility)|braille|blind(?:ness)?|low vision|visual impairment|screen reader|assistive technology|disabilit(?:y|ies)|inclusi(?:on|ve)|goalball|visually impaired|tactile)\b/i;
-export function relevant(item){return topics.test(item.title+' '+item.summary);}
-export async function fetchSource(source,fetchImpl=fetch){
-  const response=await fetchImpl(source.feed,{method:'GET',
-    headers:{Accept:'application/atom+xml, application/rss+xml, application/xml, text/xml',
-      'User-Agent':'IERC-RN-Editorial-Curator/0.1'},
-    redirect:'error',signal:AbortSignal.timeout(12000)});
-  if(!response.ok)throw new Error('Feed HTTP '+response.status);
-  if(Number(response.headers.get('content-length')||0)>700000)throw new Error('Feed too large');
-  return response.text();
+// Backward-compatible lexical check; scoring and editorial ranking live in relevance.mjs.
+export { relevanceAssessment, rankArticles } from './relevance.mjs';
+import { relevanceAssessment } from './relevance.mjs';
+export function relevant(item){return relevanceAssessment(item).relevant;}
+export async function fetchSource(source, fetchImpl = fetch) {
+  const isHtml = source.mode === 'html';
+  if (isHtml && source.previewOnly !== true)
+    throw new Error('HTML listings require explicit preview-only policy');
+  const limit = isHtml ? 1300000 : 700000;
+  const response = await fetchImpl(source.feed, {
+    method: 'GET',
+    headers: {
+      Accept: isHtml ? 'text/html' :
+        'application/atom+xml, application/rss+xml, application/xml, text/xml',
+      'User-Agent': 'IERC-RN-Editorial-Curator/0.1',
+    },
+    redirect: 'error', signal: AbortSignal.timeout(12000),
+  });
+  if (!response.ok) throw new Error('Source HTTP ' + response.status);
+  if (Number(response.headers.get('content-length') || 0) > limit)
+    throw new Error('Source exceeds size limit');
+  const body = await response.text();
+  if (body.length > limit) throw new Error('Source exceeds size limit');
+  return body;
 }
