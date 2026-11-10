@@ -36,8 +36,12 @@ if(!['preview','once','schedule'].includes(cmd)){
     const previewDays=Number(env.CURATOR_PREVIEW_DAYS||120);
     if(cmd==='preview'&&(!Number.isInteger(previewDays)||previewDays<1||previewDays>365))
       throw new Error('CURATOR_PREVIEW_DAYS must be 1..365');
+    const previewLimit=Number(env.CURATOR_PREVIEW_LIMIT||6);
+    if(cmd==='preview'&&(!Number.isInteger(previewLimit)||previewLimit<1||previewLimit>30))
+      throw new Error('CURATOR_PREVIEW_LIMIT must be 1..30');
     const execute=async()=>runOnce({router,store:redis,cms,dryRun,logger:log,
-      maxAgeDays:cmd==='preview'?previewDays:45});
+      maxAgeDays:cmd==='preview'?previewDays:45,
+      maxArticles:cmd==='preview'?previewLimit:3});
     const slot=()=>{
       const parts=new Intl.DateTimeFormat('en-GB',{
         timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit',

@@ -31,3 +31,17 @@ test('RSS format and lack of relevance are handled',()=>{
  assert.equal(parseFeed(rss,source,Date.parse('2026-11-09T15:00:00Z')).length,1);
  assert.equal(relevant({title:'Weather',summary:'rain today'}),false);
 });
+
+test('Perkins RSS parses current educational news and preserves official source URL',()=>{
+ const perkins=SOURCES.find(s=>s.id==='perkins');
+ const rss='<rss><channel><item><title>More than a game: How adapted sport supports inclusion</title>'+
+ '<link>https://www.perkins.org/more-than-a-game-how-sport-opens-doors-to-learning-and-belonging-for-children-with-disabilities/</link>'+
+ '<pubDate>Thu, 05 Nov 2026 15:49:45 +0000</pubDate>'+
+ '<description><![CDATA[<p>Accessible and adapted sports offer a sense of belonging.</p>]]></description>'+
+ '</item></channel></rss>';
+ const entries=parseFeed(rss,perkins,Date.parse('2026-11-10T12:00:00Z'));
+ assert.equal(entries.length,1);
+ assert.match(entries[0].url,/^https:\/\/www\.perkins\.org\//);
+ assert.ok(entries[0].summary.includes('Accessible'));
+ assert.equal(relevant(entries[0]),true);
+});

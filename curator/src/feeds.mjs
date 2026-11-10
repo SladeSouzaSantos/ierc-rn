@@ -6,6 +6,9 @@ export const SOURCES = Object.freeze([
   {id:'w3c-wai',mode:'rss',name:'W3C Web Accessibility Initiative',
    country:'Internacional',language:'en',feed:'https://www.w3.org/WAI/feed.xml',
    hostname:'www.w3.org',previewOnly:false,readiness:'feed_verified'},
+  {id:'perkins',mode:'rss',name:'Perkins School for the Blind',
+   country:'Estados Unidos',language:'en',feed:'https://www.perkins.org/feed/',
+   hostname:'www.perkins.org',previewOnly:false,readiness:'feed_verified'},
   // Explicitly preview-only: RNIB terms prohibit republication without written consent.
   {id:'rnib',mode:'html',name:'RNIB — Royal National Institute of Blind People',
    country:'Reino Unido',language:'en',feed:'https://www.rnib.org.uk/news/',

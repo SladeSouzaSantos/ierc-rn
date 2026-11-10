@@ -37,9 +37,13 @@ test('age filter refuses unsafe out-of-range previews',async()=>{
 });
 
 
-test('preview balances WAI, RNIB and IBSA without publishing preview-only sources', async () => {
+test('preview balances WAI, Perkins, RNIB and IBSA without publishing preview-only sources', async () => {
   const { SOURCES } = await import('../src/feeds.mjs');
   const wbu='<rss><channel><title>World Blind Union</title></channel></rss>';
+  const perkins='<rss><channel><item><title>Braille literacy for blind students</title>' +
+    '<link>https://www.perkins.org/braille-literacy-for-blind-students/</link>' +
+    '<pubDate>Thu, 05 Nov 2026 15:00:00 +0000</pubDate>' +
+    '<description>New materials help inclusive education in classrooms.</description></item></channel></rss>';
   const rnib='<div class="listing__post small-image-card">' +
     '<h2 class="small-image-card__title"><a href="https://www.rnib.org.uk/news/accessibility-in-britain/">' +
     'Low vision accessibility in Britain</a></h2>' +
@@ -50,6 +54,7 @@ test('preview balances WAI, RNIB and IBSA without publishing preview-only source
     '<a href="https://ibsasport.org/news/new-goalball-program/"><h3>New Goalball Program</h3></a></div></div>';
   const bodyByUrl={
     'https://www.w3.org/WAI/feed.xml':atom,
+    'https://www.perkins.org/feed/':perkins,
     'https://www.rnib.org.uk/news/':rnib,
     'https://ibsasport.org/news/':ibsa,
     'https://wbu.ngo/feed/':wbu,
@@ -60,24 +65,32 @@ test('preview balances WAI, RNIB and IBSA without publishing preview-only source
     return new Response(bodyByUrl[url],{status:200});
   };
   const out=await runOnce({sources:SOURCES,fetchImpl:fetched,
-    now:Date.parse('2026-11-10T12:00:00Z'),maxArticles:3,dryRun:true,
+    now:Date.parse('2026-11-10T12:00:00Z'),maxArticles:6,dryRun:true,
     router:null,store:null,cms:null});
-  assert.equal(out.count,3);
-  assert.deepEqual(out.results.map(x=>x.source),['w3c-wai','rnib','ibsa']);
-  assert.equal(out.results[1].previewOnly,true);
+  assert.equal(out.count,4);
+  assert.deepEqual(out.results.map(x=>x.source),['w3c-wai','perkins','rnib','ibsa']);
+  assert.equal(out.results[2].previewOnly,true);
   assert.ok(out.results.every(x=>x.status==='preview'));
-  assert.equal(reads.length,4);
+  assert.equal(reads.length,5);
 });
 test('live ingestion excludes all preview-only HTML sources and empty WBU feed', async()=>{
   const { SOURCES } = await import('../src/feeds.mjs');
   const reads=[];const events=[];
   const store={set:async()=> 'OK', exists:async()=>1, eval:async()=>1};
   const cms={existing:async()=>false,create:async()=>{throw Error('must not write')}};
+  const perkins='<rss><channel><item><title>Braille literacy for blind students</title>' +
+    '<link>https://www.perkins.org/braille-literacy-for-blind-students/</link>' +
+    '<pubDate>Thu, 05 Nov 2026 15:00:00 +0000</pubDate>' +
+    '<description>New materials help inclusive education.</description></item></channel></rss>';
   const result=await runOnce({sources:SOURCES,
-    fetchImpl:async url=>{reads.push(url);return new Response(atom,{status:200});},
+    fetchImpl:async url=>{
+      reads.push(url);
+      return new Response(url.includes('perkins.org')?perkins:atom,{status:200});
+    },
     now:Date.parse('2026-11-10T12:00:00Z'),dryRun:false,store,cms,router:null,
     logger:event=>events.push(event)});
-  assert.deepEqual(reads,['https://www.w3.org/WAI/feed.xml']);
-  assert.equal(result.results[0].status,'seen');
+  assert.deepEqual(reads,['https://www.w3.org/WAI/feed.xml','https://www.perkins.org/feed/']);
+  assert.equal(result.results.length,2);
+  assert.ok(result.results.every(x=>x.status==='seen'));
   assert.equal(events.filter(x=>x.event==='source_skipped_by_policy').length,3);
 });
