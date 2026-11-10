@@ -72,6 +72,30 @@ export function cmsClient({baseUrl,token,fetchImpl=fetch}){
     },
   };
 }
+/**
+ * Shared free-provider synthesis for an explicit AI preview or a draft write.
+ * This function cannot write to the CMS or Redis itself.
+ */
+export async function generateAiDraft(source,{router,logger=()=>{}}){
+  let completion;
+  try{
+    completion=await router.complete({
+      system:SYSTEM,
+      prompt:JSON.stringify({source:source.source,date:source.publishedAt,
+        originalLanguage:source.language,title:source.title,summary:source.summary,
+        originalUrl:source.url}),
+    });
+  }catch(error){
+    logger({event:'llm_unavailable',category:error instanceof LlmExhaustedError?error.message:'other'});
+    return {status:'llm_unavailable'};
+  }
+  let draft;
+  try{draft=validateDraft(completion.content);}
+  catch{logger({event:'invalid_model_draft'});return {status:'invalid_draft'};}
+  if(!draft)return {status:'insufficient_evidence'};
+  return {status:'draft_ready',draft,provider:completion.provider};
+}
+
 export async function processArticle(source,{router,store,cms,dryRun=true,logger=()=>{}}){
   if(dryRun)return {status:'preview',article:source.title};
   const lock='ierc:curator:lock:'+source.dedupeKey;
@@ -84,27 +108,14 @@ export async function processArticle(source,{router,store,cms,dryRun=true,logger
       await store.set('ierc:curator:seen:'+source.dedupeKey,'1','EX',31536000);
       return {status:'already_in_cms'};
     }
-    let completion;
-    try{
-      completion=await router.complete({
-        system:SYSTEM,
-        prompt:JSON.stringify({source:source.source,date:source.publishedAt,
-          originalLanguage:source.language,title:source.title,summary:source.summary,
-          originalUrl:source.url}),
-      });
-    }catch(error){
-      logger({event:'llm_unavailable',category:error instanceof LlmExhaustedError?error.message:'other'});
-      return {status:'llm_unavailable'};
-    }
-    let draft;
-    try{draft=validateDraft(completion.content);}
-    catch{logger({event:'invalid_model_draft'});return {status:'invalid_draft'};}
-    if(!draft)return {status:'insufficient_evidence'};
-    const documentId=await cms.create(payloadFor(source,draft,completion.provider));
+    const generated=await generateAiDraft(source,{router,logger});
+    if(generated.status!=='draft_ready')return {status:generated.status};
+    const {draft,provider}=generated;
+    const documentId=await cms.create(payloadFor(source,draft,provider));
     await store.set('ierc:curator:seen:'+source.dedupeKey,'1','EX',31536000);
-    logger({event:'draft_created',provider:completion.provider,documentIdHash:
+    logger({event:'draft_created',provider,documentIdHash:
       createHash('sha256').update(documentId).digest('hex').slice(0,12)});
-    return {status:'draft_created',provider:completion.provider};
+    return {status:'draft_created',provider};
   }finally{
     await store.eval('if redis.call("GET",KEYS[1])==ARGV[1] then return redis.call("DEL",KEYS[1]) else return 0 end',1,lock,owner);
   }
