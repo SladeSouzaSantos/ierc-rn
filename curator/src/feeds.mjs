@@ -22,8 +22,8 @@ export const SOURCES = Object.freeze([
   // changes disclosed; third-party material excluded at the article level.
   {id:'eu-commission-news',mode:'rss',name:'Comissão Europeia',
    country:'União Europeia',language:'en',hostname:'commission.europa.eu',
-   feed:'https://commission.europa.eu/news/feed_en',previewOnly:false,
-   readiness:'feed_indexed_runtime_validation_pending',
+   feed:'https://commission.europa.eu/node/29665/rss_en',previewOnly:false,
+   readiness:'official_rss_link_verified_runtime_check_pending',
    fullTextAccess:{status:'approved',basis:'cc-by-4.0-public-notice',
      reference:'https://commission.europa.eu/legal-notice_en',
      verifiedDate:'2026-11-10',usage:'attributed-adaptation'}},
