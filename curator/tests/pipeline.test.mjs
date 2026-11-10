@@ -10,6 +10,7 @@ test('dry-run collects and filters without any LLM, Redis or Strapi call',async(
  assert.equal(value.preview,true);
  assert.equal(value.count,1);
  assert.equal(value.results[0].status,'preview');
+ assert.equal(value.aiGenerated,false);
 });
 test('unavailable feed is logged and never triggers the model',async()=>{
  const events=[];
@@ -160,6 +161,7 @@ test('AI preview returns explicit lack of evidence, never a fabricated published
   assert.equal(result.count,1);
   assert.equal(result.results[0].status,'insufficient_evidence');
   assert.equal(result.results[0].draft,undefined);
+  assert.equal(result.aiGenerated,false);
 });
 
 
@@ -198,4 +200,17 @@ test('one-shot acceptance never creates more than one CMS draft in DEV',async()=
   assert.equal(created,1);
   assert.equal(modelCalls,1);
   assert.equal(result.results.filter(r=>r.status==='draft_created').length,1);
+  assert.equal(result.preview,false);
+  assert.equal(result.aiGenerated,true);
+});
+
+test('live scan with already-seen sources does not claim AI generation',async()=>{
+ const out=await runOnce({sources:[source],now:Date.parse('2026-11-10T12:00:00Z'),
+   fetchImpl:async()=>new Response(atom,{status:200}),dryRun:false,maxArticles:1,
+   store:{async set(){return 'OK';},async exists(){return 1;},async eval(){return 1;}},
+   cms:{async existing(){throw Error('should not inspect seen item');}},
+   router:{async complete(){throw Error('should not invoke AI');}}});
+ assert.equal(out.preview,false);
+ assert.equal(out.aiGenerated,false);
+ assert.equal(out.results[0].status,'seen');
 });
