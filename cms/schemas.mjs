@@ -32,7 +32,14 @@ function make(singular, plural, title, description, attributes, kind = 'collecti
 export const models = {
   'news-article': make('news-article', 'news-articles', 'Notícias', 'Notícias verificadas do IERC-RN.', {
     title: str(true), slug: uid('title'), summary: text(true), body: { type: 'richtext' },
-    category: str(), date: { type: 'datetime' }, ...portrait,
+    category: str(), date: { type: 'datetime' },
+    originType: { type: 'enumeration', enum: ['institucional', 'externa'], default: 'institucional' },
+    scope: { type: 'enumeration', enum: ['local', 'brasil', 'internacional'], default: 'local' },
+    country: str(), sourceLanguage: str(), originalTitle: str(),
+    originalPublishedAt: { type: 'datetime' },
+    whyItMatters: text(), aiAssisted: { type: 'boolean', default: false },
+    dedupeKey: { type: 'string', unique: true },
+    ...portrait,
   }),
   event: make('event', 'events', 'Eventos', 'Agenda aprovada pela instituição.', {
     title: str(true), slug: uid('title'), summary: text(true),
