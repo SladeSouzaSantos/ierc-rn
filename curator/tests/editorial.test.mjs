@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {SYSTEM,canonicalCategory,cmsClient,validateDraft,payloadFor,processArticle} from '../src/editorial.mjs';
+import {SYSTEM,canonicalCategory,cmsClient,validateDraft,payloadFor,slugFor,processArticle} from '../src/editorial.mjs';
 const source={title:'New accessible device',summary:'A new tool for low vision has been described.',
   url:'https://www.w3.org/WAI/news/test',publishedAt:'2026-11-09T12:00:00Z',
   country:'Internacional',language:'en',source:'W3C WAI',dedupeKey:'a'.repeat(64)};
@@ -128,4 +128,76 @@ test('Radar taxonomy standardizes sport and assistive categories without making 
  assert.equal(validateDraft(JSON.stringify({...draft,category:'esporte'})).category,'Esporte adaptado');
  assert.equal(payloadFor(source,{...draft,category:'esporte'},'openrouter').category,'Esporte adaptado');
  assert.match(SYSTEM,/Classifique category com um destes rótulos/);
+});
+
+test('readable slug uses title words and deterministic source fingerprint',()=>{
+ const sample={...source,dedupeKey:'4e44e09a02'+'b'.repeat(54)};
+ const slug=slugFor(sample,'Esportes acessíveis ampliam aprendizado e pertencimento');
+ assert.match(slug,/^esportes-acessiveis-ampliam-aprendizado-e-pertencimento-4e44e09a02$/);
+ assert.ok(slug.length<=90);
+ assert.equal(slugFor(sample,'Esportes acessíveis ampliam aprendizado e pertencimento'),slug);
+ assert.notEqual(slugFor({...sample,dedupeKey:'a'.repeat(64)},'Esportes acessíveis ampliam aprendizado e pertencimento'),slug);
+ assert.equal(slugFor(sample,'!!!'),'radar-da-inclusao-4e44e09a02');
+ assert.equal(payloadFor(sample,{...draft,title:'Esportes acessíveis ampliam aprendizado e pertencimento'},'openrouter').slug,slug);
+ assert.throws(()=>slugFor({...sample,dedupeKey:'invalid'},'Teste'),/fingerprint/);
+});
+const reviewSource={...source,title:'Accessible learning and sports help blind students in classrooms',
+  summary:'A specialized school describes inclusive sports and accessible classroom practices for blind children. The new activities offer opportunities to join peer groups, participate in games, and learn skills alongside other students. Families describe these events as part of the school program.',
+  url:'https://www.w3.org/WAI/news/test'};
+const reviewDraft={...draft,
+  title:'Esporte acessível promove aprendizado com crianças',
+  body:'Uma escola especializada descreve esportes acessíveis e atividades escolares inclusivas para crianças com deficiência visual. O texto apresenta oportunidades de convivência entre colegas e participação em jogos, com base no resumo disponibilizado pela organização.'};
+const reviewReply={decision:'approve',factualSupport:'fully_supported',
+  evidenceQuotes:['Accessible learning and sports help blind students',
+    'inclusive sports and accessible classroom practices for blind children'],
+  unsupportedClaims:[],issues:[]};
+test('opted-in second AI review can publish one newly created Draft after independent CMS preflight',async()=>{
+ let n=0,created=0,published=0;
+ const router={async complete(){n++;
+   return {provider:'openrouter',content:JSON.stringify(n===1?reviewDraft:reviewReply)};}};
+ const cms={async existing(){return false;},async create(payload){
+   created++;assert.equal(payload.editorialStatus,'em_revisao');
+   assert.match(payload.slug,/^esporte-acessivel-promove-aprendizado/);
+   return 'a1b2c3d4e5f6g7h8i9j0klmn';
+ }};
+ const publisher={async publishApprovedDraft(id,payload){
+   published++;assert.equal(id,'a1b2c3d4e5f6g7h8i9j0klmn');
+   assert.equal(payload.aiAssisted,true);return {published:true};
+ }};
+ const store={async set(){return 'OK';},async exists(){return 0;},async eval(){return 1;}};
+ const out=await processArticle(reviewSource,{router,store,cms,dryRun:false,autoPublish:true,publisher});
+ assert.equal(out.status,'draft_published');
+ assert.equal(created,1);assert.equal(published,1);assert.equal(n,2);
+});
+test('AI review HOLD or unavailable leaves newly generated item as unpublished Draft',async()=>{
+ let publisherCalls=0;let modelCalls=0;let created=0;
+ const router={async complete(){modelCalls++;
+   return {provider:'openrouter',content:JSON.stringify(modelCalls%2===1?
+     reviewDraft:{...reviewReply,decision:'hold',issues:['Claim not verified']})};}};
+ const store={async set(){return 'OK';},async exists(){return 0;},async eval(){return 1;}};
+ const cms={async existing(){return false;},async create(){created++;return 'a1b2c3d4e5f6g7h8i9j0klmn';}};
+ const publisher={async publishApprovedDraft(){publisherCalls++;}};
+ const out=await processArticle(reviewSource,{router,store,cms,dryRun:false,autoPublish:true,publisher});
+ assert.equal(out.status,'draft_created_review_pending');
+ assert.equal(created,1);assert.equal(publisherCalls,0);assert.equal(modelCalls,2);
+});
+test('Strapi publish failure remains Draft and never leaks CMS errors',async()=>{
+ let calls=0;const events=[];
+ const router={async complete(){calls++;return {provider:'openrouter',
+   content:JSON.stringify(calls===1?reviewDraft:reviewReply)};}};
+ const store={async set(){return 'OK';},async exists(){return 0;},async eval(){return 1;}};
+ const cms={async existing(){return false;},async create(){return 'a1b2c3d4e5f6g7h8i9j0klmn';}};
+ const publisher={async publishApprovedDraft(){throw Error('secret CMS error detail');}};
+ const out=await processArticle(reviewSource,{router,store,cms,dryRun:false,autoPublish:true,publisher,
+   logger:x=>events.push(x)});
+ assert.equal(out.status,'draft_created_publish_failed');
+ assert.ok(events.some(x=>x.event==='auto_publish_failed'));
+ assert.ok(!JSON.stringify(events).includes('secret CMS error'));
+});
+test('auto publication refuses missing publisher before any CMS access',async()=>{
+ let cmsCalled=0;
+ const out=processArticle(reviewSource,{dryRun:false,autoPublish:true,publisher:null,
+   cms:{async create(){cmsCalled++;}},router:null,store:null});
+ await assert.rejects(out,/scoped publisher/);
+ assert.equal(cmsCalled,0);
 });
