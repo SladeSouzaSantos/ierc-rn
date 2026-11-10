@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { LlmExhaustedError } from './router.mjs';
 import {reviewAiDraft} from './auto-review.mjs';
 import {cmsNewsReadOnly} from './duplicate-check.mjs';
+import {generateFullArticleDraft,reviewFullArticleDraft} from './full-article-review.mjs';
 
 export const SYSTEM=[
   'Você escreve sínteses informativas ORIGINAIS em português do Brasil para um portal sobre inclusão de pessoas cegas e com baixa visão.',
@@ -131,10 +132,12 @@ export async function generateAiDraft(source,{router,logger=()=>{}}){
 }
 
 export async function processArticle(source,{router,store,cms,dryRun=true,logger=()=>{},
-  autoPublish=false,publisher=null}){
+  autoPublish=false,publisher=null,fullArticleEvidence=null}){
   if(dryRun)return {status:'preview',article:source.title};
   if(autoPublish && (!publisher||typeof publisher.publishApprovedDraft!=='function'))
     throw new Error('Independent scoped publisher required for auto publication');
+  if(autoPublish && (fullArticleEvidence?.verified!==true||fullArticleEvidence.mode!=='full_article'))
+    throw new Error('Auto publication requires authorized full article evidence');
   const lock='ierc:curator:lock:'+source.dedupeKey;
   const owner=randomBytes(16).toString('hex');
   const acquired=await store.set(lock,owner,'PX',180000,'NX');
@@ -145,7 +148,9 @@ export async function processArticle(source,{router,store,cms,dryRun=true,logger
       await store.set('ierc:curator:seen:'+source.dedupeKey,'1','EX',31536000);
       return {status:'already_in_cms'};
     }
-    const generated=await generateAiDraft(source,{router,logger});
+    const generated=fullArticleEvidence
+      ? await generateFullArticleDraft(source,fullArticleEvidence,{router,logger})
+      : await generateAiDraft(source,{router,logger});
     if(generated.status!=='draft_ready')return {status:generated.status};
     const {draft,provider}=generated;
     const payload=payloadFor(source,draft,provider);
@@ -156,7 +161,7 @@ export async function processArticle(source,{router,store,cms,dryRun=true,logger
     if(autoPublish){
       // A distinct editorial prompt reviews the candidate. Failure or
       // insufficient evidence NEVER escalates a draft to published.
-      const verdict=await reviewAiDraft(source,draft,{router,logger});
+      const verdict=await reviewFullArticleDraft(source,draft,fullArticleEvidence,{router,logger});
       if(!verdict.approved){
         status='draft_created_review_pending';
         logger({event:'auto_review_held',reason:verdict.reason,documentIdHash});
