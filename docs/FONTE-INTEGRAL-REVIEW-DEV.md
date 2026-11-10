@@ -117,7 +117,7 @@ A [página oficial de RSS da Agência Brasil](https://agenciabrasil.ebc.com.br/f
 - `agencia-brasil-saude`: `/rss/saude/feed.xml` (baixa visão e deficiência visual, com retenção de afirmações clínicas);
 - `agencia-brasil-geral`: `/rss/geral/feed.xml` (iniciativas comunitárias e inclusão).
 
-Os nomes, as categorias e os links têm origem no diretório oficial, mas **o funcionamento real desses quatro RSS no Docker ainda deve ser homologado**. São apenas novas portas para descobrir notícias relevantes; não há busca por palavras-chave em todo o acervo, paginação histórica, nem garantia de encontrar toda pauta pertinente. Os novos feeds não recebem `fullTextAccess`, não estão na allowlist de publicação, e o pipeline os exclui de geração e ingestão mesmo que retornem uma notícia relevante. O portal não receberá publicações automáticas dessas editorias.
+Os nomes, as categorias e os links têm origem no diretório oficial, mas **o funcionamento real desses quatro RSS no Docker ainda deve ser homologado**. São apenas novas portas para descobrir notícias relevantes; não há busca por palavras-chave em todo o acervo, paginação histórica, nem garantia de encontrar toda pauta pertinente. Os novos feeds não recebem `fullTextAccess`, não estão na allowlist de publicação, e o pipeline os exclui de geração e ingestão mesmo que retornem uma notícia relevante. O portal não receberá publicações automáticas dessas editorias. Notícias repetidas entre dois RSS são deduplicadas na memória de cada rodada pela `dedupeKey`, registrando apenas `cross_feed_duplicate_skipped` sem escrever no Redis.
 
 Para testar, executar **cada comando em uma única linha no terminal PowerShell do VS Code**:
 
