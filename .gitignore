@@ -23,3 +23,8 @@ cms/public/uploads/
 
 # Banco e midias locais: nunca versionar backups
 cms-backups/
+
+# Curadoria - segredos e dados gerados nunca entram no Git
+curator/node_modules/
+curator/.cache/
+curator/.tmp/
