@@ -12,32 +12,38 @@ export function cmsNewsReadOnly({baseUrl,token,fetchImpl=fetch}){
   if(typeof token!=='string'||token.length<10)
     throw new Error('Scoped CMS read token required');
   const headers={Authorization:'Bearer '+token,Accept:'application/json'};
+  async function lookupStatus(status,dedupeKey){
+    if(!/^[a-f0-9]{64}$/i.test(dedupeKey||''))throw new Error('Invalid source fingerprint');
+    const params=new URLSearchParams({
+      status,'filters[dedupeKey][$eq]':dedupeKey,'pagination[pageSize]':'1',
+    });
+    let response;
+    try{
+      response=await fetchImpl(host.origin+'/api/news-articles?'+params,{
+        method:'GET',headers,redirect:'error',signal:AbortSignal.timeout(7000),
+      });
+    }catch{
+      throw new Error('CMS read-only duplicate lookup unavailable');
+    }
+    if(!response?.ok)
+      throw new Error('CMS read-only duplicate lookup failed (HTTP '+response?.status+')');
+    let data;
+    try{data=(await response.json())?.data;}catch{
+      throw new Error('Invalid CMS read-only duplicate lookup response');
+    }
+    if(!Array.isArray(data)||data.length>1)
+      throw new Error('Invalid CMS read-only duplicate lookup response');
+    return data.length>0;
+  }
   return Object.freeze({
+    // Diagnostic endpoint checks only the draft query, preserving its existing
+    // one-GET contract. Full deduplication must check both versions.
+    async existingDraftOnly(dedupeKey){
+      return lookupStatus('draft',dedupeKey);
+    },
     async existing(dedupeKey){
-      if(!/^[a-f0-9]{64}$/i.test(dedupeKey||''))throw new Error('Invalid source fingerprint');
-      for(const status of ['draft','published']){
-        const params=new URLSearchParams({
-          status,'filters[dedupeKey][$eq]':dedupeKey,'pagination[pageSize]':'1',
-        });
-        let response;
-        try{
-          response=await fetchImpl(host.origin+'/api/news-articles?'+params,{
-            method:'GET',headers,redirect:'error',signal:AbortSignal.timeout(7000),
-          });
-        }catch{
-          throw new Error('CMS read-only duplicate lookup unavailable');
-        }
-        if(!response?.ok)
-          throw new Error('CMS read-only duplicate lookup failed (HTTP '+response?.status+')');
-        let data;
-        try{data=(await response.json())?.data;}catch{
-          throw new Error('Invalid CMS read-only duplicate lookup response');
-        }
-        if(!Array.isArray(data)||data.length>1)
-          throw new Error('Invalid CMS read-only duplicate lookup response');
-        if(data.length===1)return true;
-      }
-      return false;
+      return await lookupStatus('draft',dedupeKey) ||
+        await lookupStatus('published',dedupeKey);
     },
   });
 }
