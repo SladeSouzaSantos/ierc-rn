@@ -45,6 +45,8 @@ test('PROD and unsupported commands cannot activate automatic publication',()=>{
 
 test('source allowlist must be explicit, trusted and duplicate-free',()=>{
   for(const list of ['', 'rnib','ibsa','wbu','perkins','w3c-wai',
+    'agencia-brasil-justica','agencia-brasil-politica',
+    'agencia-brasil-saude','agencia-brasil-geral',
     'agencia-brasil-esportes,rnib','agencia-brasil-esportes,agencia-brasil-esportes']){
     assert.throws(()=>configure({CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES:list}),
       /Explicit verified source allowlist/);
