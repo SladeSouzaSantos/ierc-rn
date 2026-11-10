@@ -21,7 +21,9 @@ function CmsNewsCard({ item, external = false }: { item: CmsArticle; external?: 
       <strong>Fonte externa:</strong> {item.sourceName}{item.country ? " · " + item.country : ""}
     </p>}
     {external && item.aiAssisted && <p className="radar-ai-note">
-      Síntese assistida por IA · aprovada pela revisão editorial
+      {item.autoReviewed
+        ? "Síntese gerada e revisada automaticamente por IA · baseada em resumo RSS"
+        : "Síntese assistida por IA · revisão editorial humana"}
     </p>}
     <Link className="editorial-source" href={"/noticias/" + item.slug}>
       {external ? "Ler síntese em português" : "Ler notícia"} <ArrowUpRight size={16} aria-hidden="true"/>
