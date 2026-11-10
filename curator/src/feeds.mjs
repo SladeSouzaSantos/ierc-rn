@@ -2,7 +2,26 @@ import { XMLParser } from 'fast-xml-parser';
 import { createHash } from 'node:crypto';
 
 // Only curated, public RSS/Atom endpoints. Never crawl arbitrary article URLs.
+export const EBC_REUSE_POLICY=Object.freeze({
+  status:'approved',basis:'published-reproduction-policy',
+  reference:'https://agenciabrasil.ebc.com.br/sobre',
+  authorizationDetails:'https://www.gov.br/pt-br/servicos/acessar-noticias-em-tempo-real-gratuitamente?id=5351&origem=servico',
+  verifiedDate:'2026-11-10',usage:'journalistic-noncommercial',
+});
+// Published Agência Brasil RSS feed categories; the full-text reader still
+// rejects partner agencies/Reuters, rights warnings and missing EBC bylines.
+const EBC=(id,section)=>Object.freeze({
+  id,section,mode:'rss',name:'Agência Brasil (EBC)',
+  country:'Brasil',language:'pt-BR',hostname:'agenciabrasil.ebc.com.br',
+  feed:'https://agenciabrasil.ebc.com.br/rss/'+section+'/feed.xml',
+  previewOnly:false,readiness:'feed_official_endpoint_runtime_validation_pending',
+  fullTextAccess:EBC_REUSE_POLICY,
+});
 export const SOURCES = Object.freeze([
+  EBC('agencia-brasil-direitos','direitos-humanos'),
+  EBC('agencia-brasil-educacao','educacao'),
+  EBC('agencia-brasil-esportes','esportes'),
+  EBC('agencia-brasil-internacional','internacional'),
   {id:'w3c-wai',mode:'rss',name:'W3C Web Accessibility Initiative',
    country:'Internacional',language:'en',feed:'https://www.w3.org/WAI/feed.xml',
    hostname:'www.w3.org',previewOnly:false,readiness:'feed_verified'},
