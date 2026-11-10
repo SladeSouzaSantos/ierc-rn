@@ -4,6 +4,7 @@ import {providersFromEnv,settingsFromEnv} from './providers.mjs';
 import {FreeLlmRouter} from './router.mjs';
 import {cmsClient} from './editorial.mjs';
 import {cmsPublisher} from './cms-publish.mjs';
+import {autoPublishSettingsFromEnv} from './auto-config.mjs';
 import {runOnce} from './pipeline.mjs';
 
 const cmd=process.argv[2];
@@ -25,19 +26,8 @@ if(!['preview','generate-preview','review-preview','once','schedule'].includes(c
   const aiPreview=cmd==='generate-preview'||cmd==='review-preview';
   const reviewPreview=cmd==='review-preview';
   const dryRun=cmd==='preview'||aiPreview||env.CURATOR_WRITE_DRAFTS!=='true';
-  const autoPublish=env.CURATOR_AUTO_PUBLISH_ENABLED==='true';
-  if(autoPublish){
-    if(env.CURATOR_INSTANCE_KIND!=='dev'||dryRun||
-       !['once','schedule'].includes(cmd)||
-       env.CURATOR_AUTO_PUBLISH_ACK!=='RSS_ONLY_REVIEW_ACCEPTED')
-      throw new Error('Auto publication requires explicit DEV RSS-only review acknowledgment and live write mode');
-  }
-  const allowedSources=autoPublish?(env.CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES||'')
-    .split(',').map(x=>x.trim()).filter(Boolean):[];
-  if(autoPublish&&(!allowedSources.length||
-     !allowedSources.every(x=>['perkins','w3c-wai'].includes(x))||
-     new Set(allowedSources).size!==allowedSources.length))
-    throw new Error('Explicit verified source allowlist required for auto publication');
+  // Reject unsafe publication configuration without starting Redis or any API call.
+  const {autoPublish,allowedSources}=autoPublishSettingsFromEnv(env,cmd,{dryRun});
   // Wait for a fully ready Redis BEFORE using any quota-bearing operation.
   // No model calls are made if the connection cannot be established.
   const redis=cmd==='preview'?null:await connectQuotaRedis(
