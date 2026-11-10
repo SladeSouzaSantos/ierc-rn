@@ -1,65 +1,61 @@
-# Radar da Inclusão — verificação com texto integral e evidências (DEV)
+# Curadoria de fontes integrais — IERC-RN, Brasil e mundo (DEV)
 
-**Status em 10/11/2026:** implementação experimental na branch `dev`, testes com HTML sintético e proteção ativa. **Nenhuma fonte atual está autorizada para extração automática do artigo completo.** Nenhuma notícia foi criada, modificada ou publicada nesta implementação. A `main`, o PR #12 e o agendador não foram alterados.
+**Status — 10/11/2026:** desenvolvido na branch `dev`, com fontes oficiais, classificação editorial, checagens de direitos por artigo e testes automatizados. **Ativação real do publicador e do agendador: não efetuada.** O código não modifica `main`, PROD, tokens locais ou rascunhos existentes.
 
-## Motivo da mudança
+## 1. Três frentes editoriais, sem confundir autoria
 
-A prévia anterior selecionou uma matéria inédita da Perkins sobre CVI, mas a segunda IA retornou `unverifiable_evidence_quotes`. Ambas as chamadas verificavam apenas título e resumo do RSS; a aprovação a partir do RSS não prova que o conteúdo da reportagem completa sustenta as afirmações. O novo leitor permite avaliar trechos textuais extraídos da **mesma página de origem**, somente se houver permissão de acesso automatizado documentada.
+| Frente | Definição | Destino público |
+|---|---|---|
+| **IERC-RN na imprensa** | Matéria de terceiro que mencione explicitamente `IERC-RN`, `IERC/RN` ou o nome completo do Instituto; evidência deve estar na fonte | `/noticias`, seção independente das notícias institucionais |
+| **Brasil e inclusão** | Esporte adaptado, goalball, Braille, tecnologia assistiva, acessibilidade, educação inclusiva e direitos de pessoas com deficiência | `/radar-da-inclusao` → Brasil |
+| **Experiências internacionais** | Iniciativas e ações estrangeiras sobre a causa com contexto potencialmente útil para a comunidade brasileira | `/radar-da-inclusao` → mundo |
 
-### Fontes e restrições reais
+A classificação está em `curator/src/coverage-policy.mjs`; o ranqueamento em `curator/src/relevance.mjs`. O pipeline prioriza menções explícitas ao IERC-RN, depois notícias nacionais e experiências internacionais. **`originType=externa` é preservado em todos os casos de reprodução/síntese de terceiros.** Apenas a equipe institucional pode criar comunicados próprios. O campo Strapi `scope=local|brasil|internacional` evita migração adicional e diferencia os destinos sem nova coleção.
 
-- **Perkins:** os [termos e condições](https://www.perkins.org/terms-conditions/) reservam a propriedade do conteúdo e **excluem coleta automatizada/data mining/robôs da licença de acesso**. O acesso automatizado à reportagem integral permanece bloqueado; o RSS autorizado como fonte do curador não autoriza, por si só, extração da página.
-- **W3C/WAI:** a [política de reutilização do material](https://www.w3.org/WAI/about/using-wai-material/) exige atribuição, link e, para a maioria dos documentos, **proíbe modificações/adaptações** sem licença adicional aplicável. Não habilitamos a extração e geração derivada de qualquer página WAI genericamente.
-- **RNIB, IBSA e WBU:** permanecem fora do conjunto de fontes aptas para geração/publicação automática, conforme política já homologada.
-- **Licença e evidências de direito:** uma exceção futura requer **autorização escrita específica**, revisão editorial dos termos e referência documentada. Mudar uma variável de ambiente **não** concede autorização de uso.
+## 2. Fontes habilitadas e licença
 
-No `curator/src/feeds.mjs`, nenhum item de `SOURCES` possui `fullTextAccess`; por isso, o `fetchArticleEvidence` falha **antes de qualquer chamada HTTP**, com `source_permission_pending`. Em futura autorização válida, o Editor poderá registrar e revisar no catálogo, via alteração de código auditável, uma entrada do formato:
+**Agência Brasil (EBC)** — fontes RSS oficiais `/rss/direitos-humanos/feed.xml`, `/rss/educacao/feed.xml`, `/rss/esportes/feed.xml` e `/rss/internacional/feed.xml`. O portal oficial [informa os feeds](https://agenciabrasil.ebc.com.br/feed/); a [política de reprodução](https://agenciabrasil.ebc.com.br/sobre) autoriza a reprodução jornalística com atribuição, e a [Carta de Serviços](https://www.gov.br/pt-br/servicos/acessar-noticias-em-tempo-real-gratuitamente?id=5351&origem=servico) reconhece a captura automatizada por portais. Essa permissão **não cobre automaticamente conteúdo de Reuters, AFP ou outros parceiros**: o leitor exige autoria `Agência Brasil` ou repórter identificado como EBC, e rejeita páginas com aviso de reprodução proibida. Uso aqui: síntese original, não comercial, com crédito e URL da fonte; nenhuma imagem é copiada. A autoria é verificada em `.autor-noticia` e o texto em `.conteudo-noticia`.
 
-```javascript
-fullTextAccess: {
-  status: 'approved',
-  basis: 'written-permission',
-  reference: 'https://.../referencia-da-autorizacao',
-  verifiedDate: 'AAAA-MM-DD',
-}
-```
+**Comissão Europeia** — feed de notícias `https://commission.europa.eu/news/feed_en`. O [aviso jurídico oficial](https://commission.europa.eu/legal-notice_en) disponibiliza editorial próprio sob **Creative Commons Atribuição 4.0** na ausência de aviso individual contrário. O leitor exige URL de notícia do domínio oficial, identificação `Directorate-General for Communication` e corpo da própria Comissão. Materiais externos, fotografias, logotipos e conteúdos de terceiros não são automaticamente licenciados; não são copiados. Traduções e sínteses devem mencionar adaptação e manter link e crédito.
 
-O exemplo **não deve ser copiado para Perkins/WAI sem autorização real** e não se destina a ser configurado por usuário final no arquivo `.env`.
+**Outras fontes:** Perkins e WAI continuam como fontes RSS para prévia/editorial, mas **não têm extração integral autorizada nesta implementação**. RNIB/IBSA/WBU continuam bloqueadas conforme políticas anteriores. O conteúdo do CPB, BNews RN e Tribuna do Norte pode ser referenciado e resumido com links após verificação, mas não é extraído em massa nem tratado como licenciado para publicação autônoma. Novas fontes devem receber avaliação de direitos, feeds, estrutura, relevância e testes antes de ativação.
 
-## Arquitetura
+**Importante:** os endpoints RSS da EBC e da Comissão Europeia foram identificados em páginas oficiais e índices; **o desempenho real dentro do Docker Windows ainda precisa de smoke test**. Erro, bloqueio de acesso ou mudança de formato retorna `feed_unavailable` ou `article_evidence_unavailable`, sem contornar restrições.
 
-1. `curator/src/duplicate-check.mjs`: consulta de notícias já processadas no Redis e Strapi Draft/Published antes de consumir IA (sem escrever no CMS).
-2. `curator/src/article-evidence.mjs`: somente com permissão formal documentada, valida HTTPS, host **exato** aprovado, ausência de credenciais/portas alternativas, um redirecionamento no mesmo documento; força `Accept:text/html`, desabilita redirecionamento automático, aplica timeout, tamanho máximo de resposta (340 kB), ignora scripts, imagens, iframes, navegação e formulários. Para não presumir conteúdo completo, recusa páginas sem estrutura textual suficiente ou que excedam o limite (12.000 caracteres/45 blocos). Não faz download de mídia.
-3. Os parágrafos e subtítulos extraídos são rotulados `E01, E02, ...`, mantidos apenas durante a execução e associados a SHA-256 do texto. **Não armazenar o texto integral de terceiro no banco, logs ou relatórios públicos.**
-4. `curator/src/full-article-review.mjs`: primeira LLM redige uma síntese ORIGINAL usando apenas esses blocos; a segunda LLM revisa fatos, tradução e atribuição, exigindo **duas citações literais distintas, presentes em blocos diferentes**. A checagem é determinística sobre os blocos exatos enviados, sem confiar apenas na declaração da IA.
-5. `curator/src/pipeline.mjs`: `review-full-preview` (script npm `review:full-preview`) exige seleção de inéditas e leitura de fonte autorizada antes de geração ou revisão. Na falta de permissão ou evidências, retorna `article_evidence_unavailable`, com código sanitizado (`source_permission_pending`, `article_text_incomplete`, etc.) e **não aciona a IA**. O modo RSS anterior `review:preview` permanece para prévias editoriais limitadas, sem poder autorizar publicação.
-6. O modo `autoPublish` só pode ser habilitado no DEV com `CURATOR_FULL_ARTICLE_REVIEW_ENABLED=true` e a nova autorização explícita `CURATOR_AUTO_PUBLISH_ACK=FULL_ARTICLE_REVIEW_ACCEPTED`. O valor antigo `RSS_ONLY_REVIEW_ACCEPTED` é recusado. `curator/src/editorial.mjs` também recusa publicação sem `fullArticleEvidence`. `curator/src/cms-publish.mjs` rejeita auditorias RSS-only e exige `evidenceMode=full_article`, digest SHA-256 e duas citações antes de qualquer GET/PUT.
-7. Quando futuramente autorizada, a nota de aprovação no Strapi indicará a IA, a base textual integral, seu SHA-256 e as duas evidências. O portal distingue revisão **humana** de **IA baseada em fonte integral** e mantém indicação da origem externa.
+## 3. Segurança e auditoria
 
-**Limitações remanescentes:** o artigo não lido por completo ou cuja estrutura de HTML não permita extração confiável é recusado. Um teste automatizado de citações literais em dois blocos é evidência rastreável, **não comprova que toda afirmação da síntese é verdadeira**. O segundo modelo pode ser o mesmo provedor gratuito do primeiro. Para publicação contínua sem humano, ainda são recomendáveis políticas de amostragem editorial, checagem adicional de licença, monitoramento e um ambiente de homologação isolado. Temas clínicos, médicos, jurídico-políticos e demais assuntos sensíveis devem ficar em revisão humana.
+- `curator/src/article-evidence.mjs`: URL HTTPS e host exatos, no máximo um redirect para o mesmo documento, timeout, até 340 kB HTML, 12 mil caracteres / 45 blocos. Remove scripts, formulários, mídia, menus e conteúdo não editorial. Seletores específicos da EBC e da Comissão Europeia; ausência de evidência, autoria ou licença válida implica retenção.
+- `curator/src/full-article-review.mjs`: duas chamadas LLM (redação e revisão), com texto dividido em blocos numerados `E01`, `E02` etc. A segunda etapa exige duas citações literais distintas, presentes em blocos diferentes. Fatos não comprovados, afirmações médicas sensíveis e traduções equivocadas levam a `hold`.
+- `curator/src/duplicate-check.mjs`: Redis `EXISTS` e Strapi `GET` de Draft/Published antes do gasto com IA. A prévia não faz escrita editorial.
+- `curator/src/cms-publish.mjs`: exige documento originalmente Draft, mesma fonte, URL, título, resumo, corpo e dedupeKey, uma auditoria de revisão com SHA-256 do texto extraído, trechos de evidência, referência à licença específica e token Custom separado. Sem tudo isso, não envia `PUT ?status=published`.
+- `curator/src/auto-config.mjs`: permite ativação exclusivamente em DEV mediante `CURATOR_FULL_ARTICLE_REVIEW_ENABLED=true`, `FULL_ARTICLE_REVIEW_ACCEPTED`, allowlist de fontes licenciadas e lote de um item; tudo **desativado por padrão**.
+- A reportagem integral e os elementos gráficos de terceiros não são gravados no Strapi. O portal distingue conteúdo externo, revisão humana e aprovação automática assistida por IA. Aprovações automáticas indicam a política da fonte, origem e adaptação no registro de auditoria.
 
-## Comandos de homologação seguros no Windows
+Uma citação literal verificável **não garante**, por si só, que todas as afirmações feitas pela IA estejam corretas. A implementação inclui retenção conservadora e precisa de inspeção humana amostral antes de operar continuamente.
+
+## 4. Homologação no Windows
 
 ```powershell
 git switch dev
 git pull --ff-only origin dev
 npm run --prefix curator check
 npm run --prefix curator test
+npm run typecheck
 
 docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator build worker
 
-# Testa a nova rota de análise integral, sem criar ou publicar no Strapi.
-# Com as permissões atuais, a fonte será RETIDA sem leitura integral nem IA.
+# Verifica feeds e seleção: sem IA nem escrita
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run preview
+
+# Verifica leitura integral, seleção inédita e dupla IA: sem escrita editorial
 docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T `
   -e CURATOR_GEMINI_API_KEY= `
   -e CURATOR_GROQ_API_KEY= `
   worker npm run review:full-preview
 ```
 
-Saída esperada **nas fontes atuais**: `article_evidence_unavailable`, `evidenceReason=source_permission_pending`, `preview=true`, `aiGenerated=false`, podendo haver `skippedPreviouslyProcessed`. É um teste bem-sucedido do bloqueio de acesso, **não** uma aprovação editorial de fonte integral.
+**Resultados possíveis:** `review_approved_preview`, `review_pending_preview`, `article_evidence_unavailable`, `feed_unavailable` ou `count:0`. Uma publicação da Agência Brasil assinada por agência parceira deve ser retida com `article_rights_unverified`. Matérias Perkins/WAI retornam `source_permission_pending`. A presença de uma matéria pública já processada deverá levar ao descarte da duplicata antes da IA.
 
-Os testes unitários utilizam **HTML fictício e uma autorização sintética somente no teste**, sem coletar páginas de Perkins/WAI ou criar registros no CMS. Eles verificam saída de texto, ausência de mídias/scripts, limites, redirects, trechos literais em blocos diferentes, bloqueio de fontes não autorizadas e bloqueio da publicação sem evidência.
+**Não utilizar** `CURATOR_AUTO_PUBLISH_ENABLED=true` nem iniciar o `schedule` antes de: CI aprovado, smoke local dos feeds, conferência da extração de autoria e direitos de um artigo real, backup PostgreSQL restaurável, token de publicação separado e execução supervisionada em DEV isolado. Nenhum desses passos autoriza PROD ou merge na `main`.
 
-**NÃO executar `npm run once` com `CURATOR_AUTO_PUBLISH_ENABLED=true` ou `npm run schedule` nesta etapa.** Somente após uma autorização documentada, homologação técnica e editorial independente e backup PostgreSQL restaurável poderemos discutir um teste supervisionado de publicação em instância DEV isolada.
-
-Referências complementares: [Revisão IA e publicação DEV](REVISAO-IA-PUBLICACAO-DEV.md), [Curadoria Sprint 3.2](CURADORIA-SPRINT3-2.md), [issue #14](https://github.com/SladeSouzaSantos/ierc-rn/issues/14).
+Veja também [issue #14](https://github.com/SladeSouzaSantos/ierc-rn/issues/14), [Curadoria 3.2](CURADORIA-SPRINT3-2.md) e [Política de publicação](REVISAO-IA-PUBLICACAO-DEV.md).
