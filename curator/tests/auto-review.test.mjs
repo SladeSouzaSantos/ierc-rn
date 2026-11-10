@@ -35,7 +35,7 @@ test('review validation rejects malformed or incomplete model judgements',()=>{
   assert.throws(()=>validateReview(JSON.stringify({...approved,issues:['x'.repeat(300)]})),/Invalid AI review/);
 });
 test('strict review accepts only source-grounded quotes with no unsupported claims',()=>{
-  assert.deepEqual(reviewDecision(source,draft,approved),{approved:true,reason:'rss_review_passed'});
+  assert.deepEqual(reviewDecision(source,draft,approved),{approved:true,reason:'rss_review_passed',evidenceQuotes:evidence});
   assert.equal(reviewDecision(source,draft,{...approved,decision:'hold'}).approved,false);
   assert.equal(reviewDecision(source,draft,{...approved,unsupportedClaims:['Invented outcome']}).approved,false);
   assert.equal(reviewDecision(source,draft,{...approved,evidenceQuotes:['A fake quote','Another invented quote']}).reason,'unverifiable_evidence_quotes');
@@ -55,7 +55,7 @@ test('second model call returns approval only for supported RSS claims',async()=
     return {content:JSON.stringify(approved),provider:'openrouter'};
   }}});
   assert.equal(calls.length,1);
-  assert.deepEqual(out,{approved:true,reason:'rss_review_passed'});
+  assert.deepEqual(out,{approved:true,reason:'rss_review_passed',evidenceQuotes:evidence,reviewerProvider:'openrouter'});
 });
 test('short RSS does not waste a free-model call; invalid and unavailable replies hold',async()=>{
   let count=0;
