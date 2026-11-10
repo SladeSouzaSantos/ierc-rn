@@ -95,7 +95,9 @@ export class FreeLlmRouter {
         });
         if (!response.ok) throw new ModelHttpError(response.status,response.headers.get('retry-after'));
         // Never log provider error bodies, response contents or credentials.
-        const data=await response.json();
+        let data;
+        try {data=await response.json();}
+        catch {throw invalidOutput('response_json');}
         const content=contentFromResponse(provider,data);
         // An HTTP 200 with a malformed editorial JSON draft is not usable.
         // Count the attempt and try the next FREE provider, never a paid route.
