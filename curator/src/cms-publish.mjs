@@ -21,8 +21,10 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
       if(!Array.isArray(quotes)||quotes.length!==2||
          quotes.some(x=>typeof x!=='string'||x.length<12||x.length>160||
            /[\r\n<>]/.test(x))||
+         reviewEvidence?.evidenceMode!=='full_article'||
+         !/^[a-f0-9]{64}$/.test(reviewEvidence?.evidenceDigest||'')||
          !['openrouter','gemini','groq','ollama'].includes(reviewEvidence.reviewerProvider))
-        throw new Error('Publisher requires a verified AI review audit');
+        throw new Error('Publisher requires authorized full article evidence audit');
       const audit=quotes.map(x=>x.replace(/\s+/g,' ').trim());
       const url=host.origin+'/api/news-articles/'+encodeURIComponent(documentId);
       // Authenticate against the exact draft just created by this worker.
@@ -44,7 +46,7 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
          current.title!==expected.title||current.summary!==expected.summary||
          current.body!==expected.body||current.image)
         throw new Error('Publisher preflight failed; draft changed or unverified');
-      const reference='ai-rss-v1-'+createHash('sha256')
+      const reference='ai-source-v2-'+createHash('sha256')
         .update(expected.dedupeKey).digest('hex').slice(0,12);
       // In Strapi 5 PUT with status=published publishes immediately. Explicit
       // query is intentional and must NEVER be used on a general write client.
@@ -54,8 +56,9 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
           body:JSON.stringify({data:{
             editorialStatus:'aprovado',
             approvalReference:reference,
-            approvalNote:'Revisão automática por IA ('+reviewEvidence.reviewerProvider+
-              '), baseada apenas em título/resumo RSS; sem validação humana. Evidências literais: "'+
+            approvalNote:'Revisão IA ('+reviewEvidence.reviewerProvider+
+              ') fundamentada no texto integral autorizado, sem validação humana. SHA256 do texto: '+
+              reviewEvidence.evidenceDigest+'. Evidências internas: "'+
               audit[0]+'" | "'+audit[1]+'".',
           }}),
           redirect:'error',signal:AbortSignal.timeout(9000),
