@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { LlmExhaustedError } from './router.mjs';
+import {reviewAiDraft} from './auto-review.mjs';
 
 export const SYSTEM=[
   'Você escreve sínteses informativas ORIGINAIS em português do Brasil para um portal sobre inclusão de pessoas cegas e com baixa visão.',
@@ -145,8 +146,11 @@ export async function generateAiDraft(source,{router,logger=()=>{}}){
   return {status:'draft_ready',draft,provider:completion.provider};
 }
 
-export async function processArticle(source,{router,store,cms,dryRun=true,logger=()=>{}}){
+export async function processArticle(source,{router,store,cms,dryRun=true,logger=()=>{},
+  autoPublish=false,publisher=null}){
   if(dryRun)return {status:'preview',article:source.title};
+  if(autoPublish && (!publisher||typeof publisher.publishApprovedDraft!=='function'))
+    throw new Error('Independent scoped publisher required for auto publication');
   const lock='ierc:curator:lock:'+source.dedupeKey;
   const owner=randomBytes(16).toString('hex');
   const acquired=await store.set(lock,owner,'PX',180000,'NX');
@@ -160,11 +164,31 @@ export async function processArticle(source,{router,store,cms,dryRun=true,logger
     const generated=await generateAiDraft(source,{router,logger});
     if(generated.status!=='draft_ready')return {status:generated.status};
     const {draft,provider}=generated;
-    const documentId=await cms.create(payloadFor(source,draft,provider));
+    const payload=payloadFor(source,draft,provider);
+    const documentId=await cms.create(payload);
+    const documentIdHash=createHash('sha256').update(documentId).digest('hex').slice(0,12);
+    logger({event:'draft_created',provider,documentIdHash});
+    let status='draft_created';
+    if(autoPublish){
+      // A distinct editorial prompt reviews the candidate. Failure or
+      // insufficient evidence NEVER escalates a draft to published.
+      const verdict=await reviewAiDraft(source,draft,{router,logger});
+      if(!verdict.approved){
+        status='draft_created_review_pending';
+        logger({event:'auto_review_held',reason:verdict.reason,documentIdHash});
+      }else{
+        try{
+          await publisher.publishApprovedDraft(documentId,payload);
+          status='draft_published';
+          logger({event:'auto_published',documentIdHash,review:'rss_only'});
+        }catch{
+          status='draft_created_publish_failed';
+          logger({event:'auto_publish_failed',reason:'cms_rejected_or_unavailable',documentIdHash});
+        }
+      }
+    }
     await store.set('ierc:curator:seen:'+source.dedupeKey,'1','EX',31536000);
-    logger({event:'draft_created',provider,documentIdHash:
-      createHash('sha256').update(documentId).digest('hex').slice(0,12)});
-    return {status:'draft_created',provider};
+    return {status,provider};
   }finally{
     await store.eval('if redis.call("GET",KEYS[1])==ARGV[1] then return redis.call("DEL",KEYS[1]) else return 0 end',1,lock,owner);
   }
