@@ -8,6 +8,7 @@ const footerNavigation = [
   { href: "/esportes", label: "Esporte" },
   { href: "/historias", label: "Histórias" },
   { href: "/noticias", label: "Notícias" },
+  { href: "/radar-da-inclusao", label: "Radar da Inclusão" },
   { href: "/eventos", label: "Eventos" },
   { href: "/galeria", label: "Galeria" },
   { href: "/visitas", label: "Visitas" },
