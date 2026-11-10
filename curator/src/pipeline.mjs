@@ -60,6 +60,9 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
         previewOnly: source.previewOnly === true,
         validLastYear: validYear.length,
         withinWindow: withinWindow.length, candidates: articles.length, maxAgeDays,
+        filteredByTopic: withinWindow.length-articles.length,
+        ...(articles.length===0?{noCandidatesReason:withinWindow.length>0
+          ?'no_matching_topics':'no_recent_items'}:{}),
         ...(source.mode === 'html' ? {listingDiagnostics} : {}),
       });
     } catch (error) {
