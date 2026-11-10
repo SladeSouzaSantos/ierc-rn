@@ -8,7 +8,7 @@ const expected={
   summary:'A publicação descreve projetos acessíveis para a participação de crianças com deficiência.',
   body:'Atividades esportivas acessíveis são apresentadas em um contexto de participação e aprendizagem.',
   slug:'uma-iniciativa-de-esporte-adaptado-aaaaaaaaaa',
-  dedupeKey:'a'.repeat(64),sourceUrl:'https://www.perkins.org/example',
+  dedupeKey:'a'.repeat(64),sourceUrl:'https://agenciabrasil.ebc.com.br/esportes/noticia/2026-11/exemplo',
 };
 const stored={documentId:doc,publishedAt:null,editorialStatus:'em_revisao',
   originType:'externa',aiAssisted:true,image:null,...expected};
@@ -16,7 +16,8 @@ const creds={baseUrl:'http://cms:1337',token:'publisher-demo-12345',draftToken:'
 const reviewed={evidenceQuotes:[
   'Accessible adaptive sports programs',
   'structured group activities and participation opportunities',
-],reviewerProvider:'openrouter',evidenceMode:'full_article',evidenceDigest:'f'.repeat(64)};
+],reviewerProvider:'openrouter',evidenceMode:'full_article',evidenceDigest:'f'.repeat(64),
+ licenseReference:'https://agenciabrasil.ebc.com.br/sobre'};
 
 test('auto publisher uses separate token and checks exact unpublished draft before PUT',async()=>{
  const seen=[];
@@ -81,5 +82,6 @@ test('publisher requires two fixed-size review quotes, never blind publish',asyn
  await assert.rejects(api.publishApprovedDraft(doc,expected,{...reviewed,evidenceQuotes:['only one']}),/full article evidence audit/);
  await assert.rejects(api.publishApprovedDraft(doc,expected,{...reviewed,evidenceMode:'rss'}),/full article evidence audit/);
  await assert.rejects(api.publishApprovedDraft(doc,expected,{...reviewed,evidenceDigest:null}),/full article evidence audit/);
+ await assert.rejects(api.publishApprovedDraft(doc,expected,{...reviewed,licenseReference:'https://example.com/other'}),/documented source reuse permission/);
  assert.equal(network,0);
 });
