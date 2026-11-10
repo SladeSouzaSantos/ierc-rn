@@ -282,3 +282,30 @@ Error: gemini requires an operator-confirmed free-tier-only account
 5. Compartilhar apenas a saída do terminal **sem segredos**. O próximo gate é uma saída `draft_ready` da LLM gratuita com fonte e texto editorial verificável.
 
 O CI do commit `0496c74` ([workflow #42758177280](https://github.com/SladeSouzaSantos/ierc-rn/actions/runs/42758177280)) concluiu com **success**, incluindo os testes unitários e a conexão com Redis 7 real. A `main` e a automação de publicação continuam intocadas.
+
+
+## Primeira chamada real OpenRouter e ajuste do Nemotron — 10/11/2026
+
+A primeira chamada LLM real no Docker Windows **ultrapassou os bloqueios anteriores**: Redis `healthy`, fontes RSS lidas e filtros de permissão aplicados. W3C/WAI retornou 8 itens no último ano, nenhum na janela operacional de 45 dias. Perkins retornou 10 itens atuais e 10 candidatos temáticos; o item escolhido foi **“More than a game: How sport opens doors to learning and belonging for children with disabilities”**, de 05/11/2026, `relevanceScore=17`, URL oficial `https://www.perkins.org/more-than-a-game-how-sport-opens-doors-to-learning-and-belonging-for-children-with-disabilities`. RNIB/IBSA/WBU foram puladas deliberadamente por política. A resposta da única LLM configurada `nvidia/nemotron-3.5-super-vl:free` foi classificada como `invalid_output` após ~4,8 s; o modo manual retornou `llm_unavailable` e **não gravou nenhum rascunho no Strapi**.
+
+O diagnóstico antigo **não permitia distinguir** resposta vazia, resposta truncada por `finish_reason=length`, JSON editorial inválido ou campos obrigatórios insuficientes. Não afirmar que a causa foi raciocínio sem texto: é uma hipótese, pois o modelo Nemotron 3.5 Super VL gratuito usa raciocínio por padrão e a chamada anterior enviava `max_tokens=900`. De acordo com a [documentação oficial do OpenRouter](https://openrouter.ai/docs/guides/best-practices/reasoning-tokens), os tokens de raciocínio podem consumir o orçamento completo de saída.
+
+**Incremento na `dev`, somente código local/CI, sem chamadas externas do assistente:** a camada `router.mjs` agora gera diagnósticos seguros `token_limit`, `reasoning_without_text`, `empty_content`, `response_json`, `json_syntax`, `incomplete_draft`, `unsafe_markup`, `invalid_structure`, `schema_rejected` e `oversize_content`; os logs contêm apenas categoria fixa, provedor e duração, não o corpo, prompt, raciocínio ou chaves. Se `finish_reason=length`, nenhum texto parcialmente gerado é aceito como matéria pronta. O orçamento padrão de saída passou de 900 para **1600 tokens**, com teto de configuração de 4096 via `CURATOR_MAX_OUTPUT_TOKENS`; a solicitação ao **modelo exato** `nvidia/nemotron-3.5-super-vl:free` inclui `reasoning:{enabled:false}`, evitando que a síntese curta dependa do orçamento de raciocínio padrão. Outros modelos gratuitos mantêm parâmetros de raciocínio anteriores; `CURATOR_OPENROUTER_REASONING_ENABLED=true/false` permite configuração explícita. Nenhuma rota paga foi habilitada, e as quotas Redis permanecem inalteradas.
+
+### Repetir a primeira geração (PowerShell)
+
+```powershell
+git switch dev
+git pull --ff-only origin dev
+npm run --prefix curator test
+
+# Compilar apenas o worker; as imagens/volumes CMS DEV e Redis ficam preservados.
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator build worker
+
+# Uma única prévia com OpenRouter gratuito; segredos não são impressos
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run generate:preview
+```
+
+O arquivo local `curator/.env` pode continuar com o modelo NVIDIA gratuito e os limites 30 chamadas globais/10 OpenRouter (ou inferiores). Manter `CURATOR_ENABLED=false`, `CURATOR_WRITE_DRAFTS=false`, `CURATOR_STRAPI_DRAFT_TOKEN` vazio, `CURATOR_GEMINI_API_KEY` e `CURATOR_GROQ_API_KEY` vazias enquanto não houver confirmação de acesso gratuito sem faturamento. Se quiser configurar explicitamente, `CURATOR_MAX_OUTPUT_TOKENS=1600` e `CURATOR_OPENROUTER_REASONING_ENABLED=false`, mas no modelo NVIDIA acima esses valores já são defaults do novo código. Não há reset do contador de Redis: qualquer tentativa anterior consome quota, e um cooldown persistente pode gerar `llm_unavailable` temporário sem nova chamada.
+
+**Resultado esperado para revisão de conteúdo:** `draft_ready` com campos `draft.title, draft.summary, draft.body, draft.whyItMatters, draft.category`, ou nova categoria segura no evento `llm_attempt`. Ainda **não há prova** de `draft_ready` em uma execução real; nenhum token Strapi de escrita deve ser ativado antes da análise de qualidade da notícia em pt-BR.
