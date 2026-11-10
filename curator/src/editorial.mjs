@@ -175,6 +175,7 @@ export async function processArticle(source,{router,store,cms,dryRun=true,logger
             reviewerProvider:verdict.reviewerProvider,
             evidenceMode:verdict.evidenceMode,
             evidenceDigest:verdict.evidenceDigest,
+            licenseReference:verdict.licenseReference,
           });
           status='draft_published';
           logger({event:'auto_published',documentIdHash,review:'rss_only'});
