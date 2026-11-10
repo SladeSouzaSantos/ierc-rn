@@ -109,7 +109,7 @@ export default async function ContentPage({ params }: RouteProps) {
               Explorar o Radar <ArrowUpRight size={18} aria-hidden="true"/>
             </Link>
           </section>
-          <Note>Os registros acima referem-se a fontes verificáveis, não a notícias fictícias. Para comunicados atuais do Instituto, consulte o <a href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer">Instagram informado do IERC<span className="sr-only"> (abre em nova aba)</span></a>.</Note>
+          <Note>Não foram criadas notícias fictícias. Os registros acima referem-se a fontes verificáveis. Para comunicados atuais do Instituto, consulte o <a href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer">Instagram informado do IERC<span className="sr-only"> (abre em nova aba)</span></a>.</Note>
         </>}
 
         {slug === "eventos" && <>
