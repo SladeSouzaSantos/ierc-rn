@@ -95,3 +95,12 @@ $diagnostico | docker compose --env-file curator/.env -f compose.curator.dev.yml
 Interpretar: `status:200` e XML com corpo indica acesso; `301/302/307/308` exige avaliação de `Location` antes de qualquer alteração na política de redirects; `TimeoutError` significa expiração real do teste Docker; `TypeError` com `cause` exige distinguir DNS, IPv4/IPv6, TLS ou falha de rede. Se Windows **e** Docker expirarem, não concluir automaticamente que o feed está fora do ar para todos; manter como fonte degradada e permitir que as demais fontes continuem operando. Não ampliar timeout indiscriminadamente, não usar proxies não aprovados, não ativar publicação automática.
 
 O arquivo `next-env.d.ts` pode ser atualizado automaticamente pelo Next.js durante o desenvolvimento; sua diferença de cabeçalho ou referência de rotas não se relaciona ao curador. Conferir `git diff -- next-env.d.ts` e decidir separadamente sobre essa mudança.
+
+
+### Quarentena temporária da fonte europeia — 10/11/2026
+
+Após o teste corrigido via PowerShell stdin, o container Docker também retornou `{"error":"TimeoutError","cause":"unknown"}` com 20 segundos, além de `curl.exe (28) / HTTP=000` no Windows. Ambos os caminhos locais falharam; isso **não comprova** indisponibilidade global da Comissão Europeia nem falta de licença.
+
+Para evitar atrasos repetidos e consumo desnecessário de rede, a fonte `eu-commission-news` permanece no catálogo oficial com `paused:true` e `readiness=temporarily_paused_timeout_windows_docker_2026-11-10`. O pipeline emite `source_paused` e **não faz requisição HTTP** à fonte em nenhum modo, inclusive prévias e publicações, enquanto esse bloqueio estiver ativo. A coleta EBC/Perkins/WAI continua normalmente; as restrições individuais de reutilização das matérias permanecem.
+
+**Reativação:** somente mediante teste real de conectividade HTTP/TLS (URL oficial, resposta XML, sem desvio de host nem proxy desconhecido) nos ambientes pretendidos. Depois, remover `paused:true` em alteração auditável, executar testes e `preview` sem escrita. Não basta simplesmente prolongar o timeout.
