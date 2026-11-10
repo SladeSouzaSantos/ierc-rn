@@ -99,7 +99,7 @@ export function parseListing(body, source, now = Date.now(), ageDays = 45, stats
     throw new Error('Unsupported HTML source: no custom parser');
   }
   stats.listingState = stats.detectedCards > 0 ? 'cards_detected' :
-    (source.id === 'ibsa' && /Loading news(?:\\.{3}|…)/i.test(body)
+    (source.id === 'ibsa' && /Loading news(?:\.{3}|…)/i.test(body)
       ? 'client_render_pending' : 'no_cards');
   return cards.filter(Boolean);
 }
