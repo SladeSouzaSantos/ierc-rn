@@ -13,6 +13,10 @@ const expected={
 const stored={documentId:doc,publishedAt:null,editorialStatus:'em_revisao',
   originType:'externa',aiAssisted:true,image:null,...expected};
 const creds={baseUrl:'http://cms:1337',token:'publisher-demo-12345',draftToken:'draft-demo-12345'};
+const reviewed={evidenceQuotes:[
+  'Accessible adaptive sports programs',
+  'structured group activities and participation opportunities',
+],reviewerProvider:'openrouter'};
 
 test('auto publisher uses separate token and checks exact unpublished draft before PUT',async()=>{
  const seen=[];
@@ -25,9 +29,11 @@ test('auto publisher uses separate token and checks exact unpublished draft befo
    assert.equal(data.editorialStatus,'aprovado');
    assert.match(data.approvalReference,/^ai-rss-v1-[a-f0-9]{12}$/);
    assert.match(data.approvalNote,/Revisão automática por IA/);
+   assert.match(data.approvalNote,/Evidências literais/);
+   assert.match(data.approvalNote,/Accessible adaptive sports programs/);
    return new Response(JSON.stringify({data:{...stored,...data,publishedAt:'2026-11-10T16:00:00Z'}}),{status:200});
  }});
- assert.deepEqual(await api.publishApprovedDraft(doc,expected),{published:true});
+ assert.deepEqual(await api.publishApprovedDraft(doc,expected,reviewed),{published:true});
  assert.equal(seen.length,2);
  assert.equal(seen[0].url,'http://cms:1337/api/news-articles/'+doc+'?status=draft');
  assert.equal(seen[1].url,'http://cms:1337/api/news-articles/'+doc+'?status=published');
@@ -46,7 +52,7 @@ test('draft modification, missing source and premature publication prevent any P
      if(opts.method==='PUT'){writes++;throw Error('unexpected update');}
      return new Response(JSON.stringify({data:{...stored,...mismatch}}),{status:200});
    }});
-   await assert.rejects(api.publishApprovedDraft(doc,expected),/preflight failed/);
+   await assert.rejects(api.publishApprovedDraft(doc,expected,reviewed),/preflight failed/);
    assert.equal(writes,0);
  }
 });
@@ -55,7 +61,7 @@ test('publisher validates token, private endpoint, document ID and non-success r
  assert.throws(()=>cmsPublisher({...creds,token:''}),/Separate scoped/);
  assert.throws(()=>cmsPublisher({...creds,baseUrl:'https://production.example.com'}),/private/);
  const api=cmsPublisher({...creds,fetchImpl:async()=>new Response('{}',{status:403})});
- await assert.rejects(api.publishApprovedDraft(doc,expected),/HTTP 403/);
+ await assert.rejects(api.publishApprovedDraft(doc,expected,reviewed),/HTTP 403/);
  await assert.rejects(api.publishApprovedDraft('bad',expected),/Invalid CMS document ID/);
 });
 test('publisher refuses to report success if PUT response does not confirm publishedAt',async()=>{
@@ -64,6 +70,14 @@ test('publisher refuses to report success if PUT response does not confirm publi
    calls++;
    return new Response(JSON.stringify({data:calls===1?stored:{...stored,editorialStatus:'aprovado',publishedAt:null}}),{status:200});
  }});
- await assert.rejects(api.publishApprovedDraft(doc,expected),/did not confirm published status/);
+ await assert.rejects(api.publishApprovedDraft(doc,expected,reviewed),/did not confirm published status/);
  assert.equal(calls,2);
+});
+
+test('publisher requires two fixed-size review quotes, never blind publish',async()=>{
+ let network=0;
+ const api=cmsPublisher({...creds,fetchImpl:async()=>{network++;return new Response('{}');}});
+ await assert.rejects(api.publishApprovedDraft(doc,expected),/verified AI review audit/);
+ await assert.rejects(api.publishApprovedDraft(doc,expected,{...reviewed,evidenceQuotes:['only one']}),/verified AI review audit/);
+ assert.equal(network,0);
 });
