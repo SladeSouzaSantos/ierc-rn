@@ -35,3 +35,49 @@ test('preview can inspect WAI history without changing 45-day live window',async
 test('age filter refuses unsafe out-of-range previews',async()=>{
  await assert.rejects(runOnce({maxAgeDays:366}),/Invalid article age window/);
 });
+
+
+test('preview balances WAI, RNIB and IBSA without publishing preview-only sources', async () => {
+  const { SOURCES } = await import('../src/feeds.mjs');
+  const wbu='<rss><channel><title>World Blind Union</title></channel></rss>';
+  const rnib='<div class="listing__post small-image-card">' +
+    '<h2 class="small-image-card__title"><a href="https://www.rnib.org.uk/news/accessibility-in-britain/">' +
+    'Low vision accessibility in Britain</a></h2>' +
+    '<p class="small-image-card__description">Rights and support</p>' +
+    '<span class="small-image-card__meta-item">Posted Thursday, 5 November 2026</span></div>';
+  const ibsa='<div class="tekup-blog-wrap"><div class="tekup-blog-content">' +
+    '<div class="tekup-blog-meta"><ul><li>IBSA</li><li>05 November 2026</li></ul></div>' +
+    '<a href="https://ibsasport.org/news/new-goalball-program/"><h3>New Goalball Program</h3></a></div></div>';
+  const bodyByUrl={
+    'https://www.w3.org/WAI/feed.xml':atom,
+    'https://www.rnib.org.uk/news/':rnib,
+    'https://ibsasport.org/news/':ibsa,
+    'https://wbu.ngo/feed/':wbu,
+  };
+  const reads=[];
+  const fetched=async url=>{
+    reads.push(url);
+    return new Response(bodyByUrl[url],{status:200});
+  };
+  const out=await runOnce({sources:SOURCES,fetchImpl:fetched,
+    now:Date.parse('2026-11-10T12:00:00Z'),maxArticles:3,dryRun:true,
+    router:null,store:null,cms:null});
+  assert.equal(out.count,3);
+  assert.deepEqual(out.results.map(x=>x.source),['w3c-wai','rnib','ibsa']);
+  assert.equal(out.results[1].previewOnly,true);
+  assert.ok(out.results.every(x=>x.status==='preview'));
+  assert.equal(reads.length,4);
+});
+test('live ingestion excludes all preview-only HTML sources and empty WBU feed', async()=>{
+  const { SOURCES } = await import('../src/feeds.mjs');
+  const reads=[];const events=[];
+  const store={set:async()=> 'OK', exists:async()=>1, eval:async()=>1};
+  const cms={existing:async()=>false,create:async()=>{throw Error('must not write')}};
+  const result=await runOnce({sources:SOURCES,
+    fetchImpl:async url=>{reads.push(url);return new Response(atom,{status:200});},
+    now:Date.parse('2026-11-10T12:00:00Z'),dryRun:false,store,cms,router:null,
+    logger:event=>events.push(event)});
+  assert.deepEqual(reads,['https://www.w3.org/WAI/feed.xml']);
+  assert.equal(result.results[0].status,'seen');
+  assert.equal(events.filter(x=>x.event==='source_skipped_by_policy').length,3);
+});
