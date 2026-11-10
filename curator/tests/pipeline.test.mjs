@@ -407,3 +407,22 @@ test('full-article mode rejects an unconfigured evidence reader',async()=>{
  await assert.rejects(runOnce({reviewPreview:true,aiPreview:true,fullArticlePreview:true,
    previewLookup:{async check(){return null;}}}),/full article reader/);
 });
+
+
+test('auto publishing cannot write or call LLM when source lacks full-text permission',async()=>{
+  const {ArticleEvidenceError}=await import('../src/article-evidence.mjs');
+  let llm=0,writes=0,redisWrites=0;
+  const response=await runOnce({sources:[source],
+    fetchImpl:async()=>new Response(atom,{status:200}),
+    now:Date.parse('2026-11-10T12:00:00Z'),
+    maxArticles:1,dryRun:false,autoPublish:true,autoPublishSources:['w3c-wai'],
+    articleReader:async()=>{throw new ArticleEvidenceError('source_permission_pending');},
+    cms:{async existing(){writes++;throw Error('never called');},async create(){writes++;}},
+    store:{async set(){redisWrites++;throw Error('never called');}},
+    publisher:{async publishApprovedDraft(){writes++;throw Error('never called');}},
+    router:{async complete(){llm++;throw Error('never called');}},
+  });
+  assert.equal(response.results[0].status,'article_evidence_unavailable');
+  assert.equal(response.results[0].evidenceReason,'source_permission_pending');
+  assert.equal(writes,0);assert.equal(llm,0);assert.equal(redisWrites,0);
+});
