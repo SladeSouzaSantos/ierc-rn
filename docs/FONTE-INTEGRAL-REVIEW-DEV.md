@@ -104,3 +104,30 @@ Após o teste corrigido via PowerShell stdin, o container Docker também retorno
 Para evitar atrasos repetidos e consumo desnecessário de rede, a fonte `eu-commission-news` permanece no catálogo oficial com `paused:true` e `readiness=temporarily_paused_timeout_windows_docker_2026-11-10`. O pipeline emite `source_paused` e **não faz requisição HTTP** à fonte em nenhum modo, inclusive prévias e publicações, enquanto esse bloqueio estiver ativo. A coleta EBC/Perkins/WAI continua normalmente; as restrições individuais de reutilização das matérias permanecem.
 
 **Reativação:** somente mediante teste real de conectividade HTTP/TLS (URL oficial, resposta XML, sem desvio de host nem proxy desconhecido) nos ambientes pretendidos. Depois, remover `paused:true` em alteração auditável, executar testes e `preview` sem escrita. Não basta simplesmente prolongar o timeout.
+
+
+## 6. Expansão de descoberta temática pela EBC — 10/11/2026
+
+Os quatro feeds EBC previamente homologados (Direitos Humanos, Educação, Esportes e Internacional) são RSS válidos, mas a execução do Docker recebeu somente **10 itens recentes por editoria**, todos fora dos tópicos do IERC-RN. O corte temático está funcionando e **não será afrouxado** para publicar matérias genéricas. O limite de dez itens também significa que uma janela configurada como 45/120 dias **não equivale a recuperar todo o histórico desse período**.
+
+A [página oficial de RSS da Agência Brasil](https://agenciabrasil.ebc.com.br/feed/) expõe outras editorias. Quatro fontes foram adicionadas na `dev` exclusivamente em **`previewOnly=true`**, com `readiness=official_rss_discovery_live_validation_pending`:
+
+- `agencia-brasil-justica`: `/rss/justica/feed.xml` (direitos e decisões relevantes);
+- `agencia-brasil-politica`: `/rss/politica/feed.xml` (acessibilidade e cidadania, com revisão humana adicional de informações eleitorais/políticas);
+- `agencia-brasil-saude`: `/rss/saude/feed.xml` (baixa visão e deficiência visual, com retenção de afirmações clínicas);
+- `agencia-brasil-geral`: `/rss/geral/feed.xml` (iniciativas comunitárias e inclusão).
+
+Os nomes, as categorias e os links têm origem no diretório oficial, mas **o funcionamento real desses quatro RSS no Docker ainda deve ser homologado**. São apenas novas portas para descobrir notícias relevantes; não há busca por palavras-chave em todo o acervo, paginação histórica, nem garantia de encontrar toda pauta pertinente. Os novos feeds não recebem `fullTextAccess`, não estão na allowlist de publicação, e o pipeline os exclui de geração e ingestão mesmo que retornem uma notícia relevante. O portal não receberá publicações automáticas dessas editorias.
+
+Para testar, executar **cada comando em uma única linha no terminal PowerShell do VS Code**:
+
+```powershell
+git pull --ff-only origin dev
+npm run --prefix curator test
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator build worker
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run preview
+```
+
+Esperar eventos `feed_checked` para `agencia-brasil-justica`, `agencia-brasil-politica`, `agencia-brasil-saude` e `agencia-brasil-geral` se estiverem acessíveis, com `filteredByTopic` e `candidates`. Um `feed_unavailable` deverá ser investigado pela mesma política de hosts/redirecionamentos. O `source_paused` para Comissão Europeia permanece em vigor.
+
+Para evolução posterior: validar um mecanismo **documentado e autorizado** de pesquisa temática ou consulta paginada no site da EBC. A caixa de busca da página inicial não confirma sozinha uma API estável e licenciada para captura automatizada; não inventar endpoint nem consultar buscadores terceirizados como fonte de verdade sem revalidação na reportagem oficial.
