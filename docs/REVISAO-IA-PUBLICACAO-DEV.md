@@ -1,6 +1,6 @@
 # Revisão automatizada e publicação controlada — Radar da Inclusão (DEV)
 
-> **Atualização de segurança — 10/11/2026:** a arquitetura de publicação automática baseada exclusivamente em RSS descrita historicamente abaixo **não é mais permitida para publicar**. A versão atual exige permissão escrita por fonte e evidências do texto integral. Consulte obrigatoriamente [FONTE-INTEGRAL-REVIEW-DEV.md](FONTE-INTEGRAL-REVIEW-DEV.md). O comando antigo com `RSS_ONLY_REVIEW_ACCEPTED` é rejeitado pelo código. **Nenhuma fonte atual possui autorização de extração integral no catálogo; não habilitar agendamento ou publicação.**
+> **Atualização de segurança — 10/11/2026:** a arquitetura de publicação automática baseada exclusivamente em RSS descrita historicamente abaixo **não é mais permitida para publicar**. A versão atual exige permissão escrita por fonte e evidências do texto integral. Consulte obrigatoriamente [FONTE-INTEGRAL-REVIEW-DEV.md](FONTE-INTEGRAL-REVIEW-DEV.md). O comando antigo com `RSS_ONLY_REVIEW_ACCEPTED` é rejeitado pelo código. **As fontes Agência Brasil (conteúdo original EBC) e Comissão Europeia (notícias próprias) foram integradas com políticas públicas de reutilização, sujeitas a checagem por artigo. Não habilitar agendamento ou publicação até homologação real em DEV.**
 
 
 **Estado da implementação:** disponível na branch `dev` como funcionalidade **opt-in**, desativada por padrão. `main` e o PR #12 Draft não foram alterados. A IA é usada na geração **e numa segunda etapa de revisão**. Nenhuma configuração de publicação foi aplicada automaticamente ao CMS local.
@@ -81,13 +81,13 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml --profile cura
   -e CURATOR_AUTO_PUBLISH_ENABLED=true `
   -e CURATOR_AUTO_PUBLISH_ACK=FULL_ARTICLE_REVIEW_ACCEPTED `
   -e CURATOR_FULL_ARTICLE_REVIEW_ENABLED=true `
-  -e CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES=perkins `
+  -e CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES=agencia-brasil-esportes `
   -e CURATOR_GEMINI_API_KEY= `
   -e CURATOR_GROQ_API_KEY= `
   worker npm run once
 ```
 
-**Não execute o comando do Gate B nas fontes atuais.** O código barra publicação sem autorização de fonte integral, mesmo com token de update. Em uma futura fonte especificamente autorizada, o comando poderá publicar uma notícia real se todos os gates passarem. Ele não serve como teste de leitura. Recomenda-se executá-lo primeiro em uma instância Strapi DEV isolada de homologação com conteúdo de teste e verificar explicitamente a postagem.
+**Não execute ainda o comando do Gate B.** Há fontes com política pública de reutilização, mas o funcionamento completo (autoria, texto integral, links, aprovação por IA, token segregado e backup) precisa de homologação real em DEV. Em uma futura fonte especificamente autorizada, o comando poderá publicar uma notícia real se todos os gates passarem. Ele não serve como teste de leitura. Recomenda-se executá-lo primeiro em uma instância Strapi DEV isolada de homologação com conteúdo de teste e verificar explicitamente a postagem.
 
 Resultados esperados:
 - `draft_published`: draft salvo e publicado automaticamente (apenas após todas as verificações).
@@ -145,4 +145,4 @@ Não necessita de token de publicação (`CURATOR_STRAPI_PUBLISH_TOKEN`), nenhum
 
 ### Modo novo: verificação de reportagem integral (ainda não autorizado nas fontes atuais)
 
-Execute `npm run --prefix curator review:full-preview` ou `worker npm run review:full-preview` no ambiente Docker DEV para verificar os bloqueios sem gravar notícias. Sem licença documentada, o modo retorna `article_evidence_unavailable` com `evidenceReason=source_permission_pending`, **sem chamadas à IA ou ao site**. O uso de `review:preview` permanece limitado ao RSS e nunca pode autorizar publicação automática. O status e a trilha de verificação integral estão documentados em [FONTE-INTEGRAL-REVIEW-DEV.md](FONTE-INTEGRAL-REVIEW-DEV.md).
+Execute `npm run --prefix curator review:full-preview` ou `worker npm run review:full-preview` no ambiente Docker DEV para verificar os bloqueios sem gravar notícias. Nas fontes sem permissão (Perkins/WAI), o modo retorna `article_evidence_unavailable` com `evidenceReason=source_permission_pending`, **sem chamadas ao artigo ou à IA**. As fontes EBC/Comissão Europeia podem prosseguir quando a política e a autoria da matéria específica forem verificadas; parceiros ou erros são retidos. O uso de `review:preview` permanece limitado ao RSS e nunca pode autorizar publicação automática. O status e a trilha de verificação integral estão documentados em [FONTE-INTEGRAL-REVIEW-DEV.md](FONTE-INTEGRAL-REVIEW-DEV.md).
