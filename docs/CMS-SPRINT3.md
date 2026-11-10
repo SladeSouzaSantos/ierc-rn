@@ -252,3 +252,22 @@ Correção aplicada apenas na `dev`: `cms/scripts/verify-editorial-read.mjs` uti
 **Próximo teste local:** atualizar `dev`, executar os seis testes e repetir `absent` — ainda deve retornar `OK`. No painel local, conferir a existência do item `homologacao-cms-dev`. Se ainda não foi criado, criar e salvar em **Draft / em_preparacao**; se já existe, confirmar que está Draft. Não executar `visible` até o registro ser intencionalmente **Published e aprovado** no CMS DEV. Um `visible` com zero itens é uma reprovação esperada, mas a execução deve encerrar sem assertion nativa.
 
 Ainda pendentes: verificação do estado real do documento no painel, publicação e despublicação controladas, RBAC Author/Editor e teste de acessibilidade. Nenhuma alteração ao CMS instalado, PostgreSQL, `main` ou PR #12 foi executada pela correção de código.
+
+
+### Gate real de publicação e despublicação aprovado — 10/11/2026
+
+O operador realizou a sequência de cinco verificações **na instância Strapi DEV local**, com o script de leitura autenticada `cms/scripts/verify-editorial-read.mjs` e o mesmo slug `homologacao-cms-dev`:
+
+| Momento do roteiro | Comando | Resposta real |
+| --- | --- | --- |
+| Rascunho `em_preparacao` | `absent` | **OK**, `publicados_aprovados=0` |
+| Rascunho `em_revisao` | `absent` | **OK**, `publicados_aprovados=0` |
+| Publicado `em_revisao` | `absent` | **OK**, `publicados_aprovados=0` |
+| Publicado `aprovado` | `visible` | **OK**, `publicados_aprovados=1` |
+| Despublicado | `absent` | **OK**, `publicados_aprovados=0` |
+
+A associação de cada comando ao estado da notícia segue a sequência previamente solicitada; os logs do verificador **não carregam o estado visual do painel**. Assim, os cinco retornos provam que o contrato de consulta ao CMS local funciona nos momentos testados, não que os papéis administrativos foram exercidos por contas diferentes ou que a exibição visual no Next.js foi comprovada. O script continua limitado a GET e não executa Publish, Unpublish, POST ou DELETE. Não foi necessário reconstruir o Docker nem ampliar as permissões de acesso.
+
+**Próximo gate: RBAC real (separar de Users & Permissions do site).** Em *Settings → Administration panel → Roles*, verificar permissões de `news-article` por função: `Author` deve ter `Read/Create/Update` sobre conteúdos próprios, sem `Publish`; `Editor` deve ter `Read/Update/Publish` para conteúdos aprovados. Restringir acesso a configurações sensíveis, tokens e usuários. Em *Settings → Administration panel → Users*, verificar se já existem contas autorizadas associadas a esses papéis; se não existirem, convites de teste devem ser manuais e destinados exclusivamente a endereços controlados pelo operador, sem expor links de convite. **Não usar a conta Super Admin para validar restrições de Author.**
+
+Roteiro de aceitação: `Author` cria ou edita uma notícia sintética e salva Draft, mas não consegue publicar; `Editor` acessa essa notícia, revisa e publica; depois despublica o item. Usar `cms/scripts/verify-editorial-read.mjs` para provar `absent → visible → absent` sem expor credenciais. Se qualquer usuário não autorizado conseguir `Publish`, interromper a homologação e corrigir o papel; não ativar curadoria. Também restam verificação visual no Next.js local, testes assistivos e eventual teste de restore do backup.
