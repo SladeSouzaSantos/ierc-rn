@@ -20,7 +20,7 @@ O curador agora usa `slugFor(source, draft.title)`, removendo acentos e caracter
 
 Exemplo: `esportes-acessiveis-ampliam-aprendizado-e-pertencimento-4e44e09a02` em vez de `radar-4e44e09a02c386028c`.
 
-**Isso vale apenas para novos rascunhos.** A notícia da Perkins já publicada mantém o slug atual. Alterar a URL antiga requer redirecionamento HTTP 301/308 correspondente, verificação de links e revisão editorial; não foi modificada automaticamente para evitar quebrar links existentes.
+**Isso vale apenas para novos rascunhos.** A notícia da Perkins já publicada mantém o slug atual: ela não foi modificada automaticamente para evitar quebrar links. Se um Editor atualizar manualmente o slug no Strapi e republicar o conteúdo, a rota `/noticias/[slug]` da `dev` reconhecerá links antigos `radar-<18 caracteres hexadecimais>` por meio do início do `dedupeKey` e retornará redirecionamento permanente (308) para a nova URL, **somente se existir exatamente um documento publicado e aprovado correspondente**. A alteração não foi efetuada no CMS local e requer verificação manual antes de deploy.
 
 ## 3. Tokens Custom do Strapi DEV (separados)
 
