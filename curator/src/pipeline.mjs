@@ -41,6 +41,12 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
     throw new Error('Invalid article batch size');
   const buckets = [];
   for (const source of sources) {
+    // Connectivity quarantine is explicit and applies to previews as well:
+    // do not waste the entire run repeatedly timing out on this endpoint.
+    if(source.paused===true){
+      logger({event:'source_paused',source:source.id,reason:source.readiness});
+      continue;
+    }
     if ((!dryRun || aiPreview) && source.previewOnly === true) {
       logger({ event: 'source_skipped_by_policy', source: source.id, reason: source.readiness });
       continue;
