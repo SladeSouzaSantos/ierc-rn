@@ -57,3 +57,52 @@ test('successful content ends only as a draft and seen mark is written',async()=
  const result=await processArticle(source,{dryRun:false,router,store,cms});
  assert.equal(result.status,'draft_created');assert.ok(seen.some(x=>x.includes(':seen:')));
 });
+
+
+test('Strapi draft lookup reports only safe HTTP status and never exposes remote errors',async()=>{
+ const SECRET='secret-should-never-be-logged';
+ for(const code of [400,401,403,404,500,503]){
+   const urls=[];const token='test-token-123456';
+   const api=cmsClient({baseUrl:'http://cms:1337',token,
+     fetchImpl:async(url,options)=>{
+       urls.push({url,options});
+       return new Response(JSON.stringify({error:{message:SECRET,
+         details:{authorization:token}}}),{status:code});
+     }});
+   await assert.rejects(api.existing(source.dedupeKey),error=>{
+     assert.equal(error.message,'Strapi draft lookup failed (HTTP '+code+')');
+     assert.ok(!error.message.includes(SECRET));
+     assert.ok(!error.message.includes(token));
+     return true;
+   });
+   assert.equal(urls.length,1);
+   assert.equal(urls[0].options.method,undefined); // GET
+   assert.match(urls[0].url,/status=draft/);
+   assert.match(decodeURIComponent(urls[0].url),/filters\[dedupeKey\]\[\$eq\]/);
+   assert.equal(urls[0].options.headers.Authorization,'Bearer '+token);
+ }
+});
+test('Strapi lookup transport and malformed body errors are sanitized',async()=>{
+ const token='test-token-123456';
+ const network=cmsClient({baseUrl:'http://cms:1337',token,fetchImpl:async()=>{
+   throw new Error('Connection password private-secret has been included');
+ }});
+ await assert.rejects(network.existing(source.dedupeKey),e=>
+   e.message==='Strapi draft lookup unreachable');
+ const malformed=cmsClient({baseUrl:'http://cms:1337',token,fetchImpl:async()=>
+   new Response('no-json',{status:200})});
+ await assert.rejects(malformed.existing(source.dedupeKey),e=>
+   e.message==='Invalid Strapi lookup response');
+});
+test('lookup HTTP 403 prevents model invocation or draft write and releases Redis lock',async()=>{
+ let calls=0;let unlocks=0;
+ const store={async set(){return 'OK';},async exists(){return 0;},
+   async eval(){unlocks++;return 1;}};
+ const cms={async existing(){throw new Error('Strapi draft lookup failed (HTTP 403)');},
+   async create(){calls++;}};
+ const router={async complete(){calls++;return {content:JSON.stringify(draft),provider:'openrouter'};}};
+ await assert.rejects(processArticle(source,{dryRun:false,store,cms,router}),
+   /Strapi draft lookup failed \(HTTP 403\)/);
+ assert.equal(calls,0);
+ assert.equal(unlocks,1);
+});
