@@ -23,7 +23,10 @@ export const SOURCES = Object.freeze([
   {id:'eu-commission-news',mode:'rss',name:'Comissão Europeia',
    country:'União Europeia',language:'en',hostname:'commission.europa.eu',
    feed:'https://commission.europa.eu/node/29665/rss_en',previewOnly:false,
-   readiness:'official_rss_link_verified_runtime_check_pending',
+   // Confirmed 20s timeouts on BOTH Windows host and Docker (2026-11-10).
+   // Explicitly paused until network access is re-homologated; not a rights claim.
+   paused:true,
+   readiness:'temporarily_paused_timeout_windows_docker_2026-11-10',
    fullTextAccess:{status:'approved',basis:'cc-by-4.0-public-notice',
      reference:'https://commission.europa.eu/legal-notice_en',
      verifiedDate:'2026-11-10',usage:'attributed-adaptation'}},
