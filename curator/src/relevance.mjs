@@ -17,7 +17,7 @@ export function relevanceAssessment(article,source={}){
   // Direct, explicitly named references to the Institute are always relevant.
   const direct=mentionsIerc(article);
   const score=direct?100:Math.min(22,hits.reduce((n,s)=>n+s.weight,0)+(SOURCE_FOCUS[source.id]||0));
-  return {relevant:direct||score>=6,score,topics:hits.map(x=>x.topic),
+  return {relevant:direct||score>=6||(source.id==='w3c-wai'&&/\bwcag\b/i.test(text)&&score>=3),score,topics:hits.map(x=>x.topic),
     coverageTrack:coverage.track,scope:coverage.scope,priority:coverage.priority,
     perspective:coverage.perspective};
 }
