@@ -36,6 +36,7 @@ export function validateReview(raw){
 const normalize=s=>String(s||'').normalize('NFKC').replace(/\s+/g,' ').trim().toLowerCase();
 const SOURCE_MIN_SUMMARY_CHARS=160;
 const HIGH_RISK=/\b(cure|treatment|diagnosis|medication|clinical trial|trial results|election|vaccine|cancer|canceroso|tratamento|cura|diagn[oó]stico|medicamento|ensaio cl[ií]nico|elei[cç][aã]o)\b/i;
+const UNSUPPORTED_ABSENCE=/\b(?:a fonte|a reportagem|o artigo|a publica[cç][aã]o|o material)\b[^.!?]{0,110}\b(?:n[aã]o (?:detalha|apresenta|informa|cita|oferece)|sem detalhar|aus[eê]ncia de evid[eê]ncias)\b/i;
 
 export function reviewDecision(source,draft,review){
   // Deterministic source and editorial gates: no AI statement bypasses them.
@@ -47,6 +48,8 @@ export function reviewDecision(source,draft,review){
     return {approved:false,reason:'source_not_verified'};
   if(HIGH_RISK.test(source.title+' '+source.summary+' '+draft.title+' '+draft.body))
     return {approved:false,reason:'sensitive_claims'};
+  if(UNSUPPORTED_ABSENCE.test(draft.title+' '+draft.summary+' '+draft.body+' '+draft.whyItMatters))
+    return {approved:false,reason:'unsupported_absence_claim'};
   if(!review||review.decision!=='approve'||review.factualSupport!=='fully_supported'||
      review.issues?.length!==0||review.unsupportedClaims?.length!==0)
     return {approved:false,reason:'ai_review_hold'};
@@ -68,7 +71,7 @@ export async function reviewAiDraft(source,draft,{router,logger=()=>{}}){
     decision:'approve',factualSupport:'fully_supported',issues:[],unsupportedClaims:[],
     evidenceQuotes:[source?.title||'',source?.summary||''],
   });
-  if(['insufficient_rss_evidence','source_not_verified','sensitive_claims'].includes(pre.reason))
+  if(['insufficient_rss_evidence','source_not_verified','sensitive_claims','unsupported_absence_claim'].includes(pre.reason))
     return {approved:false,reason:pre.reason};
   let answer;
   try{
