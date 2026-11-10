@@ -12,6 +12,29 @@ test('dry-run collects and filters without any LLM, Redis or Strapi call',async(
  assert.equal(value.results[0].status,'preview');
  assert.equal(value.aiGenerated,false);
 });
+test('valid feeds with no matching inclusion topic report editorial filtering, not an outage',async()=>{
+ const general='<rss><channel><item>'+
+   '<title>Economia registra nova rodada de dados comerciais</title>'+
+   '<link>https://agenciabrasil.ebc.com.br/economia/noticia/2026-11/economia-dados</link>'+
+   '<pubDate>Tue, 10 Nov 2026 12:00:00 GMT</pubDate>'+
+   '<description>Estudo mostra resultados de exportação e comércio.</description>'+
+   '</item></channel></rss>';
+ const ebc={id:'agencia-brasil-educacao',name:'Agência Brasil',country:'Brasil',
+   mode:'rss',feed:'https://agenciabrasil.ebc.com.br/rss/educacao/feed.xml',
+   hostname:'agenciabrasil.ebc.com.br'};
+ const events=[];
+ const result=await runOnce({sources:[ebc],fetchImpl:async()=>new Response(general,{status:200}),
+   now:Date.parse('2026-11-10T15:00:00Z'),maxArticles:1,dryRun:true,logger:x=>events.push(x)});
+ assert.equal(result.count,0);
+ assert.equal(events[0].event,'feed_checked');
+ assert.equal(events[0].validLastYear,1);
+ assert.equal(events[0].withinWindow,1);
+ assert.equal(events[0].candidates,0);
+ assert.equal(events[0].filteredByTopic,1);
+ assert.equal(events[0].noCandidatesReason,'no_matching_topics');
+ assert.equal(events.some(x=>x.event==='feed_unavailable'),false);
+});
+
 test('unavailable feed is logged and never triggers the model',async()=>{
  const events=[];
  const value=await runOnce({sources:[source],fetchImpl:async()=>new Response('',{status:503}),
