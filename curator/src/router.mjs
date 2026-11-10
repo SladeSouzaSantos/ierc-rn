@@ -5,6 +5,21 @@ export class LlmExhaustedError extends Error {
 class ModelHttpError extends Error {
   constructor(status,retryAfter) { super('Model HTTP status '+status);this.status=status;this.retryAfter=retryAfter; }
 }
+// Fixed diagnostic labels only: never expose a provider body, prompt or credentials.
+function invalidOutput(reason) {
+  const error=new Error('Invalid model output');
+  error.name='InvalidModelOutput';
+  error.reason=reason;
+  return error;
+}
+function editorialFailureReason(error) {
+  const message=error?.message;
+  if(message==='Model output is not JSON')return 'json_syntax';
+  if(message==='Incomplete model draft')return 'incomplete_draft';
+  if(message==='Unsafe draft markup')return 'unsafe_markup';
+  if(message==='Invalid editorial payload')return 'invalid_structure';
+  return 'schema_rejected';
+}
 const fallbackFor = (err) => {
   if (err instanceof ModelHttpError) {
     if ([400,403,413,422].includes(err.status)) return null; // malformed input or policy refusal: do not retry
@@ -29,13 +44,21 @@ function retryDelay(err, now, base, maximum, category) {
   return Math.min(maximum,Math.max(1,Math.ceil(delay)));
 }
 function contentFromResponse(provider,payload) {
+  const choice=payload?.choices?.[0];
+  // Never accept truncated JSON as a finished draft, even if it parses.
+  if (provider.kind!=='ollama' && choice?.finish_reason==='length')
+    throw invalidOutput('token_limit');
   const value=provider.kind==='ollama'
     ? payload?.message?.content
-    : payload?.choices?.[0]?.message?.content;
-  if (typeof value!=='string' || !value.trim() || value.length>20000) {
-    const e=new Error('Model response is empty or invalid');
-    e.name='InvalidModelOutput';throw e;
+    : choice?.message?.content;
+  if (typeof value!=='string' || !value.trim()) {
+    const reasoning=choice?.message?.reasoning;
+    const hasReasoning=(typeof reasoning==='string' && reasoning.trim().length>0)
+      || (Array.isArray(choice?.message?.reasoning_details) && choice.message.reasoning_details.length>0)
+      || (Number(payload?.usage?.completion_tokens_details?.reasoning_tokens)>0);
+    throw invalidOutput(hasReasoning?'reasoning_without_text':'empty_content');
   }
+  if (value.length>20000)throw invalidOutput('oversize_content');
   return value.trim();
 }
 export class FreeLlmRouter {
@@ -59,7 +82,11 @@ export class FreeLlmRouter {
       try {
         const body=provider.kind==='ollama'
           ? {model:provider.model,stream:false,messages:[{role:'system',content:system},{role:'user',content:prompt}]}
-          : {model:provider.model,stream:false,max_tokens:900,temperature:0.2,messages:[{role:'system',content:system},{role:'user',content:prompt}]};
+          : {model:provider.model,stream:false,
+              max_tokens:this.settings.outputMaxTokens||1600,temperature:0.2,
+              ...(provider.id==='openrouter' && typeof provider.reasoningEnabled==='boolean'
+                ? {reasoning:{enabled:provider.reasoningEnabled}} : {}),
+              messages:[{role:'system',content:system},{role:'user',content:prompt}]};
         const response=await this.fetchImpl(provider.url,{
           method:'POST',headers:{
             'Content-Type':'application/json',
@@ -74,10 +101,8 @@ export class FreeLlmRouter {
         // Count the attempt and try the next FREE provider, never a paid route.
         if (validateOutput) {
           try { validateOutput(content); }
-          catch {
-            const error=new Error('Invalid editorial output');
-            error.name='InvalidModelOutput';
-            throw error;
+          catch (error) {
+            throw invalidOutput(editorialFailureReason(error));
           }
         }
         attempts.push({provider:provider.id,action:'attempt',result:'success'});
@@ -92,7 +117,9 @@ export class FreeLlmRouter {
         const delay=retryDelay(error,this.now(),this.settings.cooldownMs,this.settings.maxCooldownMs,category);
         await this.state.block(provider.id,delay);
         attempts.push({provider:provider.id,action:'attempt',result:category});
-        this.logger({event:'llm_attempt',provider:provider.id,result:category,ms:this.now()-start});
+        this.logger({event:'llm_attempt',provider:provider.id,result:category,
+          ...(category==='invalid_output'?{reason:error?.reason||'invalid_response'}:{}),
+          ms:this.now()-start});
       } finally {clearTimeout(timer);}
     }
     throw new LlmExhaustedError('all_free_providers_unavailable',attempts);
