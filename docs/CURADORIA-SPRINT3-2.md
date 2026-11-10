@@ -516,3 +516,60 @@ docker compose --env-file cms/.env -f compose.cms.yml exec -T db psql -X -v ON_E
 Após eventual deploy, verificar `dedupeKeyPresent:true`, conferir contagem e conteúdo existente no Content Manager, `npm run cms:check` com status `ok` e **somente depois** permitir uma única criação `Draft` supervisionada, sem cron ou publicação automática.
 
 **Estado:** `main` intocada, PR #12 Draft, `CURATOR_ENABLED=false` e `CURATOR_WRITE_DRAFTS=false` persistidos; nenhum novo rascunho gerado no CMS nesta etapa.
+
+
+## Inspeção física PostgreSQL concluída: tabela intacta, dois registros — 10/11/2026
+
+O operador executou as três consultas **somente leitura** no Postgres 17 DEV e confirmou:
+- `public.ierc_news_articles` existe.
+- Contém **23 colunas**, incluindo `document_id`, `published_at`, `editorial_status` e dados atuais de notícias. **Não possui nenhum dos nove novos campos** de origem/rastreabilidade/IA/deduplicação.
+- Contém **2 registros físicos** antes do deploy, `SELECT COUNT(*) = 2`. Não interpretar como duas notícias distintas: o Strapi 5 pode manter versões draft/published para um documento.
+- A comparação anterior de schemas de aplicação retornou `additions_only` com nove adições exclusivamente em `news-article`, `hazards=[]`. A inspeção de tabela física é compatível com esse delta. Ainda não foi auditado o catálogo completo de constraints e tabelas auxiliares.
+- O backup `cms-backups/ierc-before-curator.dump` tem 245848 bytes e foi copiado com sucesso. **Restaurabilidade ainda não ensaiada**.
+
+O usuário também confirmou `.env.local` da raiz com `CMS_ENABLED=true`, `CMS_API_URL=http://127.0.0.1:1337` e `CMS_READ_TOKEN`: esse token é **somente para o portal ler conteúdo**. O token Custom `CURATOR_STRAPI_DRAFT_TOKEN` no `curator/.env` é independente, com `find/create` em Notícias.
+
+### Atualização controlada somente do serviço CMS DEV
+
+Verificar a listagem do dump de backup sem restaurar ou alterar dados:
+```powershell
+docker compose --env-file cms/.env -f compose.cms.yml exec -T db pg_restore -l /tmp/ierc-before-curator.dump > $null
+if ($LASTEXITCODE -ne 0) { throw "Dump PostgreSQL nao pode ser listado; nao fazer deploy" }
+Get-Item .\cms-backups\ierc-before-curator.dump | Select-Object Name, Length
+
+# Construir imagem nova, sem reiniciar/alterar banco.
+docker compose --env-file cms/.env -f compose.cms.yml build cms
+if ($LASTEXITCODE -ne 0) { throw "Build CMS falhou; nao fazer deploy" }
+```
+
+**Observação:** `pg_restore -l` apenas valida a leitura do catálogo do arquivo, não prova a restauração completa. Se o `cms` tiver alterações pendentes no Content Manager ou o backup não corresponder ao banco atual, verificar antes de prosseguir.
+
+Após validar gates e confirmar que a sincronização automática do Strapi 5 poderá ser aplicada a este DEV, recriar **somente** o CMS, sem subir dependências, sem `down` nem `-v`:
+
+```powershell
+docker compose --env-file cms/.env -f compose.cms.yml up -d --no-deps cms
+if ($LASTEXITCODE -ne 0) { throw "Deploy CMS falhou; nao executar curador" }
+
+docker compose --env-file cms/.env -f compose.cms.yml ps
+```
+
+O Strapi sincroniza schema no startup e, com `forceMigration` padrão, pode remover objetos não declarados; mesmo que o diff de content-types seja aditivo, essa operação **escreve no PostgreSQL** e deve ser tratada como migração DEV supervisionada. Referência oficial: https://docs.strapi.io/cms/configurations/database.
+
+Validar **depois do deploy**, sem imprimir títulos de notícias ou segredos:
+
+```powershell
+docker compose --env-file cms/.env -f compose.cms.yml exec -T cms node -e "const s=require('/opt/app/src/api/news-article/content-types/news-article/schema.json'); console.log(JSON.stringify({draftAndPublish:s.options.draftAndPublish,dedupeKeyPresent:Object.hasOwn(s.attributes,'dedupeKey')}))"
+
+docker compose --env-file cms/.env -f compose.cms.yml exec -T db psql -X -v ON_ERROR_STOP=1 -U ierc_cms -d ierc_cms -c "SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='ierc_news_articles' AND column_name IN ('origin_type','scope','country','source_language','original_title','original_published_at','why_it_matters','ai_assisted','dedupe_key') ORDER BY column_name;"
+
+docker compose --env-file cms/.env -f compose.cms.yml exec -T db psql -X -v ON_ERROR_STOP=1 -U ierc_cms -d ierc_cms -c "SELECT COUNT(*) AS total_news_rows FROM public.ierc_news_articles;"
+```
+
+Esperado: `dedupeKeyPresent=true`, **nove colunas novas**, `total_news_rows=2` antes da execução do curador; confirmar também notícias existentes no Content Manager e login/admin sem regressão. Se algum item divergir, **não executar o curador**; diagnosticar logs do CMS e preservar backup/volumes, sem reset.
+
+Somente após esses gates, executar no worker já construído:
+```powershell
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run cms:check
+```
+
+O resultado obrigatório é `{"event":"cms_draft_lookup_check","status":"ok","readOnly":true}`. A partir daí, com revisão humana e backup preservado, retomar a única escrita supervisionada como **Draft** (limite `CURATOR_ONCE_LIMIT=1`) já documentada acima. Agendador, PROD, `main` e PR #12 continuam inativos/intocados.
