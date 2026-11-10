@@ -17,13 +17,19 @@ export function listingDate(raw) {
   return date.getTime();
 }
 
-function readCard(card, fields, source, now, ageDays) {
+function readCard(card, fields, source, now, ageDays, stats) {
   const title = plain(fields.title(card), 200);
   const url = canonicalLink(fields.url(card), source);
   const stamp = listingDate(fields.date(card));
-  if (!title || !url || !url.startsWith('https://' + source.hostname + source.articlePath) ||
-      stamp === null || stamp < now - ageDays * 86400000 || stamp > now + 86400000)
-    return null;
+  if (!title) { stats.invalidTitle++; return null; }
+  if (!url || !url.startsWith('https://' + source.hostname + source.articlePath)) {
+    stats.invalidLink++; return null;
+  }
+  if (stamp === null) { stats.invalidDate++; return null; }
+  if (stamp < now - ageDays * 86400000 || stamp > now + 86400000) {
+    stats.outsideWindow++; return null;
+  }
+  stats.accepted++;
   // HTML listing is preview-only. Do not send excerpts to AI or republish third-party text.
   return {
     title, url, summary: '', publishedAt: new Date(stamp).toISOString(),
@@ -32,29 +38,35 @@ function readCard(card, fields, source, now, ageDays) {
   };
 }
 
-export function parseListing(body, source, now = Date.now(), ageDays = 45) {
+export function parseListing(body, source, now = Date.now(), ageDays = 45, stats = {}) {
   if (typeof body !== 'string' || body.length > 1300000) throw new Error('HTML listing too large');
   if (source.mode !== 'html' || source.previewOnly !== true)
     throw new Error('HTML listings must remain preview-only');
+  Object.assign(stats, {detectedCards:0,invalidTitle:0,invalidLink:0,
+    invalidDate:0,outsideWindow:0,accepted:0});
   const $ = load(body);
   const cards = [];
+  const record = (card, fields) => {
+    stats.detectedCards++;
+    cards.push(readCard(card, fields, source, now, ageDays, stats));
+  };
   if (source.id === 'rnib') {
     $('.listing__post').slice(0, 30).each((_, el) => {
       const card = $(el);
-      cards.push(readCard(card, {
+      record(card, {
         title: x => x.find('.small-image-card__title a').first().text(),
         url: x => x.find('.small-image-card__title a').first().attr('href'),
         date: x => x.find('.small-image-card__meta-item').first().text(),
-      }, source, now, ageDays));
+      });
     });
   } else if (source.id === 'ibsa') {
     $('.tekup-blog-wrap').slice(0, 30).each((_, el) => {
       const card = $(el);
-      cards.push(readCard(card, {
+      record(card, {
         title: x => x.find('.tekup-blog-content h3').first().text(),
         url: x => x.find('.tekup-blog-content h3').first().closest('a').attr('href'),
         date: x => x.find('.tekup-blog-meta li').last().text(),
-      }, source, now, ageDays));
+      });
     });
   } else {
     throw new Error('Unsupported HTML source: no custom parser');
