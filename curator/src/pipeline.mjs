@@ -143,6 +143,7 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
             ...(['draft_ready','review_approved_preview','review_pending_preview'].includes(result.status) ? {
               draft: result.draft, provider: result.provider,
               ...(result.reviewReason ? {reviewReason:result.reviewReason} : {}),
+              ...(result.reviewBasis ? {reviewBasis:result.reviewBasis} : {}),
             } : {}),
           } : {}),
         } : {}),
