@@ -228,3 +228,33 @@ O job `curator-unit` do [CI #42756184288](https://github.com/SladeSouzaSantos/ie
 - JSON de notícia incompleto, mesmo vindo de HTTP 200, provoca fallback para o próximo provedor **gratuito**, com consumo de quota e cooldown.
 
 **Importante:** esses testes são determinísticos/mocados. A primeira geração real com OpenRouter `openrouter/free` ainda requer a chave do operador e o comando manual documentado acima; não informar sucesso de criação de notícia no CMS sem execução local.
+
+
+## Correção de inicialização Redis — Docker Windows (10/11/2026)
+
+Na primeira execução real de `docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run generate:preview`, o Docker criou o volume e a rede privados da curadoria, iniciou Redis `healthy` e construiu o worker Node 22 Alpine. **Nenhuma chamada à IA ocorreu nesta tentativa**: o script tentou `redis.ping()` logo após criar uma instância ioredis com `enableOfflineQueue:false`; a conexão TCP poderia estar ainda em `connecting`. O `finally` executou `redis.quit()` mesmo sem sessão pronta, ocasionando `Stream isn't writeable and enableOfflineQueue options is false` e ocultando o erro do primeiro `PING`.
+
+**Correção no código da `dev`**: `curator/src/redis-connection.mjs` usa `lazyConnect:true`, `await redis.connect()`, confirmação de `status=ready` e `PING=PONG` antes de qualquer operação de orçamento. Caso haja falha, a conexão é descartada e as chamadas de IA permanecem bloqueadas. A rotina `closeQuotaRedis` só envia `QUIT` quando o estado é `ready`; nos demais casos usa `disconnect`; uma falha de encerramento não sobrepõe os resultados do worker. Mantivemos `enableOfflineQueue:false` e os limites de quota para não reenfileirar requisições fora de controle. Há testes de regressão simulados e um smoke de Redis 7 real no job CI `curator-unit`.
+
+### Repetição segura do teste local
+
+Após confirmar que o CI do commit corretivo passou, no PowerShell da raiz:
+
+```powershell
+git switch dev
+git pull --ff-only origin dev
+npm run --prefix curator test
+
+# Inspeciona serviços sem alterar volumes CMS nem Redis
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator ps
+
+# Recria somente a imagem do worker com a correção
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator build worker
+
+# Uma única geração de síntese com IA gratuita; não grava no CMS
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm -T worker npm run generate:preview
+```
+
+O segundo comando pode mostrar o Redis já iniciado, e isso é normal. **Não executar `docker compose down -v`, não reiniciar o banco CMS, não habilitar o agendador e não colocar a chave de API na conversa.** O comando `generate-preview` ainda está isolado de escrita, usa apenas RSS W3C/WAI e Perkins e contabiliza toda tentativa na quota Redis.
+
+Se houver erro de conexão após o ajuste, consultar `docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator logs --tail=60 redis` (não colar segredos). Um erro `Redis is unavailable or not ready; quota enforcement blocked the AI request` significa que o trabalho parou **antes de chamar o modelo**. O resultado bem-sucedido produz `aiGenerated:true`, `status:draft_ready` e o texto gerado em pt-BR, sujeito a verificação editorial.
