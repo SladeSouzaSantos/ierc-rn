@@ -22,7 +22,9 @@ function CmsNewsCard({ item, external = false }: { item: CmsArticle; external?: 
     </p>}
     {external && item.aiAssisted && <p className="radar-ai-note">
       {item.autoReviewed
-        ? "Síntese gerada e revisada automaticamente por IA · baseada em resumo RSS"
+        ? ( item.autoReviewBasis === "full_article"
+          ? "Síntese gerada e revisada automaticamente por IA · fundamentada em texto integral autorizado"
+          : "Síntese gerada e revisada automaticamente por IA · baseada em resumo RSS" )
         : "Síntese assistida por IA · revisão editorial humana"}
     </p>}
     <Link className="editorial-source" href={"/noticias/" + item.slug}>
