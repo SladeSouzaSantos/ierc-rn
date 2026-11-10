@@ -16,8 +16,8 @@ export function coverageFor(article,source={}){
  if(mentionsIerc(article))return {track:'ierc',scope:'local',country:'Brasil',priority:3,
    perspective:'Referência externa sobre o IERC-RN, não comunicado institucional'};
  const foreign=source.country && !['Brasil','Brazil','Internacional'].includes(source.country);
- const abroad=foreign||source.section==='internacional'||
-   (overseas.test((article?.title||'')+' '+(article?.summary||'')) && source.country==='Internacional');
+ const abroad=foreign||source.country==='Internacional'||source.section==='internacional'||
+   overseas.test((article?.title||'')+' '+(article?.summary||''));
  if(abroad)return {track:'internacional',scope:'internacional',
    country:foreign?source.country:(source.country==='Brasil'?'Brasil':source.country||'Internacional'),
    priority:1,
