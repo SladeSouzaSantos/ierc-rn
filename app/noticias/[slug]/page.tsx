@@ -25,7 +25,11 @@ export default async function NewsDetail({ params }: Props) {
     <header className="detail-intro">
       <p className="eyebrow">{entry.originType === "externa" ? "Radar da Inclusão · Fonte externa" : (entry.category || "Notícias do IERC-RN")}</p>
       {entry.originType === "externa" && <p>Resumo original em português baseado em fonte externa{entry.country ? " · " + entry.country : ""}. Não representa comunicado ou parceria do IERC-RN.</p>}
-      {entry.originType === "externa" && entry.aiAssisted && <p className="radar-ai-note">Síntese assistida por IA · aprovada pela revisão editorial</p>}
+      {entry.originType === "externa" && entry.aiAssisted && <p className="radar-ai-note">
+        {entry.autoReviewed
+          ? "Síntese gerada e revisada automaticamente por IA · baseada em resumo RSS"
+          : "Síntese assistida por IA · revisão editorial humana"}
+      </p>}
       <h1>{entry.title}</h1>
       <p>{entry.summary}</p>
       {entry.date && !Number.isNaN(Date.parse(entry.date)) && <time dateTime={entry.date}>
