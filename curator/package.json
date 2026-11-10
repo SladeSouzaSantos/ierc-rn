@@ -8,7 +8,7 @@
     "test": "node --test tests/*.test.mjs",
     "once": "node src/cli.mjs once",
     "schedule": "node src/cli.mjs schedule",
-    "check": "node --check src/router.mjs && node --check src/pipeline.mjs && node --check src/cli.mjs",
+    "check": "node --check src/router.mjs && node --check src/pipeline.mjs && node --check src/cli.mjs && node --check src/listings.mjs && node --check src/relevance.mjs",
     "preview": "node src/cli.mjs preview"
   },
   "engines": {
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "fast-xml-parser": "4.5.3",
-    "ioredis": "5.4.2"
+    "ioredis": "5.4.2",
+    "cheerio": "1.0.0"
   }
 }
