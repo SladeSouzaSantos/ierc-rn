@@ -11,12 +11,17 @@ import { reviewAiDraft } from './auto-review.mjs';
  */
 export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, store, cms,
   now = Date.now(), maxArticles = 3, maxAgeDays = 45, dryRun = true,
-  aiPreview = false, reviewPreview = false, autoPublish = false, publisher = null,
+  aiPreview = false, reviewPreview = false, previewLookup = null,
+  autoPublish = false, publisher = null,
   autoPublishSources = [], logger = () => {} }) {
   if (aiPreview && (!dryRun || cms || autoPublish || publisher))
     throw new Error('AI preview cannot write to CMS or run in live mode');
   if(reviewPreview && !aiPreview)
     throw new Error('Review preview requires read-only AI preview');
+  if(reviewPreview && (!previewLookup || typeof previewLookup.check!=='function'))
+    throw new Error('Review preview requires a read-only Redis and CMS duplicate preflight');
+  if(!reviewPreview && previewLookup)
+    throw new Error('Read-only duplicate preflight is exclusive to review preview');
   if(autoPublish && (dryRun || !publisher || maxArticles > 1 ||
      !Array.isArray(autoPublishSources)||autoPublishSources.length===0 ||
      !autoPublishSources.every(id=>['perkins','w3c-wai'].includes(id))))
@@ -63,10 +68,23 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
 
   let remaining = maxArticles;
   const results = [];
+  const skippedPreviouslyProcessed={redis:0,cms:0};
   while (remaining > 0 && buckets.some(bucket => bucket.cursor < bucket.articles.length)) {
     for (const bucket of buckets) {
       if (remaining <= 0 || bucket.cursor >= bucket.articles.length) continue;
       const article = bucket.articles[bucket.cursor++];
+      if(reviewPreview){
+        // Check historical CMS documents (draft AND published) and Redis seen
+        // keys BEFORE either LLM call. A lookup error aborts the run.
+        const reason=await previewLookup.check(article);
+        if(reason!==null){
+          if(reason!=='redis'&&reason!=='cms')
+            throw new Error('Invalid read-only duplicate preflight result');
+          skippedPreviouslyProcessed[reason]++;
+          logger({event:'review_preview_skipped',source:bucket.source.id,reason});
+          continue;
+        }
+      }
       let result;
       if(aiPreview){
         result=await generateAiDraft(article,{router,logger});
@@ -106,5 +124,6 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
   const aiGenerated=results.some(({status})=>['draft_ready','draft_created',
     'draft_created_review_pending','draft_created_publish_failed','draft_published',
     'review_approved_preview','review_pending_preview'].includes(status));
-  return { results, preview: dryRun, aiGenerated, count: results.length };
+  return { results, preview: dryRun, aiGenerated, count: results.length,
+    ...(reviewPreview ? {skippedPreviouslyProcessed} : {}) };
 }
