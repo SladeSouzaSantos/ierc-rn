@@ -6,7 +6,21 @@
 
 Worker próprio Node.js 22, independente do Strapi e do Next.js. Redis 7 privado com persistência AOF mantém orçamento global e por provedor, cooldown, URLs já vistas e locks. Três horários de verificação: 08h, 13h e 19h, sempre em America/Fortaleza.
 
-A primeira origem de coleta é o feed oficial [W3C/WAI](https://www.w3.org/WAI/news/subscribe/) (https://www.w3.org/WAI/feed.xml). Outras fontes (WBU, ICEVI, RNIB, IBSA, CPB, CBDV) serão adicionadas somente após confirmar RSS/API, permissão de coleta e qualidade. Não há rastreamento indiscriminado da web nem download de fotos.
+As fontes são mantidas em catálogo fechado, com a permissão de cada origem separada da capacidade de coletar títulos.
+
+| Origem | Canal verificado | Situação |
+|---|---|---|
+| W3C/WAI | [RSS/Atom oficial](https://www.w3.org/WAI/feed.xml) | Elegível para síntese original e rascunho após aprovação do fluxo |
+| Perkins School for the Blind | [RSS oficial](https://www.perkins.org/feed/) — publicações atuais sobre educação inclusiva, CVI e esporte adaptado | Elegível para síntese original e rascunho após aprovação do fluxo |
+| RNIB | [Página pública de notícias](https://www.rnib.org.uk/news/) | **Apenas prévia de títulos/datas/links**. Termos restringem republicação; exigir autorização para qualquer reutilização |
+| IBSA | [Página pública de notícias](https://ibsasport.org/news/) | **Apenas prévia de títulos/datas/links** até validar um resumo factual confiável e direitos |
+| WBU | [RSS oficial](https://wbu.ngo/feed/) | Feed válido porém sem itens na inspeção, somente diagnóstico |
+| ICEVI / CPB / AFB | Feeds oficiais localizados em inspeção, mas sem publicações recentes adequadas ou com conteúdos heterogêneos | Catalogação futura antes de ativação |
+| CBDV | Página institucional | Feed não confirmado |
+
+As listagens HTML são acessadas somente no modo `preview` e **não** entram no pipeline de escrita do Strapi; a prévia não replica descrições de RNIB/IBSA. O modo real percorre **exclusivamente W3C/WAI e Perkins**. A automação não rastreia artigos completos nem descarrega fotografias. Em caso de autorização negada ou conteúdo insuficiente, a origem permanece bloqueada para geração de rascunhos.
+
+Relevância editorial: pontuação determinística por Braille/educação, goalball/paradesporto, tecnologias assistivas/baixa visão e acessibilidade; artigos sem sinal temático são ignorados. A prévia distribui resultados entre fontes por *round-robin*, com prioridade por pontuação dentro de cada origem.
 
 ## Consumo de IA — regras ORBE reaproveitadas
 
@@ -40,13 +54,21 @@ Na raiz do projeto, com Node.js 22 ou superior:
     npm run --prefix curator test
     npm run --prefix curator preview
 
-A prévia consulta apenas o feed público W3C/WAI, sem Redis, Strapi nem APIs de IA. O modo preview examina **120 dias** por padrão para permitir testes com publicações históricas; o worker real continua limitado a **45 dias**, preservando atualidade. O campo validLastYear informa quantos itens válidos existem no feed em 365 dias; withinWindow informa quantos passaram pelo filtro de recência; candidates corresponde aos que também passaram pelo tema. Não cria notícias no site.
+A prévia consulta apenas o feed público W3C/WAI, sem Redis, Strapi nem APIs de IA. O modo preview examina **120 dias** por padrão e apresenta até **6 resultados distribuídos entre fontes**; o worker real mantém **45 dias** e no máximo 3 rascunhos processados por rodada, preservando atualidade. O campo validLastYear informa quantos itens válidos existem no feed em 365 dias; withinWindow informa quantos passaram pelo filtro de recência; candidates corresponde aos que também passaram pelo tema. Não cria notícias no site.
 
 Para simular outra janela somente na prévia, no PowerShell:
 
     $env:CURATOR_PREVIEW_DAYS = '180'
     npm run --prefix curator preview
     Remove-Item Env:CURATOR_PREVIEW_DAYS -ErrorAction SilentlyContinue
+
+Ajuste opcional do número de resultados **apenas na prévia**, entre 1 e 30:
+
+    $env:CURATOR_PREVIEW_LIMIT = '10'
+    npm run --prefix curator preview
+    Remove-Item Env:CURATOR_PREVIEW_LIMIT -ErrorAction SilentlyContinue
+
+Os resultados indicam também `previewOnly: true` nas fontes que **nunca** podem ser enviadas ao Strapi por esse worker.
 
 Uma lista vazia pode significar que a fonte não publicou material recente ou que o tema não passou no filtro; as novas contagens ajudam a distinguir essas situações.
 
@@ -77,12 +99,13 @@ O Redis da curadoria não possui portas expostas e armazena dados em volume pró
 ## Verificações
 
 - [x] Roteamento gratuito com quotas por provedor/global, cooldown e fallback com limites.
-- [x] Feed internacional oficial W3C/WAI e deduplicação.
+- [x] Feeds oficiais W3C/WAI + Perkins; RNIB/IBSA apenas na prévia, WBU RSS vazio; deduplicação e classificação de relevância.
 - [x] Prévia sem IA e rascunhos Strapi explicitamente não publicados.
 - [x] Horários 08h/13h/19h em America/Fortaleza e worker opt-in.
 - [x] Conteúdo externo identificado separadamente no site.
 - [ ] Testes finais CI e primeira prévia local confirmada.
-- [ ] Expansão do catálogo de fontes nacionais/internacionais.
+- [x] Catálogo inicial com permissões explícitas, prévia internacional diversificada e testes de bloqueio de fontes sem autorização.
+- [ ] Avaliar feeds atuais de outras instituições e autorizações de reutilização para promover novas fontes à coleta ativa.
 - [ ] Homologação de falhas reais com provedores gratuitos, sem cobrança.
 - [ ] Validação da criação de rascunho em Strapi DEV com permissão mínima.
 - [ ] Acessibilidade do conteúdo externo aprovado e revisão editorial.

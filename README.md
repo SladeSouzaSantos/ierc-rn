@@ -10,7 +10,7 @@ A separação entre CMS DEV existente e PROD futura (Docker, PostgreSQL, volumes
 
 ## Tecnologia
 
-A Sprint 3.2.1 acrescenta o [Radar da Inclusão com curadoria IA gratuita e rascunhos supervisionados](docs/CURADORIA-SPRINT3-2.md). O worker permanece desligado por padrão, sem cobrança nem publicações automáticas.
+A Sprint 3.2.1 acrescenta o [Radar da Inclusão com curadoria IA gratuita e rascunhos supervisionados](docs/CURADORIA-SPRINT3-2.md). O worker permanece desligado por padrão, sem cobrança nem publicações automáticas. A coleta ativa está preparada para RSS W3C/WAI e Perkins; as páginas RNIB/IBSA só aparecem na prévia, com restrições editoriais por origem.
 
 A partir da Sprint 3.1, a `dev` inclui o **Strapi 5 isolado em Docker/PostgreSQL**, com painel administrativo e integração opcional de publicações aprovadas (notícias, eventos, atividades e novas trajetórias), sem migrar a interface existente. Consulte [Guia do CMS](docs/CMS-SPRINT3.md) para criar credenciais locais e configurar o acesso à API no servidor Next.js. O CMS não é ativado automaticamente no portal.
 
