@@ -76,7 +76,10 @@ export function payloadFor(source,draft,provider){
     title:draft.title,slug:slugFor(source,draft.title),summary:draft.summary,body:draft.body,
     category:canonicalCategory(draft.category),date:source.publishedAt,
     editorialStatus:'em_revisao',sourceName:source.source,sourceUrl:source.url,
-    originType:'externa',scope:'internacional',country:source.country,
+    // An external report on the Institute remains external; scope=local
+    // routes it to "IERC na imprensa" rather than an official announcement.
+    originType:'externa',scope:source.coverageScope||'internacional',
+    country:source.coverageCountry||source.country,
     sourceLanguage:source.language,originalTitle:source.title,
     originalPublishedAt:source.publishedAt,whyItMatters:draft.whyItMatters,
     dedupeKey:source.dedupeKey,aiAssisted:true,imageRightsStatus:'pendente',
