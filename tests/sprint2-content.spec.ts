@@ -31,8 +31,10 @@ test("histórias apresentam trajetórias documentadas e não atribuem vínculo s
 test("notícias exibem clippings de terceiros com links e datas", async ({ page }) => {
   await page.goto("/noticias");
   await expect(page.getByRole("heading", { name: "Registros publicados sobre o IERC-RN" })).toBeVisible();
-  await expect(page.locator(".editorial-news")).toHaveCount(3);
-  await expect(page.locator('.editorial-news a[target="_blank"]')).toHaveCount(3);
+  await expect(page.locator(".editorial-section:has(#clippings-title) .editorial-news")).toHaveCount(6);
+  await expect(page.locator('.editorial-section:has(#clippings-title) .editorial-news a[target="_blank"]')).toHaveCount(6);
+  await expect(page.getByRole("heading", {name:/IERC-RN é citado em seleção de entidades/i})).toBeVisible();
+  await expect(page.getByRole("heading", {name:/Tribuna do Norte destaca autonomia/i})).toBeVisible();
   await expect(page.getByText(/Não foram criadas notícias fictícias/)).toBeVisible();
 });
 
