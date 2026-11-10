@@ -31,8 +31,11 @@ test('Strapi writer explicitly uses POST status=draft and validates unpublished 
    }});
  assert.equal(await api.existing(source.dedupeKey),false);
  assert.equal(await api.create(payloadFor(source,draft,'groq')),'doc1');
- assert.match(urls[1].url,/\?status=draft$/);
- assert.equal(JSON.parse(urls[1].opts.body).data.editorialStatus,'em_revisao');
+ assert.equal(urls.length,3);
+ assert.equal(new URL(urls[0].url).searchParams.get('status'),'draft');
+ assert.equal(new URL(urls[1].url).searchParams.get('status'),'published');
+ assert.match(urls[2].url,/\?status=draft$/);
+ assert.equal(JSON.parse(urls[2].opts.body).data.editorialStatus,'em_revisao');
 });
 test('accidental Strapi publication fails validation',async()=>{
  const api=cmsClient({baseUrl:'http://cms:1337',token:'test-token-123456',
@@ -70,13 +73,13 @@ test('Strapi draft lookup reports only safe HTTP status and never exposes remote
          details:{authorization:token}}}),{status:code});
      }});
    await assert.rejects(api.existing(source.dedupeKey),error=>{
-     assert.equal(error.message,'Strapi draft lookup failed (HTTP '+code+')');
+     assert.equal(error.message,'CMS read-only duplicate lookup failed (HTTP '+code+')');
      assert.ok(!error.message.includes(SECRET));
      assert.ok(!error.message.includes(token));
      return true;
    });
    assert.equal(urls.length,1);
-   assert.equal(urls[0].options.method,undefined); // GET
+   assert.equal(urls[0].options.method,'GET'); // authenticated GET only
    assert.match(urls[0].url,/status=draft/);
    assert.match(decodeURIComponent(urls[0].url),/filters\[dedupeKey\]\[\$eq\]/);
    assert.equal(urls[0].options.headers.Authorization,'Bearer '+token);
@@ -88,11 +91,11 @@ test('Strapi lookup transport and malformed body errors are sanitized',async()=>
    throw new Error('Connection password private-secret has been included');
  }});
  await assert.rejects(network.existing(source.dedupeKey),e=>
-   e.message==='Strapi draft lookup unreachable');
+   e.message==='CMS read-only duplicate lookup unavailable');
  const malformed=cmsClient({baseUrl:'http://cms:1337',token,fetchImpl:async()=>
    new Response('no-json',{status:200})});
  await assert.rejects(malformed.existing(source.dedupeKey),e=>
-   e.message==='Invalid Strapi lookup response');
+   e.message==='Invalid CMS read-only duplicate lookup response');
 });
 test('lookup HTTP 403 prevents model invocation or draft write and releases Redis lock',async()=>{
  let calls=0;let unlocks=0;
@@ -200,4 +203,23 @@ test('auto publication refuses missing publisher before any CMS access',async()=
    cms:{async create(){cmsCalled++;}},router:null,store:null});
  await assert.rejects(out,/scoped publisher/);
  assert.equal(cmsCalled,0);
+});
+
+test('live writer detects a previously published article even after Redis seen TTL expires',async()=>{
+ const sourceKey=source.dedupeKey;let calls=0,modelCalls=0;
+ const cms=cmsClient({baseUrl:'http://cms:1337',token:'test-token-123456',
+   fetchImpl:async(url,opts)=>{
+     calls++;
+     if(opts.method!=='GET')throw Error('Unexpected CMS write');
+     if(new URL(url).searchParams.get('status')==='draft')
+       return new Response(JSON.stringify({data:[]}),{status:200});
+     assert.equal(new URL(url).searchParams.get('status'),'published');
+     return new Response(JSON.stringify({data:[{documentId:'already-published'}]}),{status:200});
+   }});
+ const store={async set(){return 'OK';},async exists(){return 0;},async eval(){return 1;}};
+ const result=await processArticle(source,{dryRun:false,store,cms,
+   router:{async complete(){modelCalls++;throw Error('do not generate duplicate');}}});
+ assert.equal(result.status,'already_in_cms');
+ assert.equal(calls,2);assert.equal(modelCalls,0);
+ assert.equal(sourceKey,source.dedupeKey);
 });
