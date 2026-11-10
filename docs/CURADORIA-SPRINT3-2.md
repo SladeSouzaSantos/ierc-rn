@@ -451,3 +451,35 @@ Se houver `hazards`, **não reiniciar o Strapi**: investigar os modelos afetados
 Após aprovar o delta aditivo, o caminho previsto será compilar somente `cms` e recriar somente o serviço `cms` com `--no-deps`, preservando `db` e volumes, confirmar `dedupeKeyPresent:true` e executar `cms:check` novamente. Só com `status=ok` poderá ocorrer a rodada supervisionada `once` que cria **um único Draft**, sem agenda/publicação automática.
 
 `main` e PR #12 Draft permanecem intactos; Redis e worker não precisam de nova modificação por este erro.
+
+
+## PowerShell: corrigir invalid_snapshot sem reiniciar o CMS — 10/11/2026
+
+O operador atualizou `dev=7743187` e executou os **3 testes determinísticos do comparador com sucesso**. Entretanto, o comando que transmite os schemas do `docker compose exec -T cms node -e ...` para `node cms/scripts/check-deployed-schema.mjs` via pipe no PowerShell retornou `{"status":"invalid_snapshot","readOnly":true}`. **A comparação não foi executada**, portanto a saída não implica `hazards` nem `additions_only`. A origem precisa da corrupção/ausência de JSON no pipeline não foi comprovada (possibilidades: transcodificação do PowerShell, stdout não-JSON ou comando Docker). Não reiniciar o Strapi ou mexer no banco com base nesse resultado.
+
+**Novo método mais confiável no Windows (arquivo a arquivo, sem pipeline de JSON):** `cms/scripts/check-deployed-schema.mjs --schema-root <pasta>/api` lê somente os `schema.json` do diretório copiado do contêiner, compara-os contra `cms/schemas.mjs` e mantém a rejeição de mudanças destrutivas. Há testes para delta apenas aditivo, schema alterado, diretório vazio e stdin UTF-8 BOM. A alternativa antiga de stdin segue funcionando em Linux/scripts; **prefira o modo diretório no PowerShell**.
+
+Na raiz do repositório:
+
+```powershell
+git switch dev
+git pull --ff-only origin dev
+node --test cms/tests/deployed-schema-diff.test.cjs
+
+# Obtém a instância DEV em execução, sem alterar ou recriar contêineres.
+$cmsId = docker compose --env-file cms/.env -f compose.cms.yml ps -q cms
+if (-not $cmsId) { throw "Contêiner CMS DEV não encontrado" }
+
+# Cópia temporária, fora do repositório; preserva arquivos JSON originais.
+$snapshotRoot = Join-Path $env:TEMP ("ierc-cms-schema-" + [guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Force -Path $snapshotRoot | Out-Null
+docker cp "${cmsId}:/opt/app/src/api" "$snapshotRoot"
+if ($LASTEXITCODE -ne 0) { throw "Falha ao copiar schemas do CMS DEV" }
+
+# Nenhuma query SQL, nenhuma escrita, nenhuma publicação.
+node cms/scripts/check-deployed-schema.mjs --schema-root (Join-Path $snapshotRoot "api")
+```
+
+Esperado: JSON com `status`, `additions`, `hazards`, `readOnly:true` e `databaseSchemaNotChecked:true`. O script retornará código 0 em `additions_only`, 3 em `manual_review_required` e 2 em `invalid_snapshot`; o código 0 **não é aprovação automática de migração PostgreSQL**. Caso haja apenas `dedupeKey` em `additions`, ainda exigimos a revisão do delta antes de reconstruir somente o serviço `cms`. Caso haja `hazards` ou `invalid_snapshot`, parar sem reiniciar o CMS. O dump anterior de **245848 bytes** permanece preservado, sem restauração ensaiada.
+
+Não executar `npm run once` nem ativar `CURATOR_ENABLED`/`CURATOR_WRITE_DRAFTS` ou qualquer publicação até o schema DEV ser corrigido e `cms:check` retornar `status=ok`.
