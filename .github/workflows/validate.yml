@@ -45,6 +45,15 @@ jobs:
     timeout-minutes: 8
     permissions:
       contents: read
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -56,6 +65,18 @@ jobs:
         run: npm run --prefix curator check
       - name: Run deterministic fallback, quota and draft safety tests
         run: npm run --prefix curator test
+      - name: Redis readiness integration smoke without AI calls
+        run: |
+          node --input-type=module -e '
+            import {connectQuotaRedis, closeQuotaRedis} from "./curator/src/redis-connection.mjs";
+            const redis = await connectQuotaRedis("redis://127.0.0.1:6379");
+            try {
+              if (redis.status !== "ready") throw new Error("Redis readiness gate failed");
+              console.log("Redis ready; offline queue disabled; no AI or CMS calls");
+            } finally {
+              await closeQuotaRedis(redis);
+            }
+          '
 
   cms-build:
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/dev'
