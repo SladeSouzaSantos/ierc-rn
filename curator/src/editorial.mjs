@@ -170,6 +170,8 @@ export async function processArticle(source,{router,store,cms,dryRun=true,logger
           await publisher.publishApprovedDraft(documentId,payload,{
             evidenceQuotes:verdict.evidenceQuotes,
             reviewerProvider:verdict.reviewerProvider,
+            evidenceMode:verdict.evidenceMode,
+            evidenceDigest:verdict.evidenceDigest,
           });
           status='draft_published';
           logger({event:'auto_published',documentIdHash,review:'rss_only'});
