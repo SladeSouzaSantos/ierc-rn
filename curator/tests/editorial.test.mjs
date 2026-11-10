@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {cmsClient,validateDraft,payloadFor,processArticle} from '../src/editorial.mjs';
+import {SYSTEM,cmsClient,validateDraft,payloadFor,processArticle} from '../src/editorial.mjs';
 const source={title:'New accessible device',summary:'A new tool for low vision has been described.',
   url:'https://www.w3.org/WAI/news/test',publishedAt:'2026-11-09T12:00:00Z',
   country:'Internacional',language:'en',source:'W3C WAI',dedupeKey:'a'.repeat(64)};
@@ -105,4 +105,13 @@ test('lookup HTTP 403 prevents model invocation or draft write and releases Redi
    /Strapi draft lookup failed \(HTTP 403\)/);
  assert.equal(calls,0);
  assert.equal(unlocks,1);
+});
+
+test('editorial prompt never infers absence of evidence or examples from an RSS summary',()=>{
+ assert.match(SYSTEM,/Você NÃO leu a reportagem completa/);
+ assert.match(SYSTEM,/ausência de detalhes no resumo RSS não significa ausência no artigo/);
+ assert.match(SYSTEM,/Não afirme que a publicação não detalha modalidades/);
+ assert.match(SYSTEM,/skip:true em vez de especular/);
+ // The LLM receives only source title + RSS summary; this tests prompt policy,
+ // not stochastic model compliance. Human editorial approval remains mandatory.
 });
