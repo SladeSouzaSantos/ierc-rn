@@ -10,11 +10,34 @@ export const SYSTEM=[
   'Evite transformar uma possibilidade em resultado comprovado. No whyItMatters, formule implicações como reflexão contextual, não benefícios certos sem evidência no resumo.',
   'Você NÃO leu a reportagem completa: ausência de detalhes no resumo RSS não significa ausência no artigo. Não afirme que a publicação não detalha modalidades, casos, pesquisas, dados ou resultados; limite-se ao que título e resumo confirmam.',
   'Não substitua a síntese por ressalvas genéricas sobre falta de evidências. Se título e resumo não sustentarem uma notícia informativa, use skip:true em vez de especular.',
+  'Classifique category com um destes rótulos: Esporte adaptado, Educação inclusiva, Tecnologia assistiva, Direitos e acessibilidade, Cultura e participação ou Inclusão e acessibilidade.',
   'Se a fonte for insuficiente, responda apenas {"skip":true}.',
   'Caso contrário, responda apenas JSON com title, summary, body, whyItMatters e category.',
   'Mantenha title até 150 caracteres, summary até 250, body até 1000 e whyItMatters até 350.',
 ].join(' ');
 const str=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
+/** Canonical editorial labels, independent from the free-form LLM answer. */
+const CATEGORY_ALIASES = new Map([
+  ['esporte','Esporte adaptado'],['esportes','Esporte adaptado'],
+  ['esporte adaptado','Esporte adaptado'],['esportes adaptados','Esporte adaptado'],
+  ['esporte e lazer','Esporte adaptado'],['goalball','Esporte adaptado'],
+  ['paradesporto','Esporte adaptado'],
+  ['educacao','Educação inclusiva'],['educacao inclusiva','Educação inclusiva'],
+  ['braille','Educação inclusiva'],['alfabetizacao','Educação inclusiva'],
+  ['tecnologia','Tecnologia assistiva'],['tecnologia assistiva','Tecnologia assistiva'],
+  ['tecnologias assistivas','Tecnologia assistiva'],['inclusao digital','Tecnologia assistiva'],
+  ['direitos','Direitos e acessibilidade'],['direitos e acessibilidade','Direitos e acessibilidade'],
+  ['acessibilidade','Direitos e acessibilidade'],['cidadania','Direitos e acessibilidade'],
+  ['cultura','Cultura e participação'],['cultura e participacao','Cultura e participação'],
+  ['participacao','Cultura e participação'],['lazer','Cultura e participação'],
+  ['inclusao e acessibilidade','Inclusão e acessibilidade'],
+]);
+export function canonicalCategory(value){
+  const key=(typeof value==='string'?value:'').normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  return CATEGORY_ALIASES.get(key)||'Inclusão e acessibilidade';
+}
+
 export function validateDraft(raw){
   if(typeof raw!=='string'||raw.length>15000)throw new Error('Invalid model output');
   let input;
@@ -25,7 +48,7 @@ export function validateDraft(raw){
   const article={
     title:str(input.title,160),summary:str(input.summary,270),
     body:str(input.body,1300),whyItMatters:str(input.whyItMatters,400),
-    category:str(input.category,80),
+    category:canonicalCategory(str(input.category,80)),
   };
   if(article.title.length<15||article.summary.length<60||
      article.body.length<100||article.whyItMatters.length<40)throw new Error('Incomplete model draft');
@@ -37,7 +60,7 @@ export const slugFor=(source)=>'radar-'+source.dedupeKey.slice(0,18);
 export function payloadFor(source,draft,provider){
   return {
     title:draft.title,slug:slugFor(source),summary:draft.summary,body:draft.body,
-    category:draft.category||'Radar da Inclusão',date:source.publishedAt,
+    category:canonicalCategory(draft.category),date:source.publishedAt,
     editorialStatus:'em_revisao',sourceName:source.source,sourceUrl:source.url,
     originType:'externa',scope:'internacional',country:source.country,
     sourceLanguage:source.language,originalTitle:source.title,
