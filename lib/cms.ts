@@ -138,11 +138,25 @@ export async function getCmsRadarNews(): Promise<CmsArticle[]> {
 
 export async function getCmsNewsBySlug(slug: string): Promise<CmsArticle | null> {
   if (!/^[a-z0-9-]{1,90}$/.test(slug)) return null;
+  const valid=(item: CmsArticle) => validNewsArticle(item) &&
+    (item.originType !== "externa" || attributableExternalArticle(item));
   const matching = (await find("news-articles", {"filters[slug][$eq]": slug}))
-    .map(mapNewsRecord)
-    .find(item => item.slug === slug && validNewsArticle(item) &&
-      (item.originType !== "externa" || attributableExternalArticle(item)));
-  return matching ?? null;
+    .map(mapNewsRecord).find(item => item.slug === slug && valid(item));
+  if(matching)return matching;
+
+  // Legacy links used "radar-" plus the first 18 hex characters of
+  // dedupeKey. If an editor later renames such a slug, resolve the exact
+  // published+approved document and let the route issue a permanent redirect.
+  const legacy=/^radar-([a-f0-9]{18})$/.exec(slug);
+  if(!legacy)return null;
+  const candidates=await find("news-articles",{
+    "filters[dedupeKey][$startsWith]":legacy[1],
+    "filters[originType][$eq]":"externa",
+  });
+  const verified=candidates.filter(item=>typeof item.dedupeKey==="string" &&
+    item.dedupeKey.startsWith(legacy[1])).map(mapNewsRecord).filter(valid);
+  // Never guess when a partial digest is ambiguous.
+  return verified.length===1?verified[0]:null;
 }
 export async function getCmsEvents(): Promise<CmsEvent[]> {
   return (await find("events")).map(v => ({
