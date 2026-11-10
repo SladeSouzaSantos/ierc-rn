@@ -43,7 +43,7 @@ export class FreeLlmRouter {
     this.providers=providers;this.state=state;this.settings=settings;
     this.fetchImpl=fetchImpl;this.now=now;this.logger=logger;
   }
-  async complete({system,prompt}) {
+  async complete({system,prompt,validateOutput}) {
     const attempts=[];
     if (!this.providers.length) throw new LlmExhaustedError('no_free_provider_configured',attempts);
     for (const provider of this.providers) {
@@ -70,6 +70,16 @@ export class FreeLlmRouter {
         // Never log provider error bodies, response contents or credentials.
         const data=await response.json();
         const content=contentFromResponse(provider,data);
+        // An HTTP 200 with a malformed editorial JSON draft is not usable.
+        // Count the attempt and try the next FREE provider, never a paid route.
+        if (validateOutput) {
+          try { validateOutput(content); }
+          catch {
+            const error=new Error('Invalid editorial output');
+            error.name='InvalidModelOutput';
+            throw error;
+          }
+        }
         attempts.push({provider:provider.id,action:'attempt',result:'success'});
         this.logger({event:'llm_attempt',provider:provider.id,result:'success',ms:this.now()-start});
         return {content,provider:provider.id,attempts:attempts.filter(x=>x.action==='attempt').length,fallbackUsed:attempts.some(x=>x.provider!==provider.id)};
