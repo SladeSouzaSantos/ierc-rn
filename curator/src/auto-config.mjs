@@ -3,7 +3,11 @@
  * Called by the CLI before connecting to Redis, providers or the CMS.
  * A deliberately narrow allowlist prevents preview-only sources being promoted.
  */
-const WRITABLE_RSS_SOURCES=new Set(['perkins','w3c-wai']);
+export const AUTO_PUBLISH_LICENSED_SOURCES=Object.freeze([
+  'agencia-brasil-direitos','agencia-brasil-educacao',
+  'agencia-brasil-esportes','agencia-brasil-internacional','eu-commission-news',
+]);
+const WRITABLE_RSS_SOURCES=new Set(AUTO_PUBLISH_LICENSED_SOURCES);
 export function autoPublishSettingsFromEnv(env,cmd,{dryRun}){
   const autoPublish=env.CURATOR_AUTO_PUBLISH_ENABLED==='true';
   if(!autoPublish)return {autoPublish:false,allowedSources:[]};
