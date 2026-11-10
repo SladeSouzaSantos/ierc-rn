@@ -18,13 +18,18 @@ export default async function NewsDetail({ params }: Props) {
   if (!entry) notFound();
   if(entry.slug!==slug)permanentRedirect("/noticias/"+entry.slug);
   return <article className="container interior-body cms-detail">
-    <nav aria-label={entry.originType === "externa" ? "Voltar ao Radar da Inclusão" : "Voltar à lista de notícias"}>
-      <Link className="inline-link" href={entry.originType === "externa" ? "/radar-da-inclusao" : "/noticias"}>
-        <ArrowLeft size={18} aria-hidden="true"/> {entry.originType === "externa" ? "Voltar ao Radar da Inclusão" : "Voltar às notícias"}
+    <nav aria-label={entry.originType === "externa" && entry.scope !== "local" ?
+      "Voltar ao Radar da Inclusão" : "Voltar à lista de notícias"}>
+      <Link className="inline-link" href={entry.originType === "externa" && entry.scope !== "local" ?
+        "/radar-da-inclusao" : "/noticias"}>
+        <ArrowLeft size={18} aria-hidden="true"/> {entry.originType === "externa" && entry.scope !== "local" ?
+          "Voltar ao Radar da Inclusão" : "Voltar às notícias"}
       </Link>
     </nav>
     <header className="detail-intro">
-      <p className="eyebrow">{entry.originType === "externa" ? "Radar da Inclusão · Fonte externa" : (entry.category || "Notícias do IERC-RN")}</p>
+      <p className="eyebrow">{entry.originType === "externa" ? (entry.scope === "local" ?
+        "IERC-RN na imprensa · Fonte externa" : "Radar da Inclusão · Fonte externa")
+        : (entry.category || "Notícias do IERC-RN")}</p>
       {entry.originType === "externa" && <p>Resumo original em português baseado em fonte externa{entry.country ? " · " + entry.country : ""}. Não representa comunicado ou parceria do IERC-RN.</p>}
       {entry.originType === "externa" && entry.aiAssisted && <p className="radar-ai-note">
         {entry.autoReviewed
