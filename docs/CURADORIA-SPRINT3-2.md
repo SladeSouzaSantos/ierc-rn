@@ -103,7 +103,7 @@ O Redis da curadoria não possui portas expostas e armazena dados em volume pró
 - [x] Prévia sem IA e rascunhos Strapi explicitamente não publicados.
 - [x] Horários 08h/13h/19h em America/Fortaleza e worker opt-in.
 - [x] Conteúdo externo identificado separadamente no site.
-- [ ] Testes finais CI e primeira prévia local confirmada.
+- [x] Testes de curadoria no CI e primeira prévia local confirmada (48/48 no Windows, 10/11/2026); homologação editorial e da escrita permanece pendente.
 - [x] Catálogo inicial com permissões explícitas, prévia internacional diversificada e testes de bloqueio de fontes sem autorização.
 - [ ] Avaliar feeds atuais de outras instituições e autorizações de reutilização para promover novas fontes à coleta ativa.
 - [ ] Homologação de falhas reais com provedores gratuitos, sem cobrança.
