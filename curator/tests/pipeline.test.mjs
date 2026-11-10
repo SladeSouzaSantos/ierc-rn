@@ -35,6 +35,35 @@ test('valid feeds with no matching inclusion topic report editorial filtering, n
  assert.equal(events.some(x=>x.event==='feed_unavailable'),false);
 });
 
+test('new EBC topical discovery sections are read-only previews and never enter AI/live ingestion',async()=>{
+  const {SOURCES}=await import('../src/feeds.mjs');
+  const types=['justica','politica','saude','geral'];
+  const discovery=types.map(type=>SOURCES.find(x=>x.id==='agencia-brasil-'+type));
+  const feed='<rss><channel><item>'+
+    '<title>Nova iniciativa de acessibilidade e braille para estudantes cegos</title>'+
+    '<link>https://agenciabrasil.ebc.com.br/justica/noticia/2026-11/iniciativa-acessibilidade</link>'+
+    '<pubDate>Tue, 10 Nov 2026 12:00:00 GMT</pubDate>'+
+    '<description>Educação inclusiva fortalece o acesso de estudantes com deficiência visual.</description>'+
+    '</item></channel></rss>';
+  let reads=0;
+  const fetchImpl=async()=>{reads++;return new Response(feed,{status:200});};
+  const logs=[];
+  const p=await runOnce({sources:discovery,fetchImpl,
+    now:Date.parse('2026-11-10T15:00:00Z'),maxArticles:4,
+    dryRun:true,logger:x=>logs.push(x)});
+  assert.equal(reads,4);
+  assert.equal(p.aiGenerated,false);
+  assert.ok(p.results.every(x=>x.status==='preview'&&x.previewOnly===true));
+  assert.equal(logs.filter(x=>x.event==='feed_checked').length,4);
+  const attempts=reads;
+  const live=await runOnce({sources:discovery,fetchImpl,
+    now:Date.parse('2026-11-10T15:00:00Z'),maxArticles:4,dryRun:false,
+    store:null,cms:null,router:{async complete(){throw Error('No LLM allowed');}},
+    logger:x=>logs.push(x)});
+  assert.equal(live.count,0);
+  assert.equal(reads,attempts);
+  assert.equal(logs.filter(x=>x.event==='source_skipped_by_policy').length,4);
+});
 test('paused feed does not issue HTTP requests or block healthy feeds',async()=>{
   const {SOURCES}=await import('../src/feeds.mjs');
   const eu=SOURCES.find(x=>x.id==='eu-commission-news');
