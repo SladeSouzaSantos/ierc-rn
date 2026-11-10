@@ -818,3 +818,55 @@ html[data-high-contrast="true"] .athlete-story-sources li a { color: #300954; }
 .cms-detail time { display: inline-block; color: var(--muted); margin-top: 12px; font-size: .95rem; }
 .cms-article-body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.9; max-width: 900px; font-size: 1.09rem; margin-top: 42px; }
 .cms-source { margin-top: 44px; }
+
+
+/* Sprint 3.2 — Radar da Inclusão: área externa distinta de comunicados institucionais */
+.radar-intro { margin-bottom: clamp(45px, 6vw, 72px); }
+.radar-intro > p:not(.eyebrow) + p { margin-top: 14px; }
+.radar-empty {
+  padding: clamp(28px, 5vw, 55px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  max-width: 960px;
+}
+.radar-empty h2 { margin: 0 0 16px; font-size: clamp(1.65rem, 3vw, 2.35rem); }
+.radar-empty p { max-width: 700px; color: var(--muted); line-height: 1.8; }
+.radar-empty .inline-link { display: inline-flex; gap: 8px; align-items: center; }
+.radar-about {
+  max-width: 960px;
+  margin-top: clamp(56px, 7vw, 95px);
+  padding: clamp(26px, 5vw, 52px);
+  border-left: 5px solid var(--brand-purple, #5a2c86);
+  background: #f4eff8;
+  border-radius: 0 18px 18px 0;
+}
+.radar-about h2 { font-size: clamp(1.5rem, 2.7vw, 2.25rem); margin: 0 0 16px; }
+.radar-about p { max-width: 780px; line-height: 1.85; color: #263e4d; }
+.radar-about .inline-link { display: inline-flex; align-items: center; gap: 8px; }
+.radar-teaser {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(22px, 5vw, 60px);
+  margin-block: clamp(55px, 7vw, 95px);
+  border-radius: 22px;
+  padding: clamp(28px, 5vw, 60px);
+  background: var(--deep);
+  color: #fff;
+}
+.radar-teaser h2 { font-size: clamp(2rem, 3.3vw, 3.1rem); margin: 8px 0 12px; }
+.radar-teaser .eyebrow { color: #f7cf65; }
+.radar-teaser p:not(.eyebrow) { max-width: 700px; color: #e3eef0; line-height: 1.8; margin: 0; }
+.radar-teaser .button { text-align: center; white-space: normal; justify-content: center; }
+.editorial-news .editorial-place { display: block; line-height: 1.65; color: #3c5060; }
+.editorial-news .editorial-place strong { color: #264841; }
+@media (max-width: 760px) {
+  .radar-teaser { grid-template-columns: 1fr; }
+  .radar-teaser .button { justify-self: start; }
+}
+html[data-high-contrast="true"] .radar-empty,
+html[data-high-contrast="true"] .radar-about { background: #fff; border: 2px solid #000; color: #000; }
+html[data-high-contrast="true"] .radar-about p { color: #000; }
+html[data-high-contrast="true"] .radar-teaser { background: #000; border: 2px solid #fff; }
+html[data-high-contrast="true"] .radar-teaser p:not(.eyebrow) { color: #fff; }
