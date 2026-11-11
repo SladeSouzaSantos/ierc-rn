@@ -6,6 +6,7 @@ import { reviewAiDraft } from './auto-review.mjs';
 import {generateFullArticleDraft,reviewFullArticleDraft} from './full-article-review.mjs';
 import {sanitizeArticleEvidenceError} from './article-evidence.mjs';
 import {AUTO_PUBLISH_LICENSED_SOURCES} from './auto-config.mjs';
+import {createPacedEbcFetch,collectEbcArchiveCandidates} from './ebc-archive-worker.mjs';
 
 /**
  * Preview: all verified source listings, including sources held for policy review.
@@ -17,7 +18,8 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
   aiPreview = false, reviewPreview = false, fullArticlePreview = false,
   articleReader = null, previewLookup = null,
   autoPublish = false, publisher = null,
-  autoPublishSources = [], logger = () => {} }) {
+  autoPublishSources = [], archiveDiscovery = false,
+  archiveCollector = collectEbcArchiveCandidates, logger = () => {} }) {
   if (aiPreview && (!dryRun || cms || autoPublish || publisher))
     throw new Error('AI preview cannot write to CMS or run in live mode');
   if(reviewPreview && !aiPreview)
@@ -33,12 +35,21 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
      !Array.isArray(autoPublishSources)||autoPublishSources.length===0 ||
      !autoPublishSources.every(id=>AUTO_PUBLISH_LICENSED_SOURCES.includes(id))))
     throw new Error('Auto publication requires live mode, source allowlist, scoped publisher and one-item batch');
+  if(archiveDiscovery && (!autoPublish||dryRun||maxArticles!==1||
+    !autoPublishSources.includes('agencia-brasil-educacao')||
+    typeof archiveCollector!=='function'||
+    !sources.some(s=>s.id==='agencia-brasil-educacao'&&s.previewOnly!==true)))
+    throw new Error('EBC archive discovery requires licensed DEV auto-publication with one-item batch');
   if((fullArticlePreview||autoPublish) && typeof articleReader!=='function')
     throw new Error('Permission-gated full article reader is required');
   if (!Number.isInteger(maxAgeDays) || maxAgeDays < 1 || maxAgeDays > 365)
     throw new Error('Invalid article age window');
   if (!Number.isInteger(maxArticles) || maxArticles < 1 || maxArticles > 30)
     throw new Error('Invalid article batch size');
+  // Only the explicitly opted-in auto-publisher paces ALL EBC-host requests:
+  // RSS, archive listing and full article GETs, preserving 10s crawl delay.
+  const requestFetch=archiveDiscovery?createPacedEbcFetch(fetchImpl):fetchImpl;
+  const archiveEvidenceByUrl=new Map();
   const buckets = [];
   for (const source of sources) {
     // Connectivity quarantine is explicit and applies to previews as well:
@@ -60,7 +71,7 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
     }
     let articles;
     try {
-      const body = await fetchSource(source, fetchImpl);
+      const body = await fetchSource(source, requestFetch);
       const parse = source.mode === 'html' ? parseListing : parseFeed;
       const validYear = parse(body, source, now, 365);
       const listingDiagnostics = {};
@@ -89,6 +100,29 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
       continue;
     }
     if (articles.length) buckets.push({ source, articles, cursor: 0 });
+  }
+
+  if(archiveDiscovery){
+    const source=sources.find(s=>s.id==='agencia-brasil-educacao');
+    const discovered=await archiveCollector({source,fetchImpl:requestFetch,
+      articleReader,now,logger,maxEvidence:2,pages:2});
+    if(!discovered||!Array.isArray(discovered.candidates)||
+      !(discovered.evidenceByUrl instanceof Map))
+      throw new Error('Invalid EBC archive discovery contract');
+    if(discovered.candidates.length>2)
+      throw new Error('Archive discovery candidate limit exceeded');
+    for(const article of discovered.candidates){
+      const evidence=discovered.evidenceByUrl.get(article.url);
+      if(!evidence||evidence.verified!==true||evidence.mode!=='full_article'||
+        evidence.sourceUrl!==article.url||evidence.sourceId!==source.id||
+        evidence.licenseReference!==source.fullTextAccess.reference||
+        !/^[a-f0-9]{64}$/.test(article.dedupeKey)||
+        article.relevance?.editorialFocus!=='visual_direta')
+        throw new Error('Unverified archive candidate cannot enter editorial pipeline');
+      archiveEvidenceByUrl.set(article.url,evidence);
+    }
+    if(discovered.candidates.length)
+      buckets.push({source,articles:discovered.candidates,cursor:0});
   }
 
   // Prioritize explicitly documented IERC coverage, then national news,
@@ -129,7 +163,12 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
       let evidence=null;
       if(fullArticlePreview||(autoPublish&&autoPublishSources.includes(bucket.source.id))){
         try{
-          evidence=await articleReader(bucket.source,article,{fetchImpl});
+          evidence=archiveEvidenceByUrl.get(article.url)||
+            await articleReader(bucket.source,article,{fetchImpl:requestFetch});
+          if(archiveEvidenceByUrl.has(article.url)&&
+            (evidence.sourceId!==bucket.source.id||
+            evidence.licenseReference!==bucket.source.fullTextAccess.reference))
+            throw new Error('Archive evidence cannot cross publisher permissions');
           if(evidence?.verified!==true||evidence?.mode!=='full_article'||evidence?.sourceUrl!==article.url)
             throw new Error('Invalid article evidence');
         }catch(error){
