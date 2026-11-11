@@ -5,19 +5,20 @@ import {
 } from "lucide-react";
 
 /**
- * Non-financial support routes only. The Institute must confirm the current
- * bazaar schedule, accepted goods and any collaboration opportunities.
- * No payment credentials, forms, unverified phone numbers or QR codes.
+ * Bazaar logistics from an institutional contact (11 Nov 2026).
+ * Purchases can be paid at the physical bazaar by Pix or cash; the website
+ * does not receive funds or display financial identifiers. No new forms,
+ * sensitive data, unverified phone numbers or QR codes.
  */
 export function SupportPage() {
   return <>
     <div className="detail-intro support-intro">
       <p className="eyebrow">Solidariedade e participação</p>
       <h2>Há diferentes formas de caminhar junto com o IERC-RN.</h2>
-      <p>Colaborar também pode significar participar do Bazar Solidário,
-        compartilhar as iniciativas do Instituto ou conversar com a equipe
-        sobre outras possibilidades de apoio. Antes de fazer uma entrega
-        ou visita, confirme as orientações atuais com a instituição.</p>
+      <p>Você pode contribuir com roupas, sapatos e bolsas em bom estado,
+        comprar no Bazar Solidário ou conversar sobre voluntariado e
+        parcerias. Confira abaixo os horários e as orientações informadas
+        pela instituição para participar.</p>
     </div>
 
     <nav className="support-jump-links" aria-label="Nesta página">
@@ -34,27 +35,30 @@ export function SupportPage() {
         </div>
         <p className="eyebrow">Uma iniciativa do Instituto</p>
         <h2 id="support-bazar-title">Bazar Solidário</h2>
-        <p>O bazar é uma das formas divulgadas de contribuir com as atividades
-          do IERC-RN. Quem deseja doar itens ou conhecer o espaço deve
-          consultar as orientações da equipe antes de se deslocar.</p>
+        <p>O Bazar Solidário acontece na sede do IERC-RN e está aberto à
+          comunidade. A compra de produtos no bazar contribui com
+          as atividades da instituição.</p>
         <p className="support-day-reference">
           <CalendarDays size={20} aria-hidden="true" />
-          <span><strong>Referência divulgada: terças-feiras.</strong> Confirme se o funcionamento está mantido.</span>
+          <span><strong>Terças-feiras, das 8h às 11h.</strong> Atendimento presencial na sede do IERC-RN.</span>
         </p>
         <Link className="button button-dark" href="/contato">
           Consultar canais de contato <ArrowUpRight size={18} aria-hidden="true" />
         </Link>
       </div>
       <div className="support-bazar-aside">
-        <h3>Antes de visitar ou doar</h3>
-        <p>As informações abaixo ainda precisam de confirmação atual pela instituição:</p>
+        <h3>Local, doações e compras</h3>
+        <p><strong>Onde:</strong> sede do IERC-RN, Rua Fonseca e Silva, 1113,
+          Alecrim, Natal/RN.</p>
         <ul>
-          <li>Dia e horário de funcionamento;</li>
-          <li>Itens aceitos e condições para doação;</li>
-          <li>Local e orientações de entrega;</li>
-          <li>Disponibilidade para compras e atendimento.</li>
+          <li><strong>Doação de itens:</strong> segunda a quinta-feira, das 8h às 11h;</li>
+          <li><strong>O que doar:</strong> roupas, sapatos e bolsas em bom estado;</li>
+          <li><strong>Entrega:</strong> presencial, no IERC-RN. Não há coleta domiciliar;</li>
+          <li><strong>Compras:</strong> abertas a qualquer pessoa, com pagamento
+            presencial em dinheiro ou Pix.</li>
         </ul>
-        <p className="support-aside-note">Não há reserva, retirada ou cadastro de doações por este site.</p>
+        <p className="support-aside-note">Em feriados ou mudanças excepcionais,
+          consulte a instituição antes de se deslocar.</p>
       </div>
     </section>
 
@@ -62,15 +66,16 @@ export function SupportPage() {
       aria-labelledby="support-options-title">
       <p className="eyebrow">Participação da comunidade</p>
       <h2 className="interior-subtitle" id="support-options-title">Como você pode colaborar</h2>
-      <p className="editorial-intro">Escolha uma forma de se aproximar do Instituto.
-        As orientações sobre recebimento de itens e colaboração são confirmadas diretamente com a equipe.</p>
+      <p className="editorial-intro">O bazar recebe doações presenciais e atende compradores.
+        O IERC-RN também informou que aceita voluntariado e parcerias,
+        cujas condições devem ser combinadas com a equipe.</p>
       <div className="support-choice-grid">
         <article className="detail-card support-choice">
           <span className="support-choice-icon" aria-hidden="true"><HeartHandshake size={30} /></span>
           <h3>Doar itens para o bazar</h3>
-          <p>Converse com a equipe para saber o que está sendo recebido,
-            em quais condições e como combinar a entrega. Não leve itens
-            antes de verificar as regras atuais.</p>
+          <p>O IERC-RN recebe roupas, sapatos e bolsas em bom estado,
+            presencialmente, de segunda a quinta-feira, das 8h às 11h.
+            Não há serviço de coleta.</p>
           <Link className="inline-link" href="/contato">
             Consultar orientações <ArrowUpRight size={17} aria-hidden="true" />
           </Link>
@@ -78,19 +83,20 @@ export function SupportPage() {
         <article className="detail-card support-choice">
           <span className="support-choice-icon" aria-hidden="true"><ShoppingBag size={30} /></span>
           <h3>Conhecer o Bazar Solidário</h3>
-          <p>Visitar o bazar e conhecer os produtos é outra possibilidade.
-            Confirme antecipadamente a programação, o atendimento e
-            o local antes de planejar a ida.</p>
+          <p>Qualquer pessoa pode comprar no bazar, realizado às terças-feiras,
+            das 8h às 11h, na sede do Instituto. As compras são pagas
+            presencialmente em dinheiro ou Pix.</p>
           <Link className="inline-link" href="/contato">
             Ver canais do IERC-RN <ArrowUpRight size={17} aria-hidden="true" />
           </Link>
         </article>
         <article className="detail-card support-choice">
           <span className="support-choice-icon" aria-hidden="true"><Megaphone size={30} /></span>
-          <h3>Divulgar e propor colaboração</h3>
-          <p>Acompanhe e compartilhe as publicações do IERC-RN. Se deseja
-            oferecer tempo ou habilidades, converse com a equipe para
-            verificar se há alguma iniciativa recebendo apoio.</p>
+          <h3>Voluntariado e parcerias</h3>
+          <p>O Instituto informou que recebe voluntários e parcerias
+            com empresas. Para oferecer tempo, habilidades ou serviços,
+            consulte a equipe sobre as necessidades e os procedimentos.
+            Você também pode divulgar suas iniciativas.</p>
           <a className="inline-link" href="https://www.instagram.com/iercrn/"
             target="_blank" rel="noopener noreferrer">
             Conhecer o perfil informado <ArrowUpRight size={17} aria-hidden="true" />
@@ -106,17 +112,18 @@ export function SupportPage() {
       <h2 className="interior-subtitle" id="support-guidance-title">Uma contribuição bem combinada começa pela informação.</h2>
       <ol className="support-steps">
         <li><strong>Conheça o Instituto.</strong> Saiba mais sobre as atividades que integram seu trabalho.</li>
-        <li><strong>Confirme as necessidades.</strong> Consulte a equipe antes de separar itens, oferecer ajuda ou visitar o bazar.</li>
-        <li><strong>Combine a participação.</strong> Siga apenas orientações confirmadas pelos canais institucionais.</li>
+        <li><strong>Prepare a contribuição.</strong> Separe apenas roupas, sapatos e bolsas em bom estado; para outros tipos de apoio, consulte a equipe.</li>
+        <li><strong>Visite nos horários informados.</strong> A entrega de itens ocorre de segunda a quinta, das 8h às 11h; o bazar atende às terças, das 8h às 11h.</li>
       </ol>
       <aside className="support-finance" aria-labelledby="support-finance-title">
         <ShieldCheck size={27} aria-hidden="true" />
         <div>
           <h3 id="support-finance-title">Sobre doações financeiras</h3>
-          <p>Este portal ainda não recebe pagamentos. Não há Pix, QR Code,
-            cartão ou contribuição recorrente disponíveis por aqui.
-            Essas opções dependerão de validação institucional, segurança
-            do recebimento e prestação de contas.</p>
+          <p>O IERC-RN informou que possui um Pix oficial para doações financeiras
+            e autoriza sua futura divulgação. <strong>A chave e a titularidade
+            ainda não foram verificadas para publicação neste portal.</strong>
+            Não há cobrança, QR Code ou pagamento on-line disponível aqui.
+            O Pix e o dinheiro aceitos no bazar referem-se a compras presenciais.</p>
         </div>
       </aside>
     </section>
@@ -126,9 +133,9 @@ export function SupportPage() {
       <MessageCircle size={34} aria-hidden="true" />
       <p className="eyebrow light">Próximo passo</p>
       <h2 id="support-contact-title">Quer apoiar o IERC-RN?</h2>
-      <p>Consulte a página de contato para encontrar o endereço documentado
-        e o perfil informado da instituição. Os detalhes de atendimento
-        e recebimento ainda dependem de confirmação com a equipe.</p>
+      <p>As doações de itens são recebidas na sede do IERC-RN, de segunda
+        a quinta, das 8h às 11h. Para voluntariado, parcerias ou dúvidas,
+        consulte os canais institucionais disponíveis na página de contato.</p>
       <Link className="button button-yellow" href="/contato">
         Ir para Contato <ArrowUpRight size={18} aria-hidden="true" />
       </Link>
