@@ -54,6 +54,35 @@ test("Bazar exibe horários, local, itens aceitos e compra presencial conforme i
   await expect(page.locator('main a[href^="pix:"], main img[src*="qr"], main form')).toHaveCount(0);
 });
 
+test("Doação única e apoio mensal são opções informativas sem iniciar cobranças", async ({ page }) => {
+  await page.goto("/apoie");
+
+  const modes = page.locator(".support-donation-modes");
+  await expect(modes.getByRole("heading", { name: "Duas maneiras de contribuir financeiramente" })).toBeVisible();
+  await expect(modes.getByRole("heading", { name: "Doação única" })).toBeVisible();
+  await expect(modes.getByRole("heading", { name: "Apoio mensal recorrente" })).toBeVisible();
+  await expect(modes.getByText("Em preparação — sem pagamento disponível")).toBeVisible();
+  await expect(modes.getByText("Em preparação — sem assinatura ativa")).toBeVisible();
+  await expect(modes.getByText(/cancelar a recorrência/)).toBeVisible();
+
+  // No active payment mechanism is shipped before receiver/provider approval.
+  await expect(modes.locator("form, input, select, button, iframe, a")).toHaveCount(0);
+  await expect(page.locator('main a[href*="checkout"], main a[href*="subscribe"], main a[href^="pix:"]')).toHaveCount(0);
+  await expect(page.locator('main input[type="number"], main input[type="text"], main input[type="email"]')).toHaveCount(0);
+});
+
+test("Rotas financeiras permanecem inexistentes até a escolha e homologação do gateway", async ({ request }) => {
+  // Do not expose a fake checkout or a webhook listener without verified provider.
+  const checkout = await request.post("/api/donations/checkout", {
+    data: { amount: 1, frequency: "monthly" },
+  });
+  expect(checkout.status()).toBe(404);
+  const webhook = await request.post("/api/donations/webhook", {
+    data: { id: "untrusted-event", type: "paid" },
+  });
+  expect(webhook.status()).toBe(404);
+});
+
 test("Navegação interna da seção Apoie utiliza âncoras existentes", async ({ page }) => {
   await page.goto("/apoie");
   const menu = page.getByRole("navigation", { name: "Nesta página" });
