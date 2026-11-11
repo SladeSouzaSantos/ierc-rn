@@ -32,7 +32,7 @@ services:
       - "127.0.0.1:1338:1337"
     volumes:
       - ierc_cms_uploads_prod:/opt/app/public/uploads
-    networks: [cms_prod_private]
+    networks: [cms_prod_private, portal_read]
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:1337/_health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 15s
@@ -41,6 +41,8 @@ services:
       retries: 8
 networks:
   cms_prod_private: {}
+  portal_read:
+    name: ierc-rn-prod-cms-read
 volumes:
   ierc_cms_pg_prod: {}
   ierc_cms_uploads_prod: {}
