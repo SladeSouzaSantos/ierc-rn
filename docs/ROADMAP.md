@@ -14,7 +14,7 @@
 - **Gate de aprovação manual obrigatório:** NVDA, VoiceOver ou TalkBack, leitura linear, links, botões, modo alto contraste e revisão com usuários.
 
 ## Sprint 1.1 — Ilustrações institucionais
-**Acompanhamento:** [#10](https://github.com/SladeSouzaSantos/ierc-rn/issues/10)
+**Acompanhamento:** [#10](https://github.com/SladeSouzaSantos/ierc-rn/issues/10) **encerrada como entrega de código**; acessibilidade manual segue em [#6](https://github.com/SladeSouzaSantos/ierc-rn/issues/6).
 
 - Trocar capa abstrata por mãos, leitura tátil e percurso de autonomia.
 - Redesenhar goalball com quadra, meta e bola com aberturas sonoras.
@@ -36,6 +36,12 @@
 
 - CMS, editor/administrador, permissões, revisão, notícias, agenda, galerias, atletas, eventos.
 - Acessibilidade também no painel e nos formulários.
+
+## Operação automatizada de notícias e futura implantação MiniMac
+
+**Código do monitor concluído na `dev`:** Compose independente `compose.curator.monitor.yml`, sem tokens Strapi/LLM, sem escrita de CMS e sem publicação. Faz uma varredura ao iniciar e três verificações diárias às **08h/13h/19h America/Fortaleza**. Resultados ficam em JSON no volume Docker, com proteção contra repetição de slot e reinício automático do serviço. **Não está ativo no MiniMac enquanto o operador não executar o Compose nesse host.** Guia: [Monitor MiniMac](MONITOR-NOTICIAS-MINIMAC.md).
+
+**Acompanhamento:** [#15](https://github.com/SladeSouzaSantos/ierc-rn/issues/15) para ativação/homologação do monitor no MiniMac; [#16](https://github.com/SladeSouzaSantos/ierc-rn/issues/16) para deploy do portal Next.js + Strapi e PostgreSQL, proxy HTTPS, backups e acessibilidade. As issues [#13](https://github.com/SladeSouzaSantos/ierc-rn/issues/13) e [#14](https://github.com/SladeSouzaSantos/ierc-rn/issues/14) continuam abertas: busca temática histórica na EBC, revisão editorial e eventual publicação automática exigem homologação separada. Não publicar automaticamente pelo simples fato de o monitor estar em execução.
 
 ## Sprint 4 — Participação e sustentabilidade
 **Acompanhamento:** [#9](https://github.com/SladeSouzaSantos/ierc-rn/issues/9) · [#3](https://github.com/SladeSouzaSantos/ierc-rn/issues/3) · [#4](https://github.com/SladeSouzaSantos/ierc-rn/issues/4)
