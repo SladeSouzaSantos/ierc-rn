@@ -59,7 +59,7 @@ function officialLink(href,section,recordRejection){
   // runtime-injected global.
   try{
     if(typeof href!=='string'||!href.trim())return reject('malformed_url');
-    u=new NodeURL(href,archivePageUrl(section,0));
+    u=new NodeURL(href,archivePageUrl(section,0)+'/');
   }catch(error){
     return reject(error instanceof TypeError?'malformed_url':'url_parser_failure');
   }
