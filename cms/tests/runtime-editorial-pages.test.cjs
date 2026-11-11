@@ -1,0 +1,36 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const { join } = require('node:path');
+const root = join(__dirname, '../..');
+const read = path => readFileSync(join(root, path), 'utf8');
+
+// Docker builds Next.js before private CMS runtime environment variables are injected.
+// The pages must not bake an empty CMS response into a static HTML snapshot.
+test('CMS-dependent pages render dynamically with runtime-only credentials', () => {
+  for (const route of [
+    'app/page.tsx',
+    'app/[slug]/page.tsx',
+    'app/radar-da-inclusao/page.tsx',
+  ]) {
+    assert.match(read(route), /export const dynamic = ["']force-dynamic["'];/, route);
+  }
+});
+
+test('CMS still filters Published + editorially approved content on the server', () => {
+  const src = read('lib/cms.ts');
+  assert.match(src, /import ["']server-only["']/);
+  assert.match(src, /status: ["']published["']/);
+  assert.match(src, /"filters\[editorialStatus\]\[\$eq\]": ["']aprovado["']/);
+  assert.match(src, /item\.editorialStatus === ["']aprovado["']/);
+  assert.match(src, /typeof item\.publishedAt === ["']string["']/);
+  assert.match(src, /CMS_READ_TOKEN/);
+});
+
+test('the Radar filters attributable external news and uses a server-only CMS fetch', () => {
+  assert.match(read('app/radar-da-inclusao/page.tsx'), /getCmsRadarNews\(\)/);
+  const cms = read('lib/cms.ts');
+  assert.match(cms, /"filters\[originType\]\[\$eq\]": ["']externa["']/);
+  assert.match(cms, /item\.scope !== ["']local["']/);
+  assert.match(cms, /attributableExternalArticle\(item\)/);
+});
