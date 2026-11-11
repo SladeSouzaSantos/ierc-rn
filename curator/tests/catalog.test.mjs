@@ -7,7 +7,8 @@ test('source catalog declares publication policy and exact official HTTPS origin
     'agencia-brasil-esportes','agencia-brasil-internacional',
     'agencia-brasil-justica','agencia-brasil-politica',
     'agencia-brasil-saude','agencia-brasil-geral',
-    'w3c-wai','perkins','rnib','ibsa','wbu']);
+    'w3c-wai','perkins','diario-pcd','jornalista-inclusivo',
+    'fundacao-dorina','ebu','iapb','rnib','ibsa','wbu']);
   assert.equal(new Set(SOURCES.map(x=>x.id)).size, SOURCES.length);
   for(const source of SOURCES) {
     assert.equal(new URL(source.feed).protocol,'https:');
@@ -16,6 +17,24 @@ test('source catalog declares publication policy and exact official HTTPS origin
     assert.ok(source.readiness);
   }
   assert.equal(SOURCES.filter(x=>!x.previewOnly).length,7);
+  const additions={
+    'diario-pcd':'https://diariopcd.com.br/feed/',
+    'jornalista-inclusivo':'https://jornalistainclusivo.com/feed/',
+    'fundacao-dorina':'https://fundacaodorina.org.br/feed/',
+    'ebu':'https://www.euroblind.org/rss.xml',
+    'iapb':'https://www.iapb.org/feed/',
+  };
+  for(const [id,feed] of Object.entries(additions)){
+    const found=SOURCES.find(x=>x.id===id);
+    assert.ok(found, id);
+    assert.equal(found.feed,feed);
+    assert.equal(found.mode,'rss');
+    assert.equal(found.previewOnly,true);
+    assert.equal(found.paused,undefined);
+    assert.equal(found.fullTextAccess,undefined);
+    assert.match(found.readiness,/reuse_permission_pending/);
+  }
+
   assert.equal(SOURCES.filter(x=>x.fullTextAccess?.status==='approved').length,5);
   const discovery=['justica','politica','saude','geral'].map(x=>
     SOURCES.find(s=>s.id==='agencia-brasil-'+x));
