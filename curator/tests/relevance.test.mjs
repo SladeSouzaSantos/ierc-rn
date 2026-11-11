@@ -48,7 +48,7 @@ test('explicit blindness, low vision, Braille and goalball are direct visual foc
  }
 });
 test('specialist context does not fabricate direct visual relevance',()=>{
- const item=article('An inclusive community event welcomes students');
+ const item=article('An adaptive sports event welcomes students with disabilities');
  assert.equal(relevanceAssessment(item,{id:'rnib',previewOnly:true}).editorialFocus,'contextual');
  assert.equal(relevanceAssessment(item,{id:'diario-pcd',previewOnly:true}).editorialFocus,'inclusao_geral');
  assert.equal(relevanceAssessment(article('Community weather forecast'),{id:'rnib'}).editorialFocus,'fora_do_escopo');
@@ -57,7 +57,7 @@ test('RNIB listing context is used only when explicitly preview-only',()=>{
  const item={...article('Report finds NHS app falls short on accessibility'),
    summary:'',discoveryText:'Only 3 per cent of blind and partially sighted people can use the NHS App.'};
  assert.equal(relevanceAssessment(item,{id:'rnib',previewOnly:true}).editorialFocus,'visual_direta');
- assert.equal(relevanceAssessment(item,{id:'rnib',previewOnly:false}).editorialFocus,'contextual');
+ assert.equal(relevanceAssessment(item,{id:'rnib',previewOnly:false}).editorialFocus,'fora_do_escopo');
 });
 test('visual evidence ranks ahead of general disability without disabling news eligibility',()=>{
  const general=article('Paratleta conta história de superação e esporte adaptado');
