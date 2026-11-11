@@ -80,3 +80,31 @@ Configurar `PUBLIC_URL=https://strapi-dv.iercrn.org.br` em `cms/.env` e, futuram
 - [ ] PR `dev`→`main` liberado, deploy MAIN com rollback e segredos próprios
 
 A automação RSS `ierc-rn-monitor-dev` segue separada e só gera relatórios; não publica notícias.
+
+
+## Inventário real da rede (MiniMac, 10/11/2026)
+
+Inspeção enviada pelo operador:
+
+- `cloudflared` está em `network_mode: host` (rede `host`); pode alcançar os endpoints do host em `127.0.0.1:porta`, **desde que respondam no próprio MiniMac**.
+- `nginx-proxy` está apenas na bridge Docker `nginx_default`; hospeda as rotas PHASSCODE e não precisa ser alterado para o IERC-RN.
+- `sudo ss -lntp` mostrou `127.0.0.1:1337` ocupado pelo Docker; o comando não identifica o nome do container (confirmar com `docker compose --env-file cms/.env -f compose.cms.yml ps`).
+- `1338`, `3101` e `3102` não apareceram como portas ocupadas na inspeção.
+- CI [#42942516358](https://github.com/SladeSouzaSantos/ierc-rn/actions/runs/42942516358) do commit `d18a26b3`: **success** em `curator-unit`, `build-and-a11y` e `cms-build` (incluindo validação Compose).
+
+### Roteamento recomendado — sem modificar Nginx existente
+
+Como o `cloudflared` usa a rede do **host**, depois de ativar o DNS e as regras de acesso, a aplicação no túnel já existente pode encaminhar diretamente para serviços locais (sem segunda instância do Nginx):
+
+| Hostname público | Service URL planejado no Tunnel | Estado |
+|---|---|---|
+| `dev.iercrn.org.br` | `http://127.0.0.1:3101` | DEV após smoke |
+| `strapi-dv.iercrn.org.br` | `http://127.0.0.1:1337` | **Somente após Cloudflare Access e proteção da rota** |
+| `iercrn.org.br` | `http://127.0.0.1:3102` | PROD futura, após homologação |
+| `strapi.iercrn.org.br` | `http://127.0.0.1:1338` | PROD futura, **Access obrigatório** |
+
+**Sequência segura:** criar primeiro duas aplicações Cloudflare Access Self-hosted (hostnames Strapi por inteiro, incluindo `/api/*` e `/admin/*`), com política Allow específica; validar a proteção no próprio Tunnel (opção *Protect with Access* / validação do JWT, quando disponível) **antes** de criar a rota pública. Recomenda-se também proteger o portal DEV. Só então cadastrar as rotas publicadas no túnel. Não habilitar uma regra global de negar hostnames sem antes avaliar o impacto nos serviços PHASSCODE existentes.
+
+O Cloudflare Tunnel criptografa o trajeto público até `cloudflared`; a comunicação local pode ser HTTP no loopback se a origem estiver no mesmo host. O conteúdo exibido no domínio institucional MAIN continua condicionado a autorização, validação de acessibilidade e deploy homologado. Os serviços internos de Postgres/Redis **nunca recebem hostname público**.
+
+Ver documentação Cloudflare: [configurar published applications](https://developers.cloudflare.com/tunnel/get-started/), [aplicações Access self-hosted](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/) e [roteamento](https://developers.cloudflare.com/tunnel/concepts/routing/).
