@@ -1,4 +1,4 @@
-// Ordered failover derived from ORBE: OpenRouter → Gemini → Groq → optional local Ollama.
+// Editorial DEV priority based on supervised RSS previews: Groq → Gemini → OpenRouter → optional local Ollama.
 // No generic provider URL or paid model route is accepted.
 const positive = (v, def, max) => {
   if (v === undefined || v === '') return def;
@@ -69,5 +69,8 @@ export function providersFromEnv(env = process.env) {
     add('ollama','ollama',endpoint.origin+'/api/chat','LOCAL_ONLY',
       env.CURATOR_OLLAMA_MODEL.trim(),env.CURATOR_OLLAMA_MAX_CALLS);
   }
-  return out;
+  // Keep credentials, free-tier gates, quotas and model-specific flags unchanged.
+  // Priority applies to every router consumer (preview, once, schedule and review).
+  const priority=['groq','gemini','openrouter','ollama'];
+  return out.sort((a,b)=>priority.indexOf(a.id)-priority.indexOf(b.id));
 }
