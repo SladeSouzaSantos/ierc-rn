@@ -34,6 +34,11 @@ export type CmsEvent = {
   endsAt?: string;
   location?: string;
   registrationUrl?: string;
+  eventType?: "institucional" | "competicao_esportiva";
+  participationStatus?: "nao_confirmada" | "confirmada";
+  sportModality?: string;
+  sourceUrl?: string;
+  sourceName?: string;
 };
 export type CmsActivity = {
   id: string;
@@ -171,6 +176,11 @@ export async function getCmsEvents(): Promise<CmsEvent[]> {
     startsAt: string(v.startsAt, 40), endsAt: string(v.endsAt, 40) || undefined,
     location: string(v.location, 300) || undefined,
     registrationUrl: url(v.registrationUrl),
+    eventType: v.eventType === "competicao_esportiva" ? "competicao_esportiva" : "institucional",
+    participationStatus: v.participationStatus === "confirmada" ? "confirmada" : "nao_confirmada",
+    sportModality: string(v.sportModality, 80) || undefined,
+    sourceUrl: url(v.sourceUrl),
+    sourceName: string(v.sourceName, 120) || undefined,
   })).filter(v => /^[a-z0-9-]{1,90}$/.test(v.slug) && v.title && v.summary &&
      !Number.isNaN(Date.parse(v.startsAt)));
 }
