@@ -61,3 +61,20 @@ test('Radar da Inclusão exige origem externa e não afeta as noticias instituci
   assert.equal(schema.attributes.dedupeKey.unique,true);
   assert.ok(schema.attributes.whyItMatters);
 });
+
+test('competicoes esportivas manuais exigem revisao editorial e nunca confirmam participacao por padrao', () => {
+  const schema = JSON.parse(readFileSync(
+    path.join(root, 'src/api/event/content-types/event/schema.json'), 'utf8'
+  ));
+  assert.equal(schema.options.draftAndPublish, true);
+  assert.deepEqual(schema.attributes.eventType.enum, ['institucional','competicao_esportiva']);
+  assert.equal(schema.attributes.eventType.default, 'institucional');
+  assert.equal(schema.attributes.eventType.required, undefined);
+  assert.deepEqual(schema.attributes.participationStatus.enum, ['nao_confirmada','confirmada']);
+  assert.equal(schema.attributes.participationStatus.default, 'nao_confirmada');
+  assert.equal(schema.attributes.participationStatus.required, undefined);
+  assert.equal(schema.attributes.sportModality.type, 'string');
+  assert.equal(schema.attributes.editorialStatus.default, 'em_preparacao');
+  assert.ok(schema.attributes.sourceName);
+  assert.ok(schema.attributes.sourceUrl);
+});
