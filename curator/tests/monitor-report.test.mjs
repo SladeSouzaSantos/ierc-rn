@@ -91,3 +91,16 @@ test('MiniMac Compose monitors with no public ports, CMS env or credentials',asy
  assert.equal(compose.includes('cms_dev_private'),false);
  assert.equal(compose.includes('CURATOR_STRAPI_DRAFT_TOKEN:'),false);
 });
+
+test('monitor report sorts published dates descending without altering preview-only status',()=>{
+ const scan={preview:true,aiGenerated:false,results:[
+  {status:'preview',source:'perkins',title:'Old news',originalUrl:'https://www.perkins.org/old',
+   publishedAt:'2026-10-13T10:00:00Z',previewOnly:false,topics:[]},
+  {status:'preview',source:'rnib',title:'NHS accessibility',originalUrl:'https://www.rnib.org.uk/news/latest',
+   publishedAt:'2026-11-02T12:00:00Z',previewOnly:true,topics:['deficiência visual']},
+ ]};
+ const report=buildMonitoringReport({scan,events:[],reason:'scheduled'});
+ assert.deepEqual(report.articles.map(x=>x.title),['NHS accessibility','Old news']);
+ assert.equal(report.articles[0].previewOnly,true);
+ assert.ok(!('summary' in report.articles[0]));
+});
