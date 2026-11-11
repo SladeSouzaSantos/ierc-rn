@@ -55,10 +55,15 @@ function readCard(card, fields, source, now, ageDays, stats) {
     stats.outsideWindow++; return null;
   }
   stats.accepted++;
-  // HTML listing is preview-only. Do not send excerpts to AI or republish third-party text.
+  // RNIB's short listing description is used ONLY as an ephemeral relevance
+  // signal: never copied into summary, CMS, preview output or monitor report.
+  // HTML sources stay preview-only. Do not send excerpts to any LLM.
+  const discoveryText=source.id==='rnib'&&typeof fields.description==='function'
+    ? plain(fields.description(card),320) : '';
   return {
     title, url, summary: '', publishedAt: new Date(stamp).toISOString(),
     source: source.name, country: source.country, language: source.language,
+    ...(discoveryText?{discoveryText}:{}),
     dedupeKey: createHash('sha256').update(url).digest('hex'),
   };
 }
@@ -84,6 +89,7 @@ export function parseListing(body, source, now = Date.now(), ageDays = 45, stats
         title: x => x.find('.small-image-card__title a').first().text(),
         url: x => x.find('.small-image-card__title a').first().attr('href'),
         date: x => x.find('.small-image-card__meta-item').first().text(),
+        description: x => x.find('.small-image-card__description').first().text(),
       });
     });
   } else if (source.id === 'ibsa') {
