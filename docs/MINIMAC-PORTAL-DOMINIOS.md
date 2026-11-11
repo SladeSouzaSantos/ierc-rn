@@ -128,3 +128,33 @@ bash scripts/backup-cms-dev.sh
 **Segurança:** a pasta contém o `cms.env` com chaves reais; permissões 0700 da pasta raiz e umask 077 limitam o acesso no MiniMac. Nunca mostre, cole ou suba esses arquivos ao GitHub. Crie também uma cópia **criptografada fora do MiniMac**, com política de retenção adequada; backup e cópia no mesmo disco não protegem contra perda do host. Uma restauração do banco não prova que licenças de mídia/editorial e autenticação do Strapi estejam homologadas.
 
 Após backup e ensaio aprovados, o primeiro teste da curadoria deve continuar **manual**, no ambiente DEV, com `CURATOR_ONCE_LIMIT=1` e sem publicação automática; só habilitar as flags durante a execução especificamente autorizada, nunca ativar o agendador recorrente por acidente. Não reutilizar `CMS_READ_TOKEN` como token de gravação.
+
+
+## Correção: CMS publicado não aparece no Radar (11/11/2026)
+
+**Sintoma homologado no MiniMac:** a notícia Perkins estava `Published` e `aprovado` no Strapi, o detalhe `/noticias/<slug>` respondia HTTP 200, mas `/radar-da-inclusao` retornava 200 sem apresentar o cartão da notícia.
+
+**Causa provável no código original:** o `Dockerfile.portal` gera o build standalone sem `CMS_ENABLED=true` ou `CMS_READ_TOKEN` (corretamente, pois são segredos de execução). As páginas `app/radar-da-inclusao/page.tsx`, `app/[slug]/page.tsx` e `app/page.tsx` podiam ser pré-renderizadas no build enquanto a integração estava desligada e manter o HTML sem dados editoriais.
+
+**Correção na branch DEV:** as três páginas agora usam `export const dynamic = "force-dynamic"`, evitando snapshot estático do CMS durante o build. Isso faz consultas em tempo de requisição e prioriza consistência do fluxo editorial; **não** reverte o controle `status=published` + `editorialStatus=aprovado` em `lib/cms.ts`. Em Next.js 15, `force-dynamic` desabilita Full Route Cache e força `fetch` sem cache; logo o antigo `next.revalidate=60` na leitura do CMS não reduz chamadas dessas rotas. Monitorar custo/carga do Strapi; se necessário, evoluir para invalidação por webhook autenticado e cache por tags após homologação.
+
+Para aplicar **somente no DEV**, depois de o CI aprovar:
+
+```bash
+cd /opt/projects/ierc-rn-dev
+git pull --ff-only origin dev
+docker compose --env-file deploy/.env.portal.dev -f compose.portal.dev.yml up -d --build portal
+docker compose --env-file deploy/.env.portal.dev -f compose.portal.dev.yml ps
+```
+
+Teste seguro (não exibe tokens):
+
+```bash
+SLUG="perkins-destaca-esporte-acessivel-como-caminho-para-aprendizado-e-pe-4e44e09a02"
+curl -s -o /dev/null -w 'Detalhe: %{http_code}\\n' "http://127.0.0.1:3101/noticias/$SLUG"
+curl -sS "http://127.0.0.1:3101/radar-da-inclusao" | grep -F -q "/noticias/$SLUG" && echo "RADAR_ARTICLE_VISIBLE_OK" || echo "RADAR_ARTICLE_NOT_VISIBLE"
+```
+
+O resultado esperado, **se a notícia continua Published/aprovado**, é detalhe 200 e `RADAR_ARTICLE_VISIBLE_OK`. Se não ocorrer, consultar a API Strapi para os filtros completos (inclusive `originType=externa`), as variáveis de execução do portal e o log de exceções do Next.js. **Não** publicar novamente, criar outro rascunho, limpar volumes, reiniciar o CMS ou modificar MAIN para corrigir uma listagem.
+
+A correção dinâmica também previne a mesma defasagem nas páginas públicas que exibem atividades, notícias institucionais, eventos e histórias de atletas.
