@@ -44,14 +44,18 @@ export function CmsNewsList({ items }: { items: CmsArticle[] }) {
   const official = sortNewsNewestFirst(
     items.filter(item => item.originType !== "externa"), item => item.date,
   );
-  if (!official.length) return null;
   return <section className="editorial-section" aria-labelledby="cms-news-title">
-    <p className="eyebrow">Publicações do Instituto</p>
+    <p className="eyebrow">Direto do IERC-RN · Publicações oficiais</p>
     <h2 className="interior-subtitle" id="cms-news-title">Notícias da equipe do IERC-RN</h2>
-    <p className="editorial-intro">Comunicados e notícias institucionais publicados após aprovação editorial.</p>
-    <div className="editorial-panels editorial-panels-three">
-      {official.map(item => <CmsNewsCard key={item.slug} item={item}/>)}
-    </div>
+    <p className="editorial-intro">Comunicados, projetos e atividades divulgados pela instituição após aprovação editorial.</p>
+    {official.length > 0
+      ? <div className="editorial-panels editorial-panels-three">
+        {official.map(item => <CmsNewsCard key={item.slug} item={item}/>)}
+      </div>
+      : <div className="detail-card solo-card">
+        <h3>Publicações institucionais em preparação</h3>
+        <p>Ainda não há notícias oficiais publicadas e aprovadas nesta seção. Quando a equipe do IERC-RN divulgar atividades, oficinas e comunicados, eles aparecerão aqui.</p>
+      </div>}
   </section>;
 }
 
