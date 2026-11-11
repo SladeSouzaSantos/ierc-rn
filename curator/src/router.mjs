@@ -86,6 +86,8 @@ export class FreeLlmRouter {
               max_tokens:this.settings.outputMaxTokens||1600,temperature:0.2,
               ...(provider.id==='openrouter' && typeof provider.reasoningEnabled==='boolean'
                 ? {reasoning:{enabled:provider.reasoningEnabled}} : {}),
+              ...(provider.id==='gemini' && provider.reasoningEffort==='none'
+                ? {reasoning_effort:'none'} : {}),
               messages:[{role:'system',content:system},{role:'user',content:prompt}]};
         const response=await this.fetchImpl(provider.url,{
           method:'POST',headers:{
