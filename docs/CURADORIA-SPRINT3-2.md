@@ -650,3 +650,27 @@ O curador gratuito foi reforçado com **taxonomia canônica** para novos rascunh
 **Próxima ação humana, sem dependências de IA:** atualizar `dev`, iniciar ou reconstruir o Next.js DEV (não o CMS), inspecionar a página Notícias e `/radar-da-inclusao` em desktop/celular e usar NVDA/VoiceOver/TalkBack. Com o primeiro rascunho ainda `em_revisao`, o Radar deverá apresentar o estado editorial vazio. Ao concluir a revisão factual, salvar o texto corrigido sem publicar até autorização institucional; conferir `category=Esporte adaptado`, fonte, URL, dedupe e direitos de imagem. Para disponibilizá-lo publicamente, serão necessários os dois gates manuais: **aprovar no campo editorial e clicar Publish** no Strapi. Não habilitar `CURATOR_ENABLED`, `CURATOR_WRITE_DRAFTS` permanentemente, cron nem PROD.
 
 Documentação detalhada das rotas e regras: [RADAR-DA-INCLUSAO.md](RADAR-DA-INCLUSAO.md). Este commit não mudou volumes PostgreSQL, conteúdo CMS nem tokens privados.
+
+
+## Homologação dos provedores gratuitos e controle de agendamento — 11/11/2026
+
+**Testes reais MiniMac DEV:**
+- OpenRouter `nvidia/nemotron-3.5-super-vl:free`: `draft_ready` (Perkins, 1688 ms) em `generate-preview`, somente leitura.
+- Gemini `gemini-2.5-flash`: autenticação e resposta simples `OK` comprovadas; em prévia editorial isolada, a API retornou `finish_reason=length` (`invalid_output`, `token_limit`, 8063 ms), sem conteúdo gravado no CMS.
+- GroqCloud `openai/gpt-oss-120b`: autenticação, resposta simples e `draft_ready` editorial (2369 ms) comprovadas. O corpo foi mais desenvolvido que o do Nemotron, mas ainda possui generalizações não apoiadas por fatos específicos do RSS. O conteúdo **não** foi publicado.
+- Os três testes separaram provedores por `-e CURATOR_*_API_KEY=` **somente no container efêmero**; `curator/.env` persistente manteve suas credenciais protegidas.
+
+**Correção de compatibilidade na `dev`:** para modelos cujo nome comece com `gemini-2.5-flash`, `providersFromEnv` configura `reasoningEffort=none` e `FreeLlmRouter` envia `reasoning_effort: "none"`. Isso é suportado pela API OpenAI-compatible do Gemini 2.5 Flash e evita que raciocínio interno consuma o pequeno orçamento de saída JSON; **não** é aplicado a Gemini 2.5 Pro, modelos Gemini 3, OpenRouter ou Groq. Continuam a recusa de respostas `finish_reason=length`, cotas e fallback sem bypass. Fonte: https://ai.google.dev/gemini-api/docs/openai
+
+**Agendamento DEV seguro:** `CURATOR_SCHEDULE_LIMIT=1` é o único valor permitido; o comando `schedule` passa a processar no máximo um rascunho em cada horário 08h/13h/19h (America/Fortaleza). A regra não altera `once` nem os modos de prévia. Testes `curator/tests/router.test.mjs` e `curator/tests/schedule-config.test.mjs` cobrem a configuração e o fallback diante de truncamento. **O agendador permanece desligado** até homologação e autorização específica; `CURATOR_ENABLED=false`, `CURATOR_WRITE_DRAFTS=false` e `CURATOR_AUTO_PUBLISH_ENABLED=false` são mantidos no arquivo local.
+
+Para validar a nova imagem somente no DEV, após CI verde:
+
+```bash
+cd /opt/projects/ierc-rn-dev
+git pull --ff-only origin dev
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator build worker
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm --no-deps -e CURATOR_OPENROUTER_API_KEY= -e CURATOR_GROQ_API_KEY= -e CURATOR_AI_PREVIEW_LIMIT=1 worker node src/cli.mjs generate-preview
+```
+
+**Esperado:** evento `llm_attempt` com `provider=gemini`, `result=success`, resposta `draft_ready`. Se persistir `token_limit`, registrar a falha e não remover as proteções; o fallback para Groq continua disponível. Não executar `docker compose up worker` antes de aprovação de ativação.
