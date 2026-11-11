@@ -71,6 +71,12 @@ jobs:
         run: |
           bash -n scripts/backup-cms-dev.sh
           bash -n scripts/preflight-curator-autopublish-dev.sh
+      - name: Validate isolated scheduled worker Compose without secrets
+        run: |
+          : > curator/.env
+          docker compose --profile curator -f compose.curator.dev.yml config --quiet
+          docker compose --profile curator -f compose.curator.dev.yml config | grep -q 'read_only: true'
+          rm curator/.env
       - name: Validate isolated MiniMac portal Compose
         run: |
           docker compose -f compose.portal.dev.yml config --quiet
