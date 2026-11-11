@@ -51,6 +51,13 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
       logger({ event: 'source_skipped_by_policy', source: source.id, reason: source.readiness });
       continue;
     }
+    // Auto-publish mode only handles license-verified sources. Other feeds may
+    // still be explored in the separate read-only monitor, not published here.
+    if(autoPublish && !autoPublishSources.includes(source.id)){
+      logger({event:'source_skipped_by_policy',source:source.id,
+        reason:'auto_publish_source_not_allowlisted'});
+      continue;
+    }
     let articles;
     try {
       const body = await fetchSource(source, fetchImpl);
