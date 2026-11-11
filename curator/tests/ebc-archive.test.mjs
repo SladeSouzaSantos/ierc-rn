@@ -161,3 +161,59 @@ test('official EBC alternative title class remains within dated public cards',()
   assert.equal(found[0].discoveryHint,true);
   assert.equal(diagnostics.accepted,1);
 });
+
+
+test('real Agência Brasil education URLs from Nov 2026 category markup are accepted',()=>{
+  const real=[
+    ['Enem: publicações da EBC são citadas na prova',
+      'https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/reportagens-da-agencia-brasil-e-da-radioagencia-sao-citadas-no-enem',
+      'seg, 09/11/2026 - 15:25'],
+    ['Enem 2026 estreia apoio emocional e novas regras de acessibilidade',
+      'https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/enem-2026-estreia-apoio-emocional-e-novas-regras-de-acessibilidade',
+      'dom, 08/11/2026 - 11:40'],
+    ['Aprendizagem de alunos com deficiência avança no Brasil',
+      'https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/aprendizagem-de-alunos-com-deficiencia-avanca-no-brasil',
+      'sex, 06/11/2026 - 09:00'],
+  ];
+  const liveShape=titleDateUrl=>
+    '<div class="ultima-noticia">'+
+    '<a class="capa-noticia" href="'+titleDateUrl[1]+'"><img alt="imagem ilustrativa" /></a>'+
+    '<div class="box-texto">'+
+    '<a href="https://agenciabrasil.ebc.com.br/educacao" class="editoria">Educação</a>'+
+    '<a href="'+titleDateUrl[1]+'" class="titulo-noticia">'+titleDateUrl[0]+'</a>'+
+    '<div class="data-publicacao"><span class="data">'+titleDateUrl[2]+'</span></div>'+
+    '</div></div>';
+  const diag={};
+  const actual=parseEbcArchive('<html><main>'+real.map(liveShape).join('')+
+    '</main></html>',{section:'educacao',now:at,diagnostics:diag});
+  assert.equal(actual.length,3);
+  assert.deepEqual(diag,{cardsFound:3,linksMissing:0,titlesInvalid:0,
+    urlsRejected:0,datesUnrecognized:0,datesOutsideWindow:0,duplicates:0,accepted:3});
+  assert.equal(actual.find(x=>x.title.includes('apoio emocional')).discoveryHint,true);
+  assert.ok(actual.every(x=>x.url.startsWith('https://agenciabrasil.ebc.com.br/educacao/noticia/')));
+});
+
+test('strict category URLs reject malformed paths, private endpoints and offsite URLs',()=>{
+  const good=new URL(news);
+  const invalid=[
+    'https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/',
+    'https://agenciabrasil.ebc.com.br/educacao/noticia/2026-00/slug',
+    'https://agenciabrasil.ebc.com.br/educacao/noticia/2026-13/slug',
+    'https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/%2fadmin',
+    'https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/slug//',
+    'https://agenciabrasil.ebc.com.br/educacao//noticia/2026-11/slug',
+    'https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/slug#fragment',
+    'https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/slug?redirect=https://evil.example',
+    'https://agenciabrasil.ebc.com.br:8080/educacao/noticia/2026-11/slug',
+    'https://evil.example/educacao/noticia/2026-11/slug',
+    'http://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/slug',
+    'https://agenciabrasil.ebc.com.br/politica/noticia/2026-11/slug',
+  ];
+  const diag={};
+  const cards=invalid.map(x=>card('Acessibilidade e Braille nas escolas',x)).join('');
+  const res=parseEbcArchive('<main>'+cards+'</main>',{section:'educacao',now:at,diagnostics:diag});
+  assert.equal(res.length,0);
+  assert.equal(diag.urlsRejected,invalid.length);
+  assert.equal(diag.accepted,0);
+  assert.equal(good.hostname,'agenciabrasil.ebc.com.br');
+});
