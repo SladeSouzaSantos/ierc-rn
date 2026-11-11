@@ -33,22 +33,22 @@ git pull --ff-only origin dev
 Confira a configuração e inicie em background:
 
 ```bash
-docker compose -f compose.curator.monitor.yml config
-docker compose -f compose.curator.monitor.yml up -d --build
-docker compose -f compose.curator.monitor.yml ps
-docker compose -f compose.curator.monitor.yml logs --tail=80 monitor
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml config
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml up -d --build
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml ps
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml logs --tail=80 monitor
 ```
 
 O primeiro relatório é criado na inicialização, no volume Docker `monitor_reports`. Para ler o mais recente:
 
 ```bash
-docker compose -f compose.curator.monitor.yml exec -T monitor cat /reports/latest.json
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml exec -T monitor cat /reports/latest.json
 ```
 
 Para acompanhar próximas consultas:
 
 ```bash
-docker compose -f compose.curator.monitor.yml logs -f --tail=50 monitor
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml logs -f --tail=50 monitor
 ```
 
 Eventos relevantes: `monitor_started`, `feed_checked`, `source_paused`, `feed_unavailable`, `monitor_completed`. O relatório JSON contém timestamp, motivo (`startup` ou `scheduled`), totais, saúde das fontes, artigos com data/título/URL original, categoria Brasil/mundo e pontuação editorial. Os arquivos ficam no **volume privado do monitor**, com gravação atômica e retenção de até 90 relatórios (aproximadamente 30 dias em três execuções por dia). A nomenclatura é `monitor-AAAA...Z.json` e `latest.json`.
@@ -58,13 +58,13 @@ O comando de inspeção da rotina **não exige `curator/.env`, `cms/.env` ou tok
 Para pausar sem apagar dados:
 
 ```bash
-docker compose -f compose.curator.monitor.yml stop monitor
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml stop monitor
 ```
 
 Para retomar:
 
 ```bash
-docker compose -f compose.curator.monitor.yml start monitor
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml start monitor
 ```
 
 **Não execute `docker compose down -v`**: esse comando remove volumes e relatórios históricos. O serviço possui `read_only: true`, roda como usuário `node` sem privilégios, com armazenamento montado só em `/reports` e acesso de saída para consultar os sites RSS.
@@ -79,3 +79,41 @@ docker compose -f compose.curator.monitor.yml start monitor
 **Política de segurança:** o serviço `monitor` não carrega `env_file`, não utiliza credenciais ou rede do Strapi, nem inicializa os provedores LLM. Nenhum `CURATOR_AUTO_PUBLISH_ENABLED` é ativado. Seu início é seguro para homologação de RSS; não é autorização de PROD do CMS nem do site.
 
 Relacionado: [Radar e fontes integrais](FONTE-INTEGRAL-REVIEW-DEV.md), [Roadmap](ROADMAP.md), [issue #13](https://github.com/SladeSouzaSantos/ierc-rn/issues/13).
+
+
+## Ampliação de descoberta — 11/11/2026 (somente leitura)
+
+O catálogo `SOURCES` da `dev` inclui cinco RSS exploratórios adicionais, **todos com `previewOnly: true`, sem `fullTextAccess` e sem autorização de publicação**:
+
+| Fonte | RSS aprovado para teste | Observação |
+|---|---|---|
+| Diário PcD | `https://diariopcd.com.br/feed/` | RSS com matérias de novembro; filtrar PcD genérica |
+| Jornalista Inclusivo | `https://jornalistainclusivo.com/feed/` | RSS com datas; filtrar deficiência visual |
+| Fundação Dorina | `https://fundacaodorina.org.br/feed/` | RSS válido, porém na consulta de novembro trazia notícias de 2025 |
+| EBU | `https://www.euroblind.org/rss.xml` | Endpoint RSS identificado, estabilidade a homologar no MiniMac |
+| IAPB | `https://www.iapb.org/feed/` | Endpoint RSS identificado, mas conteúdo possivelmente vazio |
+
+A RNIB continua `previewOnly`: a descrição curta de cada card é lida **apenas em memória para melhorar a classificação**, nunca colocada em `summary`, entregue a uma LLM, publicada no CMS ou escrita em `latest.json`. O relatório do monitor lista notícias mais recentes primeiro, independentemente da pontuação de relevância.
+
+**Smoke isolado sem credenciais (somente GET público):**
+
+```bash
+cd /opt/projects/ierc-rn-dev
+git pull --ff-only origin dev
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml build monitor
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml run --rm --no-deps -T monitor node src/check-discovery.mjs
+```
+
+O script relata `recent`, `relevant`, `withinYear` e `newest`, ou erros sanitizados `discovery_source_unavailable`. **Não usa Redis/LLM/Strapi nem altera `latest.json`**. Este smoke é necessário para homologar acesso e XML no Docker do MiniMac; consulta pública do RSS fora dele não substitui esta etapa.
+
+Se aprovado, atualize **somente o monitor já existente**, preservando o projeto e os volumes:
+
+```bash
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml up -d --build monitor
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml logs --tail=60 monitor
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml exec -T monitor cat /reports/latest.json
+```
+
+O nome `-p ierc-rn-monitor-dev` é **obrigatório neste MiniMac**, onde o serviço ativo usa esse projeto. Sem o parâmetro, o Compose usa `ierc-rn-monitor`, que é outro projeto, e pode criar um **segundo monitor** por acidente. Não executar `down -v`. O worker de publicação tem Compose próprio `compose.curator.dev.yml`, **não é atualizado por estes comandos**.
+
+A integração de novos portais no monitor é **somente para descoberta**, não autorização para extrair reportagens integrais nem reproduzi-las. Para isso seriam necessários direitos individualmente comprovados e homologação separada. Rastreamento: [issue #17](https://github.com/SladeSouzaSantos/ierc-rn/issues/17).
