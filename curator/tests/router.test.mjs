@@ -189,3 +189,60 @@ test('free OpenRouter Nemotron receives reasoning off and bounded 1600 token JSO
     CURATOR_OPENROUTER_REASONING_ENABLED:'true',
   })[0].reasoningEnabled,true);
 });
+
+
+test('Gemini 2.5 Flash uses official none reasoning effort without changing Pro or Gemini 3',async()=>{
+  const base={
+    CURATOR_GEMINI_API_KEY:'test-only-not-a-real-token',
+    CURATOR_GEMINI_FREE_TIER_CONFIRMED:'true',
+  };
+  const flash=providersFromEnv({...base,CURATOR_GEMINI_MODEL:'gemini-2.5-flash'});
+  assert.equal(flash[0].reasoningEffort,'none');
+  const flashLite=providersFromEnv({...base,CURATOR_GEMINI_MODEL:'gemini-2.5-flash-lite'});
+  assert.equal(flashLite[0].reasoningEffort,'none');
+  for(const model of ['gemini-2.5-pro','gemini-3-flash']){
+    const candidate=providersFromEnv({...base,CURATOR_GEMINI_MODEL:model});
+    assert.equal(candidate[0].reasoningEffort,undefined,model);
+  }
+  let sent;
+  const router=new FreeLlmRouter({
+    providers:flash,state:new MemoryMeter(),settings:settingsFromEnv({}),
+    fetchImpl:async(_url,options)=>{
+      sent=JSON.parse(options.body);
+      return ok();
+    },
+  });
+  const result=await router.complete({system:'brief',prompt:'JSON only'});
+  assert.equal(result.provider,'gemini');
+  assert.equal(sent.model,'gemini-2.5-flash');
+  assert.equal(sent.reasoning_effort,'none');
+  assert.equal(sent.max_tokens,1600);
+  assert.equal(sent.reasoning,undefined);
+});
+
+test('Gemini exhausted JSON budget falls back to Groq without persisting incomplete output',async()=>{
+  const p=providersFromEnv({
+    CURATOR_GEMINI_API_KEY:'fake',CURATOR_GEMINI_MODEL:'gemini-2.5-flash',
+    CURATOR_GEMINI_FREE_TIER_CONFIRMED:'true',
+    CURATOR_GROQ_API_KEY:'fake',CURATOR_GROQ_MODEL:'openai/gpt-oss-120b',
+    CURATOR_GROQ_FREE_TIER_CONFIRMED:'true',
+  });
+  const meter=new MemoryMeter();
+  const events=[];let calls=0;
+  const router=new FreeLlmRouter({
+    providers:p,state:meter,settings:config,logger:x=>events.push(x),
+    fetchImpl:async()=> {
+      calls++;
+      if(calls===1)return new Response(JSON.stringify({
+        choices:[{finish_reason:'length',message:{content:'{"title":"partial"}'}}],
+      }),{status:200});
+      return ok();
+    },
+  });
+  const answer=await router.complete({system:'s',prompt:'p',validateOutput:JSON.parse});
+  assert.equal(answer.provider,'groq');
+  assert.equal(answer.fallbackUsed,true);
+  assert.equal(meter.n,2);
+  assert.deepEqual(events.map(x=>x.result),['invalid_output','success']);
+  assert.equal(events[0].reason,'token_limit');
+});
