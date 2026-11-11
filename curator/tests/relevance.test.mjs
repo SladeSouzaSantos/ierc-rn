@@ -31,7 +31,8 @@ test('general disability and parasports news remain suggestions, not direct visu
  assert.equal(para.editorialFocus,'inclusao_geral');
  assert.ok(para.topics.includes('esporte adaptado'));
  assert.equal(relevanceAssessment(
-   article('Teleton 2026 tem podcast sobre capacitismo e inclusão'),{id:'jornalista-inclusivo'}
+   article('Teleton 2026 tem podcast sobre capacitismo e inclusão',
+     'Direitos das pessoas com deficiência e inclusão de pessoas com deficiência'),{id:'jornalista-inclusivo'}
  ).editorialFocus,'inclusao_geral');
 });
 test('explicit blindness, low vision, Braille and goalball are direct visual focus',()=>{
