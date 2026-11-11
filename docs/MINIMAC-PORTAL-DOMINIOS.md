@@ -108,3 +108,23 @@ Como o `cloudflared` usa a rede do **host**, depois de ativar o DNS e as regras 
 O Cloudflare Tunnel criptografa o trajeto público até `cloudflared`; a comunicação local pode ser HTTP no loopback se a origem estiver no mesmo host. O conteúdo exibido no domínio institucional MAIN continua condicionado a autorização, validação de acessibilidade e deploy homologado. Os serviços internos de Postgres/Redis **nunca recebem hostname público**.
 
 Ver documentação Cloudflare: [configurar published applications](https://developers.cloudflare.com/tunnel/get-started/), [aplicações Access self-hosted](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/) e [roteamento](https://developers.cloudflare.com/tunnel/concepts/routing/).
+
+
+## Backup do Strapi DEV e ensaio de restauração (antes de novos rascunhos)
+
+O script `scripts/backup-cms-dev.sh` prepara **um snapshot lógico do PostgreSQL DEV** (`pg_dump -Fc`), compacta o volume atual de uploads, arquiva os segredos `cms/.env` separadamente na pasta privada e ensaia **uma restauração real** num PostgreSQL 17 temporário, sem rede e sem portas públicas. Não substitui ou limpa os dados reais, não inicia MAIN, não ativa IA/curador, não apaga volumes existentes. Usa somente Docker; não requer Node instalado no host.
+
+Execute em horário sem alterações editoriais simultâneas, pois o snapshot lógico do banco e o pacote de mídia não são perfeitamente atômicos entre si:
+
+```bash
+cd /opt/projects/ierc-rn-dev
+git pull --ff-only origin dev
+bash -n scripts/backup-cms-dev.sh
+bash scripts/backup-cms-dev.sh
+```
+
+**Critérios para avançar:** o comando deve terminar com `Restore rehearsal passed`, criando `cms-backups/dev-YYYYMMDDTHHMMSSZ/RESTORE_VERIFIED.txt`, o dump PostgreSQL, o backup da mídia, o arquivo de segredos e `SHA256SUMS`. Um arquivo `RESTORE_VERIFIED.txt` só é criado após `pg_restore` concluir e haver tabelas no banco temporário. Não use `docker compose down -v` nem apague os backups originais.
+
+**Segurança:** a pasta contém o `cms.env` com chaves reais; permissões 0700 da pasta raiz e umask 077 limitam o acesso no MiniMac. Nunca mostre, cole ou suba esses arquivos ao GitHub. Crie também uma cópia **criptografada fora do MiniMac**, com política de retenção adequada; backup e cópia no mesmo disco não protegem contra perda do host. Uma restauração do banco não prova que licenças de mídia/editorial e autenticação do Strapi estejam homologadas.
+
+Após backup e ensaio aprovados, o primeiro teste da curadoria deve continuar **manual**, no ambiente DEV, com `CURATOR_ONCE_LIMIT=1` e sem publicação automática; só habilitar as flags durante a execução especificamente autorizada, nunca ativar o agendador recorrente por acidente. Não reutilizar `CMS_READ_TOKEN` como token de gravação.
