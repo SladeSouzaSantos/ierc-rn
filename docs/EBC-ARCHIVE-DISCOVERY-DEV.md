@@ -88,3 +88,39 @@ Monitor e worker são independentes: autoPublish:false no monitor
 NÃO significa desligar a autopublicação da issue #14.
 Nenhuma mudança aqui modifica compose.curator.dev.yml, credenciais,
 allowlist, dados persistidos ou main. Rastreamento: #14 e #18.
+
+
+## Diagnóstico de zero resultados — estrutura HTML da listagem
+
+Na primeira validação operacional do commit 140cfbf, o monitor foi reconstruído
+com sucesso, mas a CLI retornou duas páginas verificadas e 0 itens
+datados. Esse resultado NÃO deve ser interpretado como zero notícias
+no site oficial: o HTML público visto fora do MiniMac contém cards
+datados e links de matérias.
+
+A partir do commit 8ff0e4c, cada ebc_archive_page_checked possui
+diagnostics com contadores sem conteúdo de terceiros:
+
+- cardsFound: quantidade de cards .ultima-noticia encontrados;
+- linksMissing: nenhum link de título encontrado;
+- titlesInvalid: título vazio, curto ou acima do limite;
+- urlsRejected: URL fora de HTTPS, domínio ou categoria autorizada;
+- datesUnrecognized: data ausente ou não interpretável;
+- datesOutsideWindow: data fora da janela máxima de 45 dias;
+- duplicates: URLs duplicadas na mesma página;
+- accepted: itens estruturais aceitos.
+
+Se accepted = 0 e cardsFound > 0, classificar como PARSER/HTML não
+homologado; não afirmar que não há notícias. A correção da causa real
+ainda depende de novo log do MiniMac; não remover barreiras de segurança.
+
+~~~bash
+cd /opt/projects/ierc-rn-dev
+git pull --ff-only origin dev
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml up -d --build monitor
+docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml exec -T monitor \
+  node src/check-ebc-archive.mjs --section=educacao --pages=2 --max-evidence=2
+~~~
+
+Nenhuma mudança foi realizada no worker de autopublicação. Continuar
+respeitando os direitos de terceiros e o intervalo de 10 segundos.
