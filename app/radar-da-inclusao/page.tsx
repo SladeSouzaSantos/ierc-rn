@@ -5,6 +5,9 @@ import { PageHero } from "@/components/page-hero";
 import { CmsRadarList } from "@/components/cms-public";
 import { getCmsRadarNews } from "@/lib/cms";
 
+// The Docker image is built before CMS credentials are injected. Never pre-render an empty editorial feed at build time.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Radar da Inclusão",
   description: "Sínteses informativas sobre acessibilidade, deficiência visual e esporte adaptado, com fontes identificadas e aprovação editorial.",
