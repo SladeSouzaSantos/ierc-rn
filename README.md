@@ -14,6 +14,10 @@ O operador aprovou a preparação de geração agendada e publicação automáti
 
 Guia: [Ativação supervisionada no MiniMac e preparação MAIN](docs/ATIVACAO-CURADORIA-AUTOMATICA-MINIMAC.md). O monitor RSS somente leitura continua independente.
 
+### Descoberta RSS ampliada — 11/11/2026
+
+A `dev` acrescenta **Diário PcD, Jornalista Inclusivo, Fundação Dorina, European Blind Union e IAPB** como fontes **somente para monitoramento/prévia** (`previewOnly=true`), sem autorização de IA editorial ou publicação automática. O adaptador da RNIB utiliza a descrição curta apenas como sinal temporário de relevância, sem reproduzi-la em relatórios. O monitor apresenta os resultados por data decrescente. Consulte [o guia MiniMac atualizado](docs/MONITOR-NOTICIAS-MINIMAC.md) e a [issue #17](https://github.com/SladeSouzaSantos/ierc-rn/issues/17) para executar o smoke real dos endpoints RSS, ainda pendente; o worker de publicação da Agência Brasil **não foi alterado**.
+
 ## Tecnologia
 
 A `dev` possui um módulo experimental de **geração, revisão com IA e publicação automatizada opt-in**, **desativada por padrão**. A revisão integral é exigida para publicar: a primeira IA produz uma síntese original e a segunda analisa os blocos de evidências numerados da matéria. O modo `npm run --prefix curator review:preview` usa somente título+resumo RSS, sem escrita; `npm run --prefix curator review:full-preview` faz a verificação do artigo quando os direitos da fonte permitirem, igualmente sem escrita. O catálogo admite notícias **próprias da Agência Brasil (EBC)** e da **Comissão Europeia** condicionadas a direitos e autoria por artigo; materiais de parceiros, WAI e Perkins sem permissão de leitura integral permanecem bloqueados. Para a publicação real, exige token Custom separado, licença documentada e confirmação explícita no DEV. Também gera slugs legíveis para novos artigos. Consulte [Revisão IA e publicação controlada (DEV)](docs/REVISAO-IA-PUBLICACAO-DEV.md) e [Revisão baseada na fonte integral](docs/FONTE-INTEGRAL-REVIEW-DEV.md). 
