@@ -23,6 +23,7 @@ test('RNIB allowlisted listing gets title/date/link, never copyrighted excerpt',
   const items = parseListing(rnibHtml, rnib, now, 45);
   assert.equal(items.length, 1);
   assert.equal(items[0].summary, '');
+  assert.equal(items[0].discoveryText, 'Original RNIB copyrighted excerpt must not be reused.');
   assert.equal(items[0].country, 'Reino Unido');
   assert.match(items[0].url, /^https:\/\/www\.rnib\.org\.uk\/news\//);
   assert.equal(items[0].publishedAt, '2026-11-02T12:00:00.000Z');
@@ -94,4 +95,34 @@ test('IBSA client-rendered placeholder gets a distinct safe diagnosis', () => {
   assert.equal(stats.detectedCards, 0);
   assert.equal(stats.listingState, 'client_render_pending');
   assert.ok(!JSON.stringify(stats).includes('https://'));
+});
+
+test('RNIB listing synopsis rescues relevant NHS story without leaking copyrighted text', async() => {
+  const {rankArticles}=await import('../src/relevance.mjs');
+  const html=rnibHtml.replace('Original RNIB copyrighted excerpt must not be reused.',
+    'Only 3 per cent of blind and partially sighted people find the NHS App fully accessible.');
+  const items=parseListing(html,rnib,now,45);
+  assert.equal(items.length,1);
+  assert.equal(items[0].summary,'');
+  assert.match(items[0].discoveryText,/blind and partially sighted/);
+  const selected=rankArticles(items,rnib);
+  assert.equal(selected.length,1);
+  assert.ok(selected[0].relevance.topics.includes('deficiência visual'));
+  assert.equal(selected[0].publishedAt,'2026-11-02T12:00:00.000Z');
+  // Preview never includes the extracted description in its public result.
+  const {runOnce}=await import('../src/pipeline.mjs');
+  const report=await runOnce({sources:[rnib],fetchImpl:async()=>new Response(html),
+    now,dryRun:true,maxArticles:2});
+  assert.equal(report.aiGenerated,false);
+  assert.equal(report.results.length,1);
+  assert.ok(!JSON.stringify(report).includes('Only 3 per cent'));
+  assert.ok(!JSON.stringify(report).includes('discoveryText'));
+});
+
+test('RNIB excerpt is ignored when source is not explicitly preview-only',async()=>{
+  const {relevanceAssessment}=await import('../src/relevance.mjs');
+  const article={title:'General annual report',summary:'',
+    discoveryText:'blind and partially sighted people and accessible technology'};
+  assert.equal(relevanceAssessment(article,{id:'rnib',previewOnly:false}).relevant,false);
+  assert.equal(relevanceAssessment(article,{id:'rnib',previewOnly:true}).relevant,true);
 });
