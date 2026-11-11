@@ -50,6 +50,7 @@
 
 - Link oficial de visitas (sem duplicar plataforma).
 - Confirmar funcionamento, itens aceitos e orientações do bazar.
+- **Etapa 4.2 — previsão de doação única e apoio mensal:** duas opções informativas em `/apoie` com estado "Em preparação", sem formulário de pagamento, checkout ou webhook exposto. Arquitetura e requisitos de proteção documentados em [Doações recorrentes e segurança](DOACOES-RECORRENTES-ARQUITETURA-DEV.md). Ativação bloqueada até escolher e homologar provedor e recebedor.
 - Doações via Pix/cartão/recorrência somente após aprovação da conta recebedora e provedor autorizado.
 - Política de privacidade, prestação de contas e jornada acessível.
 
