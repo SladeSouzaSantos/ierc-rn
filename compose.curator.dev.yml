@@ -17,12 +17,20 @@ services:
     networks: [worker_private]
   worker:
     build: {context: ./curator, dockerfile: Dockerfile}
-    restart: on-failure
+    # Persistent schedule only after explicit local env opt-in and smoke test.
+    command: ["node","src/cli.mjs","schedule"]
+    init: true
+    restart: unless-stopped
     profiles: [curator]
     env_file: ./curator/.env
     depends_on:
       redis: {condition: service_healthy}
     networks: [worker_private,cms_dev_private]
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=32m"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
     # No public ports or credentials in the image.
 networks:
   worker_private: {}
