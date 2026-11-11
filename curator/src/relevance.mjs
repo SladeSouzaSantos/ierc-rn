@@ -11,7 +11,11 @@ const SIGNALS=Object.freeze([
 ]);
 const SOURCE_FOCUS=Object.freeze({'rnib':1,'ibsa':2,'wbu':1,'w3c-wai':0,'perkins':1});
 export function relevanceAssessment(article,source={}){
-  const text=(article.title||'')+' '+(article.summary||'');
+  // Short RNIB listing descriptions may resolve otherwise ambiguous titles.
+  // Never use discovery-only excerpts for publishable RSS sources.
+  const text=(article.title||'')+' '+(article.summary||'')+
+    (source.previewOnly===true&&source.id==='rnib'
+      ? ' '+(article.discoveryText||'') : '');
   const coverage=coverageFor(article,source);
   const hits=SIGNALS.filter(s=>s.regex.test(text));
   // Direct, explicitly named references to the Institute are always relevant.
