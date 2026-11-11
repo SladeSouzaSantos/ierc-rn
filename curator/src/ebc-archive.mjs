@@ -4,6 +4,7 @@
  * treats discovery as publication permission. Robots: crawl-delay 10s.
  */
 import {createHash} from 'node:crypto';
+import {URL as NodeURL} from 'node:url';
 import {load} from 'cheerio';
 import {SOURCES} from './feeds.mjs';
 import {fetchArticleEvidence,sanitizeArticleEvidenceError} from './article-evidence.mjs';
@@ -51,7 +52,17 @@ function officialLink(href,section,recordRejection){
     return null;
   };
   let u;
-  try{u=new URL(href);}catch{return reject('malformed_url');}
+  // The public EBC HTML can use absolute, origin-relative or page-relative
+  // hrefs. Resolve against our fixed official origin, then enforce the same
+  // strict HTTPS host and article-path checks as for absolute URLs.
+  // Import the Node URL implementation explicitly rather than relying on a
+  // runtime-injected global.
+  try{
+    if(typeof href!=='string'||!href.trim())return reject('malformed_url');
+    u=new NodeURL(href,archivePageUrl(section,0));
+  }catch(error){
+    return reject(error instanceof TypeError?'malformed_url':'url_parser_failure');
+  }
   if(u.protocol!=='https:'||u.hostname!==HOST||u.port||
     u.username||u.password)return reject('unsafe_origin');
   if(u.hash||[...u.searchParams.keys()].some(
@@ -106,7 +117,13 @@ export function parseEbcArchive(html,{section,now=Date.now(),ageDays=45,
     if(!a.length||!a.attr('href')){counts.linksMissing++;return;}
     const title=norm(a.text());
     if(title.length<14||title.length>200){counts.titlesInvalid++;return;}
-    const url=officialLink(a.attr('href'),section,reason=>{
+    const href=a.attr('href');
+    const format=/^https:\/\//i.test(href)?'absolute_https':
+      /^\/\//.test(href)?'protocol_relative':
+      /^\//.test(href)?'root_relative':'other';
+    counts.hrefFormats??={};
+    counts.hrefFormats[format]=(counts.hrefFormats[format]||0)+1;
+    const url=officialLink(href,section,reason=>{
       counts.urlRejectReasons??={};
       counts.urlRejectReasons[reason]=(counts.urlRejectReasons[reason]||0)+1;
     });
