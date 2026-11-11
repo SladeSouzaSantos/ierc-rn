@@ -4,7 +4,8 @@ import {load} from 'cheerio';
 /**
  * This is an evidence reader, not a general-purpose web scraper.
  * It is deliberately disabled for sources without documented permission.
- * The current catalog grants no site an automated full-text access policy.
+ * The catalog permits EBC original copy and EU Commission's own articles only
+ * after source identity, reuse policy and per-article rights checks.
  */
 export class ArticleEvidenceError extends Error {
   constructor(reason){super(reason);this.name='ArticleEvidenceError';this.reason=reason;}
