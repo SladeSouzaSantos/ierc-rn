@@ -19,7 +19,9 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
   articleReader = null, previewLookup = null,
   autoPublish = false, publisher = null,
   autoPublishSources = [], archiveDiscovery = false,
-  archiveCollector = collectEbcArchiveCandidates, logger = () => {} }) {
+  archiveCollector = collectEbcArchiveCandidates,
+  archivePaceSleep = ms => new Promise(resolve=>setTimeout(resolve,ms)),
+  logger = () => {} }) {
   if (aiPreview && (!dryRun || cms || autoPublish || publisher))
     throw new Error('AI preview cannot write to CMS or run in live mode');
   if(reviewPreview && !aiPreview)
@@ -48,7 +50,8 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
     throw new Error('Invalid article batch size');
   // Only the explicitly opted-in auto-publisher paces ALL EBC-host requests:
   // RSS, archive listing and full article GETs, preserving 10s crawl delay.
-  const requestFetch=archiveDiscovery?createPacedEbcFetch(fetchImpl):fetchImpl;
+  const requestFetch=archiveDiscovery
+    ? createPacedEbcFetch(fetchImpl,{sleep:archivePaceSleep}):fetchImpl;
   const archiveEvidenceByUrl=new Map();
   const buckets = [];
   for (const source of sources) {
