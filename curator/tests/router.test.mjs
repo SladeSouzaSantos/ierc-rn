@@ -220,7 +220,7 @@ test('Gemini 2.5 Flash uses official none reasoning effort without changing Pro 
   assert.equal(sent.reasoning,undefined);
 });
 
-test('Gemini exhausted JSON budget falls back to Groq without persisting incomplete output',async()=>{
+test('Groq exhausted JSON budget falls back to Gemini without persisting incomplete output',async()=>{
   const p=providersFromEnv({
     CURATOR_GEMINI_API_KEY:'fake',CURATOR_GEMINI_MODEL:'gemini-2.5-flash',
     CURATOR_GEMINI_FREE_TIER_CONFIRMED:'true',
@@ -240,9 +240,58 @@ test('Gemini exhausted JSON budget falls back to Groq without persisting incompl
     },
   });
   const answer=await router.complete({system:'s',prompt:'p',validateOutput:JSON.parse});
-  assert.equal(answer.provider,'groq');
+  assert.equal(answer.provider,'gemini');
   assert.equal(answer.fallbackUsed,true);
   assert.equal(meter.n,2);
   assert.deepEqual(events.map(x=>x.result),['invalid_output','success']);
   assert.equal(events[0].reason,'token_limit');
+});
+
+
+test('configured free provider priority is Groq then Gemini then OpenRouter regardless of key insertion order',()=>{
+  const env={
+    CURATOR_OPENROUTER_API_KEY:'fake',CURATOR_OPENROUTER_MODEL:'openrouter/free',
+    CURATOR_GEMINI_API_KEY:'fake',CURATOR_GEMINI_MODEL:'gemini-2.5-flash',
+    CURATOR_GEMINI_FREE_TIER_CONFIRMED:'true',
+    CURATOR_GROQ_API_KEY:'fake',CURATOR_GROQ_MODEL:'openai/gpt-oss-120b',
+    CURATOR_GROQ_FREE_TIER_CONFIRMED:'true',
+  };
+  assert.deepEqual(providersFromEnv(env).map(p=>p.id),['groq','gemini','openrouter']);
+  assert.deepEqual(providersFromEnv({...env,CURATOR_GROQ_API_KEY:''}).map(p=>p.id),
+    ['gemini','openrouter']);
+  assert.deepEqual(providersFromEnv({...env,CURATOR_GEMINI_API_KEY:''}).map(p=>p.id),
+    ['groq','openrouter']);
+  assert.deepEqual(providersFromEnv({...env,CURATOR_OPENROUTER_API_KEY:''}).map(p=>p.id),
+    ['groq','gemini']);
+  assert.equal(providersFromEnv(env)[1].reasoningEffort,'none');
+});
+
+test('production-order failover Groq → Gemini → OpenRouter uses same metering and skips invalid prose',async()=>{
+  const providers=providersFromEnv({
+    CURATOR_OPENROUTER_API_KEY:'fake',CURATOR_OPENROUTER_MODEL:'openrouter/free',
+    CURATOR_GEMINI_API_KEY:'fake',CURATOR_GEMINI_MODEL:'gemini-2.5-flash',
+    CURATOR_GEMINI_FREE_TIER_CONFIRMED:'true',
+    CURATOR_GROQ_API_KEY:'fake',CURATOR_GROQ_MODEL:'openai/gpt-oss-120b',
+    CURATOR_GROQ_FREE_TIER_CONFIRMED:'true',
+  });
+  const meter=new MemoryMeter(), events=[];
+  let calls=0;
+  const router=new FreeLlmRouter({providers,state:meter,settings:config,logger:e=>events.push(e),
+    fetchImpl:async()=>{
+      calls++;
+      if(calls===1)return new Response('',{status:429});
+      if(calls===2)return new Response(JSON.stringify({
+        choices:[{finish_reason:'length',message:{content:'{"title":"partial"}'}}],
+      }),{status:200});
+      return ok();
+    },
+  });
+  const result=await router.complete({system:'s',prompt:'p',validateOutput:JSON.parse});
+  assert.equal(result.provider,'openrouter');
+  assert.equal(result.fallbackUsed,true);
+  assert.equal(result.attempts,3);
+  assert.equal(meter.n,3);
+  assert.deepEqual(events.map(e=>[e.provider,e.result]),[
+    ['groq','rate_limit'],['gemini','invalid_output'],['openrouter','success'],
+  ]);
 });
