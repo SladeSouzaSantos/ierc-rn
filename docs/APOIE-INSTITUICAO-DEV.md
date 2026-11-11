@@ -1,95 +1,104 @@
-# IERC-RN — Apoie o Instituto, primeira entrega sem pagamentos (DEV)
+# IERC-RN · Apoie o Instituto — informações do Bazar Solidário (DEV)
 
-**Data:** 11/11/2026. **Escopo:** Sprint 4, página `/apoie` na `dev`.
+**Atualizado:** 11/11/2026. **Branch:** `dev`. **Escopo:** Sprint 4.1, `/apoie`.
 
-## Objetivo e limites
+## Fonte e limites de confirmação
 
-A área Apoie passa a explicar como a comunidade pode procurar a instituição
-para colaborar, sem assumir a existência de um programa formal de voluntariado,
-de um canal para entrega de objetos, de meios de pagamento ou de campanhas
-financeiras sem aprovação institucional.
+Informações operacionais repassadas ao responsável pelo portal por uma pessoa
+da instituição em 11/11/2026. Consideradas suficientes para atualizar o
+ambiente de homologação **DEV**; a publicação definitiva em `main` exige
+confirmação editorial final junto à administração do IERC-RN.
 
-A implementação preserva a identidade visual do portal, funciona sem o CMS
-ativo e **não** cria formulário, armazenamento de dados, QR Code, chave Pix,
-checkout, links de pagamento ou funcionalidades bancárias.
+Não expor nomes de pessoas encarregadas da entrega sem autorização para
+divulgação pública. Nenhum telefone ou contato pessoal foi adicionado.
 
-## Estrutura entregue
+## Bazar Solidário — informações recebidas
 
-1. **Bazar Solidário** em destaque, com a referência histórica a
-   **terças-feiras** e a orientação explícita para **confirmar a programação**
-   antes de visitar. O site não declara horários, endereço específico de
-   entrega, regras de compras ou lista de itens aceitos como atuais.
-2. **Três formas de apoio**:
-   - Doar itens, somente após confirmar critérios e possibilidade de entrega;
-   - Conhecer o bazar, após verificar dia, horário e disponibilidade;
-   - Divulgar os canais da instituição ou conversar sobre eventual
-     colaboração, sem anunciar vagas ou programas de voluntariado inexistentes.
-3. **Três passos para apoiar com segurança:** conhecer, confirmar necessidades
-   e combinar diretamente a participação.
-4. **Informação financeira inequívoca:** o site ainda não recebe Pix,
-   cartão nem pagamento recorrente.
-5. **Chamadas úteis e acessíveis:** links internos existentes para
-   `/contato` e link ao perfil Instagram informado
-   `https://www.instagram.com/iercrn/` (nova aba identificada).
-   Nenhum telefone, endereço para doação ou conta bancária foi inventado.
+| Item | Informação |
+| --- | --- |
+| Dia e horário das vendas | **Terças-feiras, das 8h às 11h** |
+| Local do bazar | **Sede do IERC-RN**, Rua Fonseca e Silva, 1113, Alecrim, Natal/RN (endereço já documentado no portal) |
+| Quem pode comprar | Qualquer pessoa |
+| Pagamento das compras | **Dinheiro ou Pix presencial**, com instruções fornecidas no próprio bazar |
+| Entrega de doações de itens | **Segunda a quinta-feira, das 8h às 11h**, presencialmente na sede |
+| Itens aceitos | **Roupas, sapatos e bolsas em bom estado** |
+| Serviço de coleta | **Não há coleta domiciliar** |
+| Voluntariado e parcerias | Instituição informou que recebe ambos; modalidades e critérios a combinar com a equipe |
 
-O código está no componente `components/support-page.tsx` e em CSS
-estritamente escopado com prefixo `.support-` em `app/globals.css`.
-A rota `app/[slug]/page.tsx` reutiliza o componente, sem novos serviços.
+A referência à equipe de recebimento não exige publicação de nomes ou
+dados de contato de pessoas físicas. Por segurança, confirmar mudanças
+excepcionais de funcionamento ou feriados antes de deslocamentos.
 
-## Verificações
+### Pix do bazar NÃO é o Pix de doações
 
-`tests/support-page.spec.ts` cobre:
-- organização dos três meios não financeiros e referência condicional
-  de terças-feiras;
-- ausência de formulário, Pix, QR Code, checkout, links para pagamento,
-  telefone ou e-mail fictícios;
-- links de contato e Instagram, comportamento de nova aba e âncoras;
-- reflow sem rolagem horizontal em 320, 375, 768 e 1440 px;
-- acessibilidade automática com axe-core (WCAG A/AA).
+Duas operações distintas:
+1. **Compra presencial no bazar:** o IERC-RN informou aceitar dinheiro ou
+   Pix. A página explica isso **sem criar botão de pagamento** e sem
+   supor qual chave ou conta é usada presencialmente.
+2. **Doação financeira ao IERC-RN:** a instituição confirmou existir Pix
+   oficial e autorizou sua futura divulgação. **Chave, titular da conta,
+   vínculo com a pessoa jurídica e autorização final dos dados exibidos
+   ainda não foram apresentados/validados**. Não publicar chave, QR Code,
+   conta bancária ou link de pagamento nesta etapa.
 
-Esses testes automatizados **não substituem** validação manual em zoom
-200%/400%, NVDA, VoiceOver e TalkBack com pessoas usuárias.
+Não há formulário, armazenamento de dados financeiros, processamento de
+pagamentos, webhooks, gateway ou função de checkout na aplicação.
 
-## Pontos que precisam de confirmação institucional
+## Mudança no portal
 
-Antes de atualizar o conteúdo da página com detalhes operacionais,
-solicitar ao IERC-RN validação de:
-- funcionamento semanal atual do bazar e horário efetivo;
-- itens que podem ser recebidos, conservação e critérios de entrega;
-- endereço/ponto de entrega e instruções de recebimento;
-- existência de oportunidades de colaboração e pessoa responsável pelo contato;
-- políticas de imagem e autorização de fotografias;
-- se haverá recebimento financeiro e quem responderá pelas transações.
+`components/support-page.tsx`:
+- informa hora/dia do bazar e endereço já documentado;
+- explica itens em bom estado, horários de entrega e impossibilidade de coleta;
+- informa acesso público ao bazar e Pix/dinheiro como pagamento presencial;
+- substitui chamada genérica por informação sobre voluntariado e parcerias;
+- diferencia claramente doações financeiras futuras de pagamentos de compras;
+- mantém contato via `/contato` e perfil Instagram informado, sem dados fictícios.
 
-Somente após as confirmações, avaliar mover dados operacionais para campos
-editáveis e aprovados no CMS. Não publicar informações presumidas.
+Nenhum schema do Strapi, Docker Compose, Redis, worker IA, monitor, volume
+ou configuração de produção foi alterado. O conteúdo será editável pelo
+CMS somente após escolha e homologação de modelo administrativo apropriado.
 
-## Etapa financeira — NÃO implementada
+## Critérios automatizados
 
-As issues #4 e #9 permanecem abertas para avaliação de titularidade da
-conta recebedora, gateways Pix/cartão, cobrança recorrente, comprovantes,
-webhooks assinados, prevenção de duplicidade, LGPD, prestação de contas e
-teste com tecnologias assistivas.
+`tests/support-page.spec.ts` cobre as informações do bazar, a separação
+dos dois tipos de Pix, ausência de QR Code/chaves/formulários e dados pessoais
+de responsáveis, links internos e externos, alinhamento de ícones, reflow
+(320/375/768/1440 px) e WCAG A/AA com axe-core.
 
-Não adicionar chave Pix, QR Code, endpoint de pagamento ou gravação de
-dados financeiros antes de autorização formal.
+Testes automatizados não equivalem a teste assistivo humano de navegação
+por teclado, ampliação 200/400%, NVDA, VoiceOver ou TalkBack.
 
-## Homologação e deploy
+## Perguntas que permanecem para a visita de 12/11/2026
 
-Desenvolvimento ocorre apenas na `dev`. Após CI do portal aprovado,
-atualizar somente o portal DEV existente:
+- Confirmação administrativa do horário, endereço e informações recebidas,
+  especialmente funcionamento em feriados/recessos;
+- Telefone/WhatsApp/e-mail **institucional** que pode ser divulgado;
+- Quem aprova notícias, eventos, fotos e permissões de edição do Strapi;
+- Próximos eventos, campanhas e atividades institucionais, com datas aprovadas;
+- Licenças/consentimentos de imagens, especialmente menores e atendidos;
+- Condições e canal institucional para voluntariado/parcerias;
+- Validação formal e documental da chave Pix de doações financeiras,
+  titularidade, suporte e política de prestação de contas, caso se decida
+  habilitar essa segunda etapa.
+
+## Homologação do portal DEV
+
+Após CI do portal aprovado:
 
 ```bash
 cd /opt/projects/ierc-rn-dev
 git pull --ff-only origin dev
 git rev-parse --short HEAD
+
 docker compose --env-file deploy/.env.portal.dev \
   -f compose.portal.dev.yml up -d --build portal
+
 docker compose --env-file deploy/.env.portal.dev \
   -f compose.portal.dev.yml ps
 ```
 
-Verificar visualmente `http://127.0.0.1:3101/apoie` em desktop e celular.
-**Não** reconstruir Strapi, worker IA, monitor ou Redis. **Não** usar
-`docker compose down -v`. `main` e PR #12 Draft preservados.
+Conferir `http://127.0.0.1:3101/apoie`. Não reconstruir Strapi, worker IA,
+monitor ou Redis; não usar `down -v` e não alterar produção.
+
+As issues #9 e #4 permanecem abertas: a página informativa e o Pix
+financeiro são entregas distintas.
