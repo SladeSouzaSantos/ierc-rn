@@ -44,6 +44,10 @@ npm run test:e2e
 
 Para rodar os testes e2e, a aplicação deve estar compilada (`npm run build`); o Playwright inicia `next start` na porta 3000.
 
+## Deploy Docker no MiniMac
+
+Os portais DEV/PROD, redes de leitura Strapi exclusivas, portas locais e os endereços futuros `dev.iercrn.org.br`, `iercrn.org.br`, `strapi-dv.iercrn.org.br` e `strapi.iercrn.org.br` estão documentados em [MiniMac e domínios](docs/MINIMAC-PORTAL-DOMINIOS.md). DNS, Cloudflare Access e proxy HTTPS ainda precisam de homologação. O portal MAIN não deve ser iniciado antes de aprovação e merge.
+
 ## Fluxo de desenvolvimento
 
 - `main`: base institucional aprovada.
