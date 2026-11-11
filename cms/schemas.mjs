@@ -44,7 +44,12 @@ export const models = {
   event: make('event', 'events', 'Eventos', 'Agenda aprovada pela instituição.', {
     title: str(true), slug: uid('title'), summary: text(true),
     location: str(), startsAt: { type: 'datetime', required: true },
-    endsAt: { type: 'datetime' }, registrationUrl: str(), ...portrait,
+    endsAt: { type: 'datetime' }, registrationUrl: str(),
+    // Additive, optional metadata. Existing institutional events remain unchanged.
+    eventType: { type: 'enumeration', enum: ['institucional', 'competicao_esportiva'], default: 'institucional' },
+    participationStatus: { type: 'enumeration', enum: ['nao_confirmada', 'confirmada'], default: 'nao_confirmada' },
+    sportModality: str(),
+    ...portrait,
   }),
   activity: make('activity', 'activities', 'Atividades', 'Serviços atuais sujeitos à revisão institucional.', {
     title: str(true), slug: uid('title'), summary: text(true),
