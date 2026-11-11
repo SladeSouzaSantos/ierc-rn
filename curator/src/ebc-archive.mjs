@@ -146,7 +146,7 @@ export function parseEbcArchive(html,{section,now=Date.now(),ageDays=45,
   return output.sort((a,b)=>Date.parse(b.publishedAt)-Date.parse(a.publishedAt)||
     a.url.localeCompare(b.url));
 }
-async function publicListing(section,page,fetchImpl){
+export async function fetchEbcArchiveListing(section,page,fetchImpl){
   const u=archivePageUrl(section,page);
   const response=await fetchImpl(u,{method:'GET',
     headers:{Accept:'text/html','User-Agent':'IERC-RN-Official-EBC-Archive/0.1'},
@@ -184,7 +184,7 @@ export async function inspectEbcArchive({section='educacao',pages=2,
   };
   for(let page=0;page<pages;page++){
     try{
-      const html=await publicListing(section,page,pacedFetch);
+      const html=await fetchEbcArchiveListing(section,page,pacedFetch);
       const diagnostics={};
       const entries=parseEbcArchive(html,{section,now,diagnostics});
       for(const entry of entries)if(!items.has(entry.url))items.set(entry.url,entry);
