@@ -25,6 +25,8 @@ jobs:
         run: npm run build
       - name: Typecheck
         run: npm run typecheck
+      - name: Assert CMS pages are rendered at runtime
+        run: node scripts/assert-cms-runtime-render.mjs
       - name: Install browser
         run: npx playwright install --with-deps chromium
       - name: E2E, keyboard and axe checks
