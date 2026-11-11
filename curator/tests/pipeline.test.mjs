@@ -327,35 +327,22 @@ test('auto publication refuses preview, batch >1 and missing allowlisted sources
   await assert.rejects(runOnce({autoPublish:true,articleReader:async()=>{throw Error('not called');},dryRun:false,publisher:{},
     autoPublishSources:[],maxArticles:1}),/source allowlist/);
 });
-test('auto mode cannot publish a source excluded by the explicit allowlist',async()=>{
-  const content='<feed><entry><title>Blind sport and adapted games for children</title>'+
-    '<link href="https://www.w3.org/WAI/news/example"/>'+
-    '<updated>2026-11-09T15:00:00Z</updated>'+
-    '<summary>Children with disabilities participate in adapted sports and accessible games. The program offers inclusive activities, group play, opportunities to join peers and to take part in accessible physical education lessons.</summary></entry></feed>';
-  let attempts=0;
-  const cms={async existing(){return false;},async create(){
-    return 'a1b2c3d4e5f6g7h8i9j0klmn';}};
-  const store={async set(){return 'OK';},async exists(){return 0;},async eval(){return 1;}};
-  const router={async complete(){attempts++;
-    return {provider:'openrouter',content:JSON.stringify({
-      title:'Atividades de esporte adaptado para crianças com deficiência',
-      summary:'Uma instituição apresenta atividades de esporte adaptado para crianças com deficiência e oportunidades de participação em grupos.',
-      body:'O programa oferece práticas esportivas acessíveis, atividades em grupo e participação em aulas de educação física com colegas. Essas ações são descritas na comunicação original da instituição.',
-      whyItMatters:'O tema permite refletir sobre acesso ao esporte adaptado, educação inclusiva e participação de crianças com deficiência visual no Brasil.',
-      category:'esporte',
-    })};
-  }};
-  const out=await runOnce({sources:[source],fetchImpl:async()=>new Response(content),
-    now:Date.parse('2026-11-10T12:00:00Z'),maxArticles:1,dryRun:false,store,cms,router,
-    autoPublish:true,autoPublishSources:['agencia-brasil-esportes'],
-    articleReader:async()=>{throw Error('Reader not called for excluded source');},
-    publisher:{async publishApprovedDraft(){throw Error('unlisted source published');}}});
-  assert.equal(out.count,1);
-  assert.equal(out.results[0].status,'draft_created');
-  assert.equal(out.aiGenerated,true);
-  assert.equal(attempts,1);
+test('auto mode skips non-allowlisted feeds before fetching or model calls',async()=>{
+  let fetches=0,modelCalls=0,cmsWrites=0,reads=0;
+  const result=await runOnce({sources:[source],maxArticles:1,
+    dryRun:false,autoPublish:true,autoPublishSources:['agencia-brasil-esportes'],
+    fetchImpl:async()=>{fetches++;throw Error('unapproved feed fetched');},
+    articleReader:async()=>{reads++;throw Error('unapproved article read');},
+    store:{async set(){throw Error('unexpected Redis write');}},
+    cms:{async create(){cmsWrites++;},async existing(){cmsWrites++;}},
+    router:{async complete(){modelCalls++;throw Error('unapproved LLM call');}},
+    publisher:{async publishApprovedDraft(){cmsWrites++;throw Error('unapproved publish');}},
+  });
+  assert.equal(result.count,0);
+  assert.equal(result.aiGenerated,false);
+  assert.equal(fetches,0);assert.equal(reads,0);
+  assert.equal(modelCalls,0);assert.equal(cmsWrites,0);
 });
-
 
 test('review:preview performs two free-model passes and zero CMS or persistence calls',async()=>{
  const summary='Blind students participate in accessible sports, group learning, and classroom games. The program provides adapted games and activities that encourage participation alongside peers, supporting inclusion within school lessons.';
