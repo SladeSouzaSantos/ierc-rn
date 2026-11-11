@@ -124,3 +124,37 @@ docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml exec -T mon
 
 Nenhuma mudança foi realizada no worker de autopublicação. Continuar
 respeitando os direitos de terceiros e o intervalo de 10 segundos.
+
+
+## Correção de links não interpretáveis — operação de 11/11/2026
+
+Em operação com o SHA dc4b036, as duas páginas da editoria Educação
+exibiram 23 cards, mas TODOS foram rejeitados na etapa de URL:
+
+- página 0: cardsFound=9, urlsRejected=9, urlRejectReasons.malformed_url=9;
+- página 1: cardsFound=14, urlsRejected=14, urlRejectReasons.malformed_url=14;
+- nenhum título inválido nem rejeição por data. A evidência integral NÃO rodou.
+
+O código de correção importa URL explicitamente de node:url e resolve
+atributos href contra uma base confiável, com barra terminal, da seção
+oficial EBC. Admite endereços completos, relativos à raiz e à seção e
+referências //hostname; AINDA BLOQUEIA qualquer URL com origem não HTTPS,
+hostname diferente, login/porta/hash, query não permitida ou caminho fora
+de /{editoria}/noticia/{YYYY-MM}/{slug}.
+
+O diagnóstico de cada página inclui hrefFormats, que informa contagens
+agregadas de absolute_https, root_relative, protocol_relative e other;
+NUNCA registra href bruto de terceiros. urlRejectReasons passa a
+distinguir malformed_url (falha de interpretação do endereço fornecido)
+de url_parser_failure (erro inesperado de execução do parser), além das
+demais rejeições estruturais.
+
+Teste de regressão cobre os formatos acima, URL externa e URL segura
+canônica. A correção e seus testes não alteram a allowlist de publicação,
+os horários do worker de IA ou os critérios de direitos/autoria.
+
+O bloqueio só estará operacionalmente RESOLVIDO depois de novo teste
+real no MiniMac e de constatar datedEntries > 0. Para a publicação por IA
+continua obrigatório obter evidência integral positiva e executar a
+revisão independente no workflow específico; o diagnóstico read-only
+não publica nada.
