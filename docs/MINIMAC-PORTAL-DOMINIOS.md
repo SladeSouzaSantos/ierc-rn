@@ -24,7 +24,7 @@ sudo ss -lntp | grep -E ':(1337|1338|3101|3102)\\b' || true
 ```bash
 cd /opt/projects/ierc-rn-dev
 git pull --ff-only origin dev
-docker run --rm --user "$(id -u):$(id -gn)" -v "$PWD:/workspace" -w /workspace node:22-alpine node cms/scripts/init-env.mjs
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/workspace" -w /workspace node:22-alpine node cms/scripts/init-env.mjs
 docker compose --env-file cms/.env -f compose.cms.yml config --quiet
 docker compose --env-file cms/.env -f compose.cms.yml up -d --build
 docker compose --env-file cms/.env -f compose.cms.yml ps
