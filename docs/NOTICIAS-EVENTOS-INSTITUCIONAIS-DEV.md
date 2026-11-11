@@ -81,3 +81,27 @@ Para publicar um **evento** na coleção `event`:
    campos adicionais no CMS.
 4. Depois, dar andamento à seção `/apoie` sem aceitar doações por pagamento
    até confirmar titularidade, gateway, segurança e prestação de contas.
+
+## Prioridade editorial da página Notícias — 11/11/2026
+
+A seção **"Notícias da equipe do IERC-RN"** é renderizada **sempre e antes dos
+registros de imprensa externa**, mesmo quando ainda não existem publicações
+institucionais aprovadas. Nesse estado, é apresentado um cartão informativo
+"Publicações institucionais em preparação", sem simular notícia, evento,
+foto ou data. O título introdutório da página passa a enfatizar a comunicação
+do IERC, e não as fontes externas.
+
+Quando um artigo `news-article` de origem institucional for efetivamente
+publicado no Strapi e tiver `editorialStatus=aprovado`, os cartões de notícia
+substituem automaticamente a mensagem vazia. O componente **não** altera o
+filtro no servidor: só recebe notícias publicadas e aprovadas da
+`getCmsNews()`. A cobertura externa sobre o Instituto, seus seis registros
+históricos e o Radar continuam separados e inalterados.
+
+Regressão: `tests/cms-integration.spec.ts` verifica a seção oficial,
+mensagem vazia, ordem no DOM, ausência de notícia institucional fictícia,
+seis registros externos e link para o Radar com o CMS desligado.
+
+Status de implantação: código em `dev`; exige reconstruir apenas
+`compose.portal.dev.yml` depois da aprovação do CI. Não há alteração no
+schema do Strapi, curador IA, Compose do worker, Redis ou produção.
