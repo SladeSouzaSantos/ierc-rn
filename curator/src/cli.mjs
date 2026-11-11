@@ -8,6 +8,7 @@ import {cmsNewsReadOnly,previewDeduper} from './duplicate-check.mjs';
 import {fetchArticleEvidence} from './article-evidence.mjs';
 import {autoPublishSettingsFromEnv} from './auto-config.mjs';
 import {runOnce} from './pipeline.mjs';
+import {scheduleDraftLimitFromEnv} from './schedule-config.mjs';
 
 const cmd=process.argv[2];
 if(!['preview','generate-preview','review-preview','review-full-preview','once','schedule'].includes(cmd)){
@@ -69,6 +70,7 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
     const aiPreviewLimit=Number(env.CURATOR_AI_PREVIEW_LIMIT||1);
     const aiPreviewDays=Number(env.CURATOR_AI_PREVIEW_DAYS||45);
     // One-off DEV acceptance can cap writing to a single draft without enabling cron.
+    const scheduleLimit=cmd==='schedule'?scheduleDraftLimitFromEnv(env):1;
     const onceLimit=Number(env.CURATOR_ONCE_LIMIT||3);
     if(cmd==='once'&&(!Number.isInteger(onceLimit)||onceLimit<1||onceLimit>3))
       throw new Error('CURATOR_ONCE_LIMIT must be 1..3');
@@ -81,7 +83,7 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
       autoPublish,publisher,autoPublishSources:allowedSources,logger:log,
       maxAgeDays:cmd==='preview'?previewDays:aiPreview?aiPreviewDays:45,
       // Auto mode never processes more than one candidate per run.
-      maxArticles:autoPublish?1:cmd==='preview'?previewLimit:aiPreview?aiPreviewLimit:cmd==='once'?onceLimit:3});
+      maxArticles:autoPublish?1:cmd==='preview'?previewLimit:aiPreview?aiPreviewLimit:cmd==='once'?onceLimit:scheduleLimit});
     const slot=()=>{
       const parts=new Intl.DateTimeFormat('en-GB',{
         timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit',
