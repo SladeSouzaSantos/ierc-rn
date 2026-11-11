@@ -119,7 +119,7 @@ import { relevanceAssessment } from './relevance.mjs';
 export function relevant(item){return relevanceAssessment(item).relevant;}
 // Allow at most one HTTPS redirect preserving the approved host and feed path.
 const feedPath = url => url.pathname.replace(/\/+$/, '') || '/';
-export async function fetchSource(source, fetchImpl=fetch) {
+async function fetchSourceAttempt(source, fetchImpl) {
   const isHtml = source.mode === 'html';
   if (isHtml && source.previewOnly !== true)
     throw new Error('HTML listings require explicit preview-only policy');
@@ -156,4 +156,23 @@ export async function fetchSource(source, fetchImpl=fetch) {
   const body=await response.text();
   if(body.length>limit)throw new Error('Source exceeds size limit');
   return body;
+}
+
+/**
+ * One bounded retry for transient fetch failures only. No retries for policy,
+ * parser, permissions, redirects, authentication or rate-limit responses.
+ */
+const transientSourceError=error=>
+  error?.name==='TimeoutError'||error?.name==='AbortError'||
+  error instanceof TypeError||/^Source HTTP (?:500|502|503|504)$/.test(error?.message||'');
+
+export async function fetchSource(source,fetchImpl=fetch){
+  for(let attempt=0;attempt<2;attempt++){
+    try{return await fetchSourceAttempt(source,fetchImpl);}
+    catch(error){
+      if(attempt===1||!transientSourceError(error))throw error;
+      await new Promise(resolve=>setTimeout(resolve,200));
+    }
+  }
+  throw new Error('Source retry exhausted');
 }
