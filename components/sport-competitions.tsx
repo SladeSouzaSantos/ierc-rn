@@ -2,25 +2,8 @@ import { ArrowUpRight, CalendarDays, MapPin } from "lucide-react";
 import type { CmsEvent } from "@/lib/cms";
 import type { CbdvCompetition } from "@/lib/cbdv-calendar";
 import { CBDV_CALENDAR_URL } from "@/lib/cbdv-calendar";
+import {organizeSportCompetitions} from "@/lib/sport-competition-utils";
 
-const normalized = (value: string) => value.normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-const identity = (title: string, start: string) =>
-  normalized(title) + "-" + start.slice(0, 10);
-
-export function organizeSportCompetitions(cbdv: CbdvCompetition[], events: CmsEvent[]) {
-  const institutional = events.filter(event =>
-    event.eventType === "competicao_esportiva" &&
-    !!event.title && !!event.summary && !Number.isNaN(Date.parse(event.startsAt))
-  ).sort((a,b) => Date.parse(a.startsAt)-Date.parse(b.startsAt));
-  // A manually approved institutional record takes precedence when a CBDV
-  // event is also listed. Neither source is silently converted to a roster.
-  const seen = new Set(institutional.map(event => identity(event.title,event.startsAt)));
-  const external = cbdv.filter(item =>
-    !seen.has(identity(item.title,item.startsAt))
-  ).sort((a,b) => a.startsAt.localeCompare(b.startsAt));
-  return {institutional,external};
-}
 const dateLabel = (iso: string) => {
   const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(iso)?iso+"T12:00:00Z":iso);
   return new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Fortaleza",
