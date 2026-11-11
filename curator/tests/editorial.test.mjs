@@ -238,3 +238,17 @@ test('auto publication rejects RSS-only reviewer evidence before acquiring a Red
   }),/authorized full article evidence/);
   assert.equal(reads,0);
 });
+
+
+test('model JSON with clipped editorial prose is rejected even if parsed',()=>{
+  const ending='A inclusão deve ser considerada na elaboração de programas e pol';
+  assert.throws(()=>validateDraft(JSON.stringify({...draft,whyItMatters:ending})),
+    /Incomplete model draft/);
+  assert.throws(()=>validateDraft(JSON.stringify({...draft,body: 
+    'Uma notícia descreve uma prática importante para o desenvolvimento de crianças com deficiência visual. O artigo segue com informa'})), 
+    /Incomplete model draft/);
+  assert.equal(validateDraft(JSON.stringify(draft)).whyItMatters,draft.whyItMatters);
+  assert.equal(validateDraft(JSON.stringify({...draft,
+    whyItMatters:'A inclusão deve ser considerada em projetos de educação acessível!'}))
+    .category,'Tecnologia assistiva');
+});
