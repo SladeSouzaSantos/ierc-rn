@@ -45,23 +45,30 @@ export function archivePageUrl(section,page){
     throw new Error('Only the first two public archive pages are permitted');
   return 'https://'+HOST+'/'+section+(page?'?page='+page:'');
 }
-function officialLink(href,section){
-  let u;
-  try{u=new URL(href);}catch{return null;}
-  if(u.protocol!=='https:'||u.hostname!==HOST||u.port||
-    u.username||u.password||u.hash||
-    [...u.searchParams.keys()].some(k=>!(/^(?:utm_[a-z0-9_]+|fbclid|gclid)$/i).test(k)))
+function officialLink(href,section,recordRejection){
+  const reject=reason=>{
+    if(typeof recordRejection==='function')recordRejection(reason);
     return null;
-  // Match the 4 fixed URL segments instead of constructing a RegExp
-  // through an escaped JS string. Every segment is validated independently,
-  // including section identity, YYYY-MM and the ASCII article slug.
+  };
+  let u;
+  try{u=new URL(href);}catch{return reject('malformed_url');}
+  if(u.protocol!=='https:'||u.hostname!==HOST||u.port||
+    u.username||u.password)return reject('unsafe_origin');
+  if(u.hash||[...u.searchParams.keys()].some(
+    k=>!(/^(?:utm_[a-z0-9_]+|fbclid|gclid)$/i).test(k)))
+    return reject('unsafe_parameters');
+  // Fixed segments avoid dynamic RegExp escaping and preserve strict
+  // canonical site/section/path controls.
   const parts=u.pathname.split('/');
-  if(parts.length!==5&&!(parts.length===6&&parts[5]===''))return null;
+  if(parts.length!==5&&!(parts.length===6&&parts[5]===''))
+    return reject('path_segments');
   if(parts[0]!==''||parts[1]!==section||parts[2]!=='noticia'||
      !/^20\d{2}-(?:0[1-9]|1[0-2])$/.test(parts[3])||
-     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(parts[4]))return null;
+     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(parts[4]))
+    return reject('path_shape');
   const canonicalPath='/'+parts.slice(1,5).join('/');
-  if(u.pathname!==canonicalPath&&u.pathname!==canonicalPath+'/')return null;
+  if(u.pathname!==canonicalPath&&u.pathname!==canonicalPath+'/')
+    return reject('path_canonicalization');
   u.search='';u.pathname=canonicalPath;
   return u.toString();
 }
@@ -99,7 +106,10 @@ export function parseEbcArchive(html,{section,now=Date.now(),ageDays=45,
     if(!a.length||!a.attr('href')){counts.linksMissing++;return;}
     const title=norm(a.text());
     if(title.length<14||title.length>200){counts.titlesInvalid++;return;}
-    const url=officialLink(a.attr('href'),section);
+    const url=officialLink(a.attr('href'),section,reason=>{
+      counts.urlRejectReasons??={};
+      counts.urlRejectReasons[reason]=(counts.urlRejectReasons[reason]||0)+1;
+    });
     if(!url){counts.urlsRejected++;return;}
     const dateNode=card.find('.data-publicacao .data, .data-publicacao time, time[datetime]').first();
     const publishedAt=brasiliaDate(dateNode.attr('datetime')||dateNode.text());
