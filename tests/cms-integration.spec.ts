@@ -16,6 +16,25 @@ test("noticias e eventos preservam arquivo historico quando CMS esta desligado",
   await expect(page.getByRole("heading", { name: "Próximos eventos" })).toBeVisible();
 });
 
+test("noticias priorizam a secao oficial mesmo sem conteudo CMS aprovado", async ({ page }) => {
+  if (process.env.CMS_ENABLED === "true") return;
+  await page.goto("/noticias");
+
+  const official = page.locator(".editorial-section:has(#cms-news-title)");
+  const external = page.locator(".editorial-section:has(#clippings-title)");
+  await expect(official.getByRole("heading", { name: "Notícias da equipe do IERC-RN" })).toBeVisible();
+  await expect(official.getByRole("heading", { name: "Publicações institucionais em preparação" })).toBeVisible();
+  await expect(official.getByText(/Ainda não há notícias oficiais publicadas e aprovadas nesta seção/)).toBeVisible();
+  await expect(official.locator(".editorial-news")).toHaveCount(0);
+
+  // The official section must precede external clippings in document order.
+  const order = await page.locator("#cms-news-title, #clippings-title")
+    .evaluateAll(nodes => nodes.map(node => node.id));
+  expect(order).toEqual(["cms-news-title", "clippings-title"]);
+  await expect(external.locator(".editorial-news")).toHaveCount(6);
+  await expect(page.getByRole("link", { name: "Explorar o Radar" })).toHaveAttribute("href", "/radar-da-inclusao");
+});
+
 test("noticias privadas e inexistentes nao sao acessiveis por URL publica", async ({ page }) => {
   const response = await page.goto("/noticias/rascunho-nao-aprovado");
   expect(response?.status()).toBe(404);
