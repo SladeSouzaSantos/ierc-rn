@@ -152,9 +152,13 @@ export async function inspectEbcArchive({section='educacao',pages=2,
     try{
       const evidence=await articleReader(source,item,{fetchImpl:pacedFetch});
       if(evidence?.verified!==true||evidence?.mode!=='full_article'||
-        evidence.sourceUrl!==item.url)throw new Error('Invalid full article evidence');
+        evidence.sourceUrl!==item.url||
+        evidence.licenseReference!==source.fullTextAccess.reference)
+        throw new Error('Invalid full article evidence');
       const text=evidence.blocks.map(x=>x.text).join(' ');
-      const assessment=relevanceAssessment({title:item.title,summary:text},source);
+      // A discovery headline cannot qualify as verified full-text evidence.
+      // Require explicit visual anchors in extracted body paragraphs alone.
+      const assessment=relevanceAssessment({title:'',summary:text},source);
       const visual=assessment.editorialFocus==='visual_direta'&&
         assessment.relevant===true;
       if(visual)visualVerified++;
