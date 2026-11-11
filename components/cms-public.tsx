@@ -3,6 +3,7 @@ import { ArrowUpRight, CalendarDays } from "lucide-react";
 import { athleteProfiles } from "@/lib/athlete-stories";
 import type { CmsArticle, CmsEvent, CmsAthlete } from "@/lib/cms";
 import { sortNewsNewestFirst } from "@/lib/news-order";
+import { groupInstitutionalEvents, institutionalEventNews } from "@/lib/institutional-events";
 
 function dateLabel(value?: string) {
   if (!value || Number.isNaN(Date.parse(value))) return null;
@@ -107,22 +108,74 @@ export function CmsRadarList({ items }: { items: CmsArticle[] }) {
   </section>;
 }
 
+/** CMS events are an agenda, not a historical sports clipping collection. */
+function eventDateTimeLabel(value: string) {
+  if (Number.isNaN(Date.parse(value))) return "";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "long", timeStyle: "short", timeZone: "America/Fortaleza",
+  }).format(new Date(value));
+}
+
+function CmsEventCard({ item }: { item: CmsEvent }) {
+  return <article className="detail-card editorial-event" key={item.slug}>
+    <span><CalendarDays size={17} aria-hidden="true"/>
+      <time dateTime={item.startsAt}>{eventDateTimeLabel(item.startsAt)}</time>
+    </span>
+    <h4>{item.title}</h4>
+    <p>{item.summary}</p>
+    {item.endsAt && <p>Encerramento: <time dateTime={item.endsAt}>{eventDateTimeLabel(item.endsAt)}</time></p>}
+    {item.location && <p className="editorial-place">Local: {item.location}</p>}
+    {item.registrationUrl && <a className="editorial-source" href={item.registrationUrl} target="_blank" rel="noopener noreferrer">
+      Inscrição ou informações oficiais <ArrowUpRight size={16} aria-hidden="true"/>
+      <span className="sr-only"> (abre em nova aba)</span>
+    </a>}
+  </article>;
+}
+
 export function CmsEventsList({ items }: { items: CmsEvent[] }) {
-  if (!items.length) return null;
+  const { upcoming, ongoing, completed } = groupInstitutionalEvents(items);
   return <section className="editorial-section" aria-labelledby="cms-events-title">
-    <p className="eyebrow">Agenda aprovada</p>
-    <h2 className="interior-subtitle" id="cms-events-title">Programação do Instituto</h2>
-    <div className="editorial-panels">
-      {items.map(item => <article className="detail-card editorial-event" key={item.slug}>
-        <span><CalendarDays size={17} aria-hidden="true"/> <time dateTime={item.startsAt}>{dateLabel(item.startsAt)}</time></span>
-        <h3>{item.title}</h3><p>{item.summary}</p>
-        {item.location && <p className="editorial-place">Local: {item.location}</p>}
-        {item.registrationUrl && <a className="editorial-source" href={item.registrationUrl} target="_blank" rel="noopener noreferrer">
-          Inscrição ou informações oficiais <ArrowUpRight size={16} aria-hidden="true"/>
-          <span className="sr-only"> (abre em nova aba)</span>
-        </a>}
-      </article>)}
-    </div>
+    <p className="eyebrow">Agenda aprovada · IERC-RN</p>
+    <h2 className="interior-subtitle" id="cms-events-title">Programação da instituição</h2>
+    {ongoing.length > 0 && <section aria-labelledby="ongoing-events-title">
+      <h3 id="ongoing-events-title">Em andamento</h3>
+      <div className="editorial-panels">{ongoing.map(item => <CmsEventCard key={item.slug} item={item}/>)}</div>
+    </section>}
+    <section aria-labelledby="upcoming-events-title">
+      <h3 id="upcoming-events-title">Próximos eventos</h3>
+      {upcoming.length > 0
+        ? <div className="editorial-panels">{upcoming.map(item => <CmsEventCard key={item.slug} item={item}/>)}</div>
+        : <p className="editorial-intro">Ainda não há eventos futuros confirmados e aprovados na agenda do portal. Consulte os canais oficiais do Instituto antes de planejar uma visita.</p>}
+    </section>
+    {completed.length > 0 && <section aria-labelledby="completed-events-title">
+      <h3 id="completed-events-title">Eventos realizados pelo Instituto</h3>
+      <p className="editorial-intro">Registros institucionais aprovados, preservados como memória. Não representam inscrições abertas ou eventos futuros.</p>
+      <div className="editorial-panels">{completed.map(item => <CmsEventCard key={item.slug} item={item}/>)}</div>
+    </section>}
+  </section>;
+}
+
+/** Links to canonical internal news records: no duplicated event articles. */
+export function CmsInstitutionalEventNews({ items }: { items: CmsArticle[] }) {
+  const news = institutionalEventNews(items);
+  return <section className="editorial-section" aria-labelledby="institutional-event-news-title">
+    <p className="eyebrow">Aconteceu no IERC-RN</p>
+    <h2 className="interior-subtitle" id="institutional-event-news-title">Notícias de eventos e atividades internas</h2>
+    <p className="editorial-intro">Oficinas, apresentações, visitas, comemorações e outras atividades realizadas pelo Instituto, com notícias institucionais aprovadas pela equipe.</p>
+    {news.length > 0
+      ? <div className="editorial-panels editorial-panels-three">
+        {news.map(item => <article className="detail-card editorial-news" key={item.slug}>
+          <span>{item.date && !Number.isNaN(Date.parse(item.date))
+            ? <time dateTime={item.date}>{dateLabel(item.date)}</time>
+            : "Notícia institucional"}</span>
+          <h3>{item.title}</h3><p>{item.summary}</p>
+          <Link className="editorial-source" href={"/noticias/" + item.slug}>
+            Ler notícia institucional <ArrowUpRight size={16} aria-hidden="true"/>
+          </Link>
+        </article>)}
+      </div>
+      : <p className="editorial-intro">As notícias sobre eventos internos aparecerão aqui quando forem publicadas e aprovadas pela instituição.</p>}
+    <Link className="inline-link" href="/noticias">Ver todas as notícias do IERC-RN <ArrowUpRight size={16} aria-hidden="true"/></Link>
   </section>;
 }
 
