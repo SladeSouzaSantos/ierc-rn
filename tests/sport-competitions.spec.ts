@@ -73,7 +73,12 @@ test("página esportes distingue CBDV, competições manuais e lista histórica"
   await expect(page.getByRole("heading",{name:"Competições e calendário esportivo"})).toBeVisible();
   await expect(page.getByRole("heading",{name:"Competições informadas pelo IERC-RN"})).toBeVisible();
   await expect(page.getByRole("heading",{name:"Calendário oficial da CBDV · Goalball"})).toBeVisible();
-  await expect(page.getByText(/Estar no calendário da CBDV/)).toBeVisible();
+  await expect(page.getByText(/O calendário informa/)).toBeVisible();
+  // CBDV listing is not a participation audit; preserve official event facts,
+  // while allowing approved institutional cards to display their own status.
+  const cbdvSection = page.locator('section[aria-labelledby="cbdv-sport-competitions"]');
+  await expect(cbdvSection).not.toContainText("Participação do IERC-RN:");
+  await expect(cbdvSection).toContainText("Calendário oficial da CBDV · Goalball");
   await expect(page.getByRole("link",{name:/Abrir calendário da CBDV/}))
     .toHaveAttribute("href","https://www.cbdv.org.br/calendario");
   await expect(page.getByRole("heading",{name:"Equipes registradas pela CBDV"})).toBeVisible();
