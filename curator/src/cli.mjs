@@ -6,7 +6,7 @@ import {cmsClient} from './editorial.mjs';
 import {cmsPublisher} from './cms-publish.mjs';
 import {cmsNewsReadOnly,previewDeduper} from './duplicate-check.mjs';
 import {fetchArticleEvidence} from './article-evidence.mjs';
-import {autoPublishSettingsFromEnv} from './auto-config.mjs';
+import {autoPublishSettingsFromEnv,ebcArchivePublishingFromEnv} from './auto-config.mjs';
 import {runOnce} from './pipeline.mjs';
 import {scheduleDraftLimitFromEnv} from './schedule-config.mjs';
 
@@ -32,6 +32,8 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
   const dryRun=cmd==='preview'||aiPreview||env.CURATOR_WRITE_DRAFTS!=='true';
   // Reject unsafe publication configuration without starting Redis or any API call.
   const {autoPublish,allowedSources}=autoPublishSettingsFromEnv(env,cmd,{dryRun});
+  const archiveDiscovery=ebcArchivePublishingFromEnv(env,cmd,
+    {autoPublish,allowedSources,dryRun});
   // Wait for a fully ready Redis BEFORE using any quota-bearing operation.
   // No model calls are made if the connection cannot be established.
   const redis=cmd==='preview'?null:await connectQuotaRedis(
@@ -80,7 +82,7 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
       throw new Error('CURATOR_AI_PREVIEW_DAYS must be 1..120');
     const execute=async()=>runOnce({router,store:aiPreview?null:redis,cms,dryRun,aiPreview,reviewPreview,
       previewLookup,fullArticlePreview,articleReader:fullArticlePreview||autoPublish?fetchArticleEvidence:null,
-      autoPublish,publisher,autoPublishSources:allowedSources,logger:log,
+      autoPublish,publisher,autoPublishSources:allowedSources,archiveDiscovery,logger:log,
       maxAgeDays:cmd==='preview'?previewDays:aiPreview?aiPreviewDays:45,
       // Auto mode never processes more than one candidate per run.
       maxArticles:autoPublish?1:cmd==='preview'?previewLimit:aiPreview?aiPreviewLimit:cmd==='once'?onceLimit:scheduleLimit});
@@ -98,7 +100,8 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
       console.log(JSON.stringify(report));
     }else{
       const hours=['08','13','19'];
-      log({event:'schedule_started',timezone:'America/Fortaleza',hours,writeDrafts:!dryRun,autoPublish});
+      log({event:'schedule_started',timezone:'America/Fortaleza',hours,
+        writeDrafts:!dryRun,autoPublish,archiveDiscovery});
       const tick=async()=>{
         const current=slot();
         if(!hours.includes(current.hour)||Number(current.minute)>2)return;
