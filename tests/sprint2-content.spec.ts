@@ -50,7 +50,7 @@ test("eventos arquivados não simulam agenda futura", async ({ page }) => {
   await page.goto("/eventos");
   await expect(page.locator(".editorial-event")).toHaveCount(2);
   await expect(page.getByRole("heading", { name: "Próximos eventos" })).toBeVisible();
-  await expect(page.getByText(/Não há inscrições, ingressos ou datas futuras/)).toBeVisible();
+  await expect(page.getByText(/Ainda não há eventos futuros confirmados e aprovados na agenda do portal/)).toBeVisible();
 });
 
 test("endereço de contato é verificável e não há telefone fictício", async ({ page }) => {
