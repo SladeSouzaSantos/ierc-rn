@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowUpRight, CalendarDays, HeartHandshake, Instagram, MapPin, ShoppingBag, Trophy, Users } from "lucide-react";
 import { PageHero } from "@/components/page-hero";
 import { getDisplayActivities, getCmsNews, getCmsEvents, getCmsAthletes } from "@/lib/cms";
-import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsAthletesList } from "@/components/cms-public";
+import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsInstitutionalEventNews, CmsAthletesList } from "@/components/cms-public";
 import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
 import { AthleteStories } from "@/components/athlete-stories";
 
@@ -47,7 +47,7 @@ export default async function ContentPage({ params }: RouteProps) {
   if (!(slug in pages)) notFound();
   const entry = pages[slug as Slug];
   const displayActivities = slug === "atividades" ? await getDisplayActivities() : [];
-  const cmsNews = slug === "noticias" ? await getCmsNews() : [];
+  const cmsNews = slug === "noticias" || slug === "eventos" ? await getCmsNews() : [];
   const cmsEvents = slug === "eventos" ? await getCmsEvents() : [];
   const cmsAthletes = slug === "historias" ? await getCmsAthletes() : [];
 
@@ -117,10 +117,10 @@ export default async function ContentPage({ params }: RouteProps) {
         </>}
 
         {slug === "eventos" && <>
-          <div className="detail-intro"><p className="eyebrow">Agenda e memória</p><h2>Eventos com informação verificável.</h2><p>Enquanto a instituição não envia sua programação futura, reunimos registros históricos de competições esportivas com participação do IERC-RN.</p></div>
+          <div className="detail-intro"><p className="eyebrow">Agenda, notícias e memória</p><h2>O que acontece no IERC-RN.</h2><p>Acompanhe eventos futuros confirmados, atividades internas já realizadas e o acervo histórico esportivo. Somente informações institucionais aprovadas entram na agenda e na cobertura de eventos.</p></div>
           <CmsEventsList items={cmsEvents} />
+          <CmsInstitutionalEventNews items={cmsNews} />
           <PastEvents />
-          {cmsEvents.length === 0 && <div className="detail-card solo-card"><CalendarDays size={40} aria-hidden="true" /><h3>Próximos eventos</h3><p>A agenda ainda aguarda confirmação institucional. Não há inscrições, ingressos ou datas futuras anunciadas por este portal.</p></div>}
         </>}
 
         {slug === "galeria" && <><div className="detail-intro"><p className="eyebrow">Acervo em organização</p><h2>Memórias para ver, ouvir e compartilhar.</h2><p>As galerias poderão reunir atividades, apresentações, competições e momentos da comunidade. Fotografias terão descrições alternativas; vídeos terão legendas e recursos adicionais conforme o conteúdo.</p></div><div className="detail-card solo-card"><h3>Imagens oficiais em preparação</h3><p>Aguardamos seleção de materiais e autorizações. Não utilizamos fotografias de terceiros como se fossem registros do IERC.</p></div></>}
