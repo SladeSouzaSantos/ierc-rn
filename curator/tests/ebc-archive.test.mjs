@@ -110,3 +110,26 @@ test('redirect and invalid listing do not follow external URLs or expose network
   assert.equal(out.events[0].reason,'redirect_blocked');
   assert.equal(out.completed.evidenceChecked,0);
 });
+
+
+test('Braille in headline alone is insufficient without direct visual evidence in article body',async()=>{
+  const titleOnly='<main>'+card('Braille estará em uma nova ação educacional',news)+'</main>';
+  const nonVisual=[
+    'A reportagem apresenta novos horários e regras de organização de um exame aplicado para estudantes de diferentes áreas, explicando como consultar as informações disponibilizadas pelos organizadores para as instituições de ensino.',
+    'As equipes de apoio revisam documentos e orientações referentes ao acesso aos prédios e às salas onde ocorrerão as provas, com informações sobre transporte e horários de início e encerramento das atividades.',
+    'Os participantes podem consultar orientações sobre os locais de prova e sobre os procedimentos administrativos associados aos eventos escolares e à comunicação com os organizadores durante o período da avaliação.',
+  ];
+  const html='<html><div class="autor-noticia">Repórter da Agência Brasil</div>'+
+    '<div class="conteudo-noticia">'+nonVisual.map(x=>'<p>'+x+'</p>').join('')+
+    '</div></html>';
+  const out=await inspectEbcArchive({section:'educacao',pages:1,
+    maxEvidence:1,now:at,log:()=>{},
+    fetchImpl:async url=>url===archivePageUrl('educacao',0)?
+      new Response(titleOnly,{headers:{'content-type':'text/html'}}):
+      new Response(html,{headers:{'content-type':'text/html'}}),
+    sleepImpl:async()=>{}});
+  assert.equal(out.completed.visualVerified,0);
+  assert.equal(out.completed.evidenceChecked,1);
+  assert.equal(out.events.find(x=>x.event==='ebc_archive_candidate_checked')?.status,
+    'visual_evidence_not_found');
+});
