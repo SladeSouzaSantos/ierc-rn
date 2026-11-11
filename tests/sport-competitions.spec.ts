@@ -1,5 +1,6 @@
 import {expect,test} from "@playwright/test";
 import {parseCbdvGoalballCalendar} from "../lib/cbdv-calendar-parser";
+import {organizeSportCompetitions} from "../lib/sport-competition-utils";
 
 const calendar = (rows:string) =>
   '<html><h2>TORNEIOS</h2><h3 style="text-align:left">CALENDÁRIO 2026</h3>'+
@@ -49,6 +50,22 @@ test("leitor CBDV deduplica, descarta datas inválidas e títulos suspeitos",()=
   expect(results.some(x=>x.title.includes("injeta"))).toBe(false);
   expect(parseCbdvGoalballCalendar("<html>pagina alterada</html>",{now})).toEqual([]);
   expect(results.every(x=>x.participation==="nao_confirmada")).toBe(true);
+});
+
+test("competição institucional aprovada prevalece sobre duplicação CBDV, sem mudar vínculo automaticamente",()=>{
+  const data=parseCbdvGoalballCalendar(calendar(row("10/nov","15/nov",
+    "Campeonato Brasileiro de Goalball - Série B")),{now});
+  const manual=[
+    {slug:"encontro-cultura",title:"Encontro cultural",summary:"Atividade",
+      startsAt:"2026-11-15T12:00:00.000Z",eventType:"institucional" as const},
+    {slug:"serie-b",title:"Campeonato Brasileiro de Goalball - Série B",
+      summary:"Participação a confirmar",startsAt:"2026-11-10T12:00:00.000Z",
+      eventType:"competicao_esportiva" as const,participationStatus:"nao_confirmada" as const},
+  ];
+  const {institutional,external}=organizeSportCompetitions(data,manual);
+  expect(institutional.map(e=>e.slug)).toEqual(["serie-b"]);
+  expect(institutional[0].participationStatus).toBe("nao_confirmada");
+  expect(external).toHaveLength(0);
 });
 
 test("página esportes distingue CBDV, competições manuais e lista histórica",async({page})=>{
