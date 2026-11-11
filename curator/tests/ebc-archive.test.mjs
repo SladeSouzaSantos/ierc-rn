@@ -173,7 +173,7 @@ test('real Agência Brasil education URLs from Nov 2026 category markup are acce
       'dom, 08/11/2026 - 11:40'],
     ['Aprendizagem de alunos com deficiência avança no Brasil',
       'https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/aprendizagem-de-alunos-com-deficiencia-avanca-no-brasil',
-      'sex, 06/11/2026 - 09:00'],
+      'sex, 06/11/2026 - 12:10'],
   ];
   const liveShape=titleDateUrl=>
     '<div class="ultima-noticia">'+
