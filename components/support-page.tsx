@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   ArrowUpRight, CalendarDays, HeartHandshake, Megaphone,
-  MessageCircle, ShoppingBag, ShieldCheck,
+  MessageCircle, ShoppingBag, ShieldCheck, Repeat2, HandCoins,
 } from "lucide-react";
 
 /**
@@ -126,6 +126,36 @@ export function SupportPage() {
             O Pix e o dinheiro aceitos no bazar referem-se a compras presenciais.</p>
         </div>
       </aside>
+
+      <section className="support-donation-modes" aria-labelledby="support-donation-modes-title">
+        <p className="eyebrow">Planejamento de doações</p>
+        <h3 id="support-donation-modes-title">Duas maneiras de contribuir financeiramente</h3>
+        <p className="support-donation-lead">As modalidades abaixo estão previstas para uma próxima etapa.
+          Nenhuma delas realiza cobrança ou solicita dados bancários neste portal.</p>
+        <div className="support-donation-grid">
+          <article className="support-donation-card">
+            <span className="support-donation-icon" aria-hidden="true"><HandCoins size={27}/></span>
+            <h4>Doação única</h4>
+            <p>Uma contribuição feita uma só vez, no valor escolhido pelo doador
+              dentro das condições que serão divulgadas pelo IERC-RN.</p>
+            <p className="support-donation-status">Em preparação — sem pagamento disponível</p>
+          </article>
+          <article className="support-donation-card">
+            <span className="support-donation-icon" aria-hidden="true"><Repeat2 size={27}/></span>
+            <h4>Apoio mensal recorrente</h4>
+            <p>Uma contribuição a cada mês, mediante autorização expressa.
+              A pessoa poderá consultar as condições e cancelar a recorrência
+              pelos canais seguros do provedor escolhido.</p>
+            <p className="support-donation-status">Em preparação — sem assinatura ativa</p>
+          </article>
+        </div>
+        <p className="support-donation-disclosure">
+          <strong>Importante:</strong> as compras no Bazar Solidário continuam
+          presenciais. A doação mensal só será ativada após a confirmação
+          da conta recebedora, das regras de cancelamento e do provedor de
+          pagamentos autorizado pela instituição.
+        </p>
+      </section>
     </section>
 
     <section className="detail-callout support-contact"
