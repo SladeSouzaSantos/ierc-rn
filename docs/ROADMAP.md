@@ -46,8 +46,11 @@
 ## Sprint 4 — Participação e sustentabilidade
 **Acompanhamento:** [#9](https://github.com/SladeSouzaSantos/ierc-rn/issues/9) · [#3](https://github.com/SladeSouzaSantos/ierc-rn/issues/3) · [#4](https://github.com/SladeSouzaSantos/ierc-rn/issues/4)
 
+**Etapa 4.1 — Apoio não financeiro em DEV (11/11/2026):** página `/apoie` reorganizada com Bazar Solidário, doação de itens condicionada à confirmação da equipe, visita ao bazar, divulgação e proposta de colaboração. Links apenas para `/contato` e o perfil Instagram informado. Mensagens explícitas sobre horários, itens e entrega ainda não confirmados; nenhum pagamento habilitado. Testes de acessibilidade, reflow e ausência de Pix/checkout. Runbook: [Apoie o Instituto](APOIE-INSTITUICAO-DEV.md). **Homologação visual e com tecnologias assistivas no MiniMac ainda pendente.**
+
 - Link oficial de visitas (sem duplicar plataforma).
-- Doações via Pix/cartão/recorrência com provedor autorizado.
+- Confirmar funcionamento, itens aceitos e orientações do bazar.
+- Doações via Pix/cartão/recorrência somente após aprovação da conta recebedora e provedor autorizado.
 - Política de privacidade, prestação de contas e jornada acessível.
 
 ## Critério geral de entrega
