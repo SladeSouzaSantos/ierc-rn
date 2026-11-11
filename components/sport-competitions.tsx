@@ -23,9 +23,11 @@ export function SportCompetitions({cbdv,events}:{
     <p className="eyebrow">Programação em atualização</p>
     <h2 id="sport-competitions-title" className="interior-subtitle">Competições e calendário esportivo</h2>
     <p className="editorial-intro">As competições divulgadas pela CBDV são consultadas
-      automaticamente no calendário oficial. <strong>Estar no calendário da CBDV
-      não significa que o IERC-RN participará.</strong> Competições adicionais
-      informadas pela instituição são incluídas somente após aprovação editorial.</p>
+      automaticamente no calendário oficial. <strong>O calendário informa
+      os torneios, mas não comprova, isoladamente, quais tiveram participação
+      do IERC-RN.</strong> As participações documentadas permanecem no acervo
+      histórico; competições adicionais informadas pela instituição entram
+      após aprovação editorial.</p>
 
     <section aria-labelledby="local-sport-competitions">
       <h3 id="local-sport-competitions">Competições informadas pelo IERC-RN</h3>
@@ -65,7 +67,6 @@ export function SportCompetitions({cbdv,events}:{
               {dateRange(item.startsAt,item.endsAt)}
             </time></p>
             <p><MapPin size={17} aria-hidden="true"/> {item.location}</p>
-            <p><strong>Participação do IERC-RN:</strong> não confirmada.</p>
             <a className="editorial-source" href={item.sourceUrl}
               target="_blank" rel="noopener noreferrer">
               Consultar calendário oficial da CBDV <ArrowUpRight size={16} aria-hidden="true"/>
