@@ -50,9 +50,19 @@ function officialLink(href,section){
   try{u=new URL(href);}catch{return null;}
   if(u.protocol!=='https:'||u.hostname!==HOST||u.port||
     u.username||u.password||u.hash||
-    !new RegExp('^/'+section+'/noticia/20\\d{2}-(?:0[1-9]|1[0-2])/[a-z0-9-]+/?$').test(u.pathname)||
-    [...u.searchParams.keys()].some(k=>!/^utm_|^fbclid$|^gclid$/i.test(k)))return null;
-  u.search='';u.pathname=u.pathname.replace(/\/+$/,'');
+    [...u.searchParams.keys()].some(k=>!(/^(?:utm_[a-z0-9_]+|fbclid|gclid)$/i).test(k)))
+    return null;
+  // Match the 4 fixed URL segments instead of constructing a RegExp
+  // through an escaped JS string. Every segment is validated independently,
+  // including section identity, YYYY-MM and the ASCII article slug.
+  const parts=u.pathname.split('/');
+  if(parts.length!==5&&!(parts.length===6&&parts[5]===''))return null;
+  if(parts[0]!==''||parts[1]!==section||parts[2]!=='noticia'||
+     !/^20\d{2}-(?:0[1-9]|1[0-2])$/.test(parts[3])||
+     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(parts[4]))return null;
+  const canonicalPath='/'+parts.slice(1,5).join('/');
+  if(u.pathname!==canonicalPath&&u.pathname!==canonicalPath+'/')return null;
+  u.search='';u.pathname=canonicalPath;
   return u.toString();
 }
 function brasiliaDate(raw){
