@@ -220,3 +220,50 @@ test('strict category URLs reject malformed paths, private endpoints and offsite
   assert.ok((diag.urlRejectReasons.path_shape||0)>=3);
   assert.equal(good.hostname,'agenciabrasil.ebc.com.br');
 });
+
+
+test('official archive accepts absolute, root-relative, section-relative and protocol-relative hrefs',()=>{
+  const canonical='https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/enem-acessibilidade';
+  const hrefs=[
+    canonical,
+    '/educacao/noticia/2026-11/enem-acessibilidade',
+    'noticia/2026-11/enem-acessibilidade',
+    '//agenciabrasil.ebc.com.br/educacao/noticia/2026-11/enem-acessibilidade',
+    canonical+'?utm_source=agency',
+  ];
+  // One card per parse; deduplication of canonical URLs is separately
+  // tested below. All four forms must resolve to the SAME official URL.
+  for(const href of hrefs){
+    const diagnostics={};
+    const items=parseEbcArchive('<main>'+card('Enem 2026 tem novas regras de acessibilidade',href)+'</main>',
+      {section:'educacao',now:at,diagnostics});
+    assert.equal(items.length,1,href);
+    assert.equal(items[0].url,canonical,href);
+    assert.equal(diagnostics.accepted,1,href);
+    assert.equal(diagnostics.urlsRejected,0,href);
+    assert.equal(Object.values(diagnostics.hrefFormats).reduce((n,x)=>n+x,0),1);
+  }
+  const combined=parseEbcArchive('<main>'+hrefs.map(h=>
+    card('Enem 2026 tem novas regras de acessibilidade',h)).join('')+'</main>',
+    {section:'educacao',now:at});
+  assert.equal(combined.length,1);
+});
+
+test('relative and scheme-relative offsite, unsafe URLs still fail closed',()=>{
+  const invalid=[
+    '//evil.example/educacao/noticia/2026-11/enem-acessibilidade',
+    'http://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/enem-acessibilidade',
+    'javascript:alert(1)',
+    '/search/noticia/2026-11/enem-acessibilidade',
+    '../search/enem-acessibilidade',
+    '../../educacao/noticia/2026-11/%2e%2e',
+    '/educacao/noticia/2026-11/enem-acessibilidade?redirect=https://evil.example',
+    '/educacao/noticia/2026-11/%2fadmin',
+  ];
+  const diagnostics={};
+  const items=parseEbcArchive('<main>'+invalid.map(h=>card('Enem 2026 tem novas regras de acessibilidade',h)).join('')+
+    '</main>',{section:'educacao',now:at,diagnostics});
+  assert.equal(items.length,0);
+  assert.equal(diagnostics.urlsRejected,invalid.length);
+  assert.equal(diagnostics.accepted,0);
+});
