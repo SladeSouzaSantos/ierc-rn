@@ -133,3 +133,31 @@ test('Braille in headline alone is insufficient without direct visual evidence i
   assert.equal(out.events.find(x=>x.event==='ebc_archive_candidate_checked')?.status,
     'visual_evidence_not_found');
 });
+
+
+test('diagnostic counters distinguish all-rejected layouts from no relevant headline',()=>{
+  const counters={};
+  const results=parseEbcArchive(page0,{section:'educacao',now:at,diagnostics:counters});
+  assert.equal(results.length,2);
+  assert.equal(counters.cardsFound,2);
+  assert.equal(counters.accepted,2);
+  assert.equal(counters.urlsRejected,0);
+  assert.equal(counters.datesUnrecognized,0);
+  const foreign='<main>'+card('Acessibilidade e Braille serão discutidos',
+    'https://outro.example/educacao/noticia/2026-11/externa')+'</main>';
+  const rejected={};
+  assert.deepEqual(parseEbcArchive(foreign,{section:'educacao',now:at,diagnostics:rejected}),[]);
+  assert.equal(rejected.cardsFound,1);
+  assert.equal(rejected.urlsRejected,1);
+  assert.equal(rejected.accepted,0);
+});
+test('official EBC alternative title class remains within dated public cards',()=>{
+  const alt=card('Iniciativa amplia acesso ao Braille nas escolas',news)
+    .replace('class="titulo-noticia"','class="titulo-noticia-interna"');
+  const diagnostics={};
+  const found=parseEbcArchive('<main>'+alt+'</main>',{
+    section:'educacao',now:at,diagnostics});
+  assert.equal(found.length,1);
+  assert.equal(found[0].discoveryHint,true);
+  assert.equal(diagnostics.accepted,1);
+});
