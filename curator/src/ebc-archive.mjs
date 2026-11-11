@@ -68,7 +68,8 @@ function brasiliaDate(raw){
 }
 /** Extract only dated public editorial cards; never trust headlined hero cards
  * without explicit dates or text from unrelated navigation. */
-export function parseEbcArchive(html,{section,now=Date.now(),ageDays=45}={}){
+export function parseEbcArchive(html,{section,now=Date.now(),ageDays=45,
+  diagnostics}={}){
   archiveSource(section);
   if(typeof html!=='string'||html.length>MAX_HTML)throw new Error('archive_too_large');
   if(!Number.isInteger(ageDays)||ageDays<1||ageDays>45)
@@ -77,20 +78,34 @@ export function parseEbcArchive(html,{section,now=Date.now(),ageDays=45}={}){
   const cards=$('.ultima-noticia');
   if(!cards.length)throw new Error('archive_invalid_html');
   const output=[],seen=new Set();
+  // Diagnostic counters identify layout drift and rejection reasons without
+  // exposing third-party HTML or article-body text in operational logs.
+  const counts={cardsFound:cards.length,linksMissing:0,titlesInvalid:0,
+    urlsRejected:0,datesUnrecognized:0,datesOutsideWindow:0,duplicates:0,
+    accepted:0};
   cards.slice(0,35).each((_,element)=>{
     const card=$(element);
-    const a=card.find('a.titulo-noticia').first();
+    const a=card.find('a.titulo-noticia, a.titulo-noticia-interna').first();
+    if(!a.length||!a.attr('href')){counts.linksMissing++;return;}
     const title=norm(a.text());
+    if(title.length<14||title.length>200){counts.titlesInvalid++;return;}
     const url=officialLink(a.attr('href'),section);
-    const publishedAt=brasiliaDate(card.find('.data-publicacao .data').first().text());
-    if(!url||!title||title.length<14||title.length>200||!publishedAt||
-      seen.has(url)||Date.parse(publishedAt)<now-ageDays*86400000||
-      Date.parse(publishedAt)>now+86400000)return;
+    if(!url){counts.urlsRejected++;return;}
+    const dateNode=card.find('.data-publicacao .data, .data-publicacao time, time[datetime]').first();
+    const publishedAt=brasiliaDate(dateNode.attr('datetime')||dateNode.text());
+    if(!publishedAt){counts.datesUnrecognized++;return;}
+    if(Date.parse(publishedAt)<now-ageDays*86400000||
+      Date.parse(publishedAt)>now+86400000){
+      counts.datesOutsideWindow++;return;
+    }
+    if(seen.has(url)){counts.duplicates++;return;}
     seen.add(url);
+    counts.accepted++;
     output.push(Object.freeze({title,url,publishedAt,
       dedupeKey:createHash('sha256').update(url).digest('hex'),
       discoveryHint:TITLE_HINT.test(title)}));
   });
+  if(diagnostics&&typeof diagnostics==='object')Object.assign(diagnostics,counts);
   return output.sort((a,b)=>Date.parse(b.publishedAt)-Date.parse(a.publishedAt)||
     a.url.localeCompare(b.url));
 }
@@ -133,10 +148,12 @@ export async function inspectEbcArchive({section='educacao',pages=2,
   for(let page=0;page<pages;page++){
     try{
       const html=await publicListing(section,page,pacedFetch);
-      const entries=parseEbcArchive(html,{section,now});
+      const diagnostics={};
+      const entries=parseEbcArchive(html,{section,now,diagnostics});
       for(const entry of entries)if(!items.has(entry.url))items.set(entry.url,entry);
       const event={event:'ebc_archive_page_checked',section,page,
-        datedEntries:entries.length,titleHints:entries.filter(x=>x.discoveryHint).length};
+        datedEntries:entries.length,titleHints:entries.filter(x=>x.discoveryHint).length,
+        diagnostics};
       events.push(event);log(event);
     }catch(error){
       const event={event:'ebc_archive_page_unavailable',section,page,
