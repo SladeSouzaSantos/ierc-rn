@@ -37,7 +37,8 @@ export function buildMonitoringReport({at=new Date(),reason,slot=null,scan,event
     coverageTrack:item.coverageTrack,coverageScope:item.coverageScope,
     relevanceScore:item.relevanceScore,topics:item.topics,
     previewOnly:item.previewOnly===true,
-  }));
+  })).sort((a,b)=>Date.parse(b.publishedAt)-Date.parse(a.publishedAt)||
+    a.url.localeCompare(b.url));
   return {version:1,generatedAt:at.toISOString(),timezone:zone,reason,slot,
     mode:'read-only-monitor',published:false,aiUsed:false,cmsWrites:false,
     summary:{articles:articles.length,feedsChecked:sources.filter(x=>x.event==='feed_checked').length,
