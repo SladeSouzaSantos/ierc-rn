@@ -172,6 +172,7 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
           originalUrl: article.url,
           publishedAt: article.publishedAt,
           relevanceScore: article.relevance.score,
+          editorialFocus:article.relevance.editorialFocus,
           topics: article.relevance.topics,
           coverageTrack:article.coverageTrack,
           coverageScope:article.coverageScope,

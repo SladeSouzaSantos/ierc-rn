@@ -36,6 +36,7 @@ export function buildMonitoringReport({at=new Date(),reason,slot=null,scan,event
     url:item.originalUrl,
     coverageTrack:item.coverageTrack,coverageScope:item.coverageScope,
     relevanceScore:item.relevanceScore,topics:item.topics,
+    ...(item.editorialFocus?{editorialFocus:item.editorialFocus}:{}),
     previewOnly:item.previewOnly===true,
   })).sort((a,b)=>Date.parse(b.publishedAt)-Date.parse(a.publishedAt)||
     a.url.localeCompare(b.url));
@@ -43,7 +44,12 @@ export function buildMonitoringReport({at=new Date(),reason,slot=null,scan,event
     mode:'read-only-monitor',published:false,aiUsed:false,cmsWrites:false,
     summary:{articles:articles.length,feedsChecked:sources.filter(x=>x.event==='feed_checked').length,
       feedsUnavailable:sources.filter(x=>x.event==='feed_unavailable').length,
-      feedsPaused:sources.filter(x=>x.event==='source_paused').length},
+      feedsPaused:sources.filter(x=>x.event==='source_paused').length,
+      editorialFocus:{
+        visualDirect:articles.filter(x=>x.editorialFocus==='visual_direta').length,
+        contextual:articles.filter(x=>x.editorialFocus==='contextual').length,
+        generalInclusion:articles.filter(x=>x.editorialFocus==='inclusao_geral').length,
+      }},
     sources,articles};
 }
 

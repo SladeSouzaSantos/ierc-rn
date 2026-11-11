@@ -10,6 +10,21 @@ const SIGNALS=Object.freeze([
   {topic:'participação e autonomia',weight:3,regex:/\b(?:mobilidade\s+acess[ií]vel|orienta[cç][aã]o\s+e\s+mobilidade|educa[cç][aã]o\s+especial|inclus[aã]o\s+de\s+pessoas\s+com\s+defici[eê]ncia|independent living)\b/i},
 ]);
 const SOURCE_FOCUS=Object.freeze({'rnib':1,'ibsa':2,'wbu':1,'w3c-wai':0,'perkins':1});
+// The editorial focus is NOT a publication license, and is independent
+// of the existing lexical eligibility threshold.
+export const EDITORIAL_FOCUS=Object.freeze({
+  DIRECT:'visual_direta',
+  CONTEXTUAL:'contextual',
+  GENERAL:'inclusao_geral',
+  OUTSIDE:'fora_do_escopo',
+});
+const SPECIALIST_PUBLISHERS=new Set([
+  'perkins','rnib','wbu','ebu','fundacao-dorina','ibsa',
+]);
+const VISUAL_ANCHOR=/(?:\b(?:braille|goalball|blind(?:ness)?|sight loss|partially sighted|visually impaired|visual impairments?|low vision|screen readers?|white cane|cortical visual impairment|cvi|audiodescribed|audio description)\b|defici[eê]ncia\s+visual|pessoas?\s+cegas?|cegueira|baixa\s+vis[aã]o|leitura\s+t[aá]til|leitor(?:es)?\s+de\s+tela|bengala\s+(?:branca|inteligente)|audiodescri[cç][aã]o|futebol\s+de\s+cegos)/i;
+const FOCUS_PRIORITY=Object.freeze({
+  visual_direta:3,contextual:2,inclusao_geral:1,fora_do_escopo:0,
+});
 export function relevanceAssessment(article,source={}){
   // Short RNIB listing descriptions may resolve otherwise ambiguous titles.
   // Never use discovery-only excerpts for publishable RSS sources.
@@ -21,7 +36,12 @@ export function relevanceAssessment(article,source={}){
   // Direct, explicitly named references to the Institute are always relevant.
   const direct=mentionsIerc(article);
   const score=direct?100:Math.min(22,hits.reduce((n,s)=>n+s.weight,0)+(SOURCE_FOCUS[source.id]||0));
-  return {relevant:direct||score>=6||(source.id==='w3c-wai'&&/\bwcag\b/i.test(text)&&score>=3),score,topics:hits.map(x=>x.topic),
+  const relevant=direct||score>=6||(source.id==='w3c-wai'&&/\bwcag\b/i.test(text)&&score>=3);
+  const editorialFocus=!relevant?EDITORIAL_FOCUS.OUTSIDE:
+    (direct||VISUAL_ANCHOR.test(text))?EDITORIAL_FOCUS.DIRECT:
+    SPECIALIST_PUBLISHERS.has(source.id)?EDITORIAL_FOCUS.CONTEXTUAL:
+    EDITORIAL_FOCUS.GENERAL;
+  return {relevant,score,topics:hits.map(x=>x.topic),editorialFocus,
     coverageTrack:coverage.track,scope:coverage.scope,priority:coverage.priority,
     perspective:coverage.perspective};
 }
@@ -32,6 +52,7 @@ export function rankArticles(articles,source){
     coverageCountry:coverageFor(a,source).country}))
     .filter(a=>a.relevance.relevant)
     .sort((a,b)=>editorialTrackPriority(b)-editorialTrackPriority(a)||
+      FOCUS_PRIORITY[b.relevance.editorialFocus]-FOCUS_PRIORITY[a.relevance.editorialFocus]||
       b.relevance.score-a.relevance.score||
       Date.parse(b.publishedAt)-Date.parse(a.publishedAt)||
       a.url.localeCompare(b.url));

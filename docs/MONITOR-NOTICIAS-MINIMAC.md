@@ -117,3 +117,17 @@ docker compose -p ierc-rn-monitor-dev -f compose.curator.monitor.yml exec -T mon
 O nome `-p ierc-rn-monitor-dev` é **obrigatório neste MiniMac**, onde o serviço ativo usa esse projeto. Sem o parâmetro, o Compose usa `ierc-rn-monitor`, que é outro projeto, e pode criar um **segundo monitor** por acidente. Não executar `down -v`. O worker de publicação tem Compose próprio `compose.curator.dev.yml`, **não é atualizado por estes comandos**.
 
 A integração de novos portais no monitor é **somente para descoberta**, não autorização para extrair reportagens integrais nem reproduzi-las. Para isso seriam necessários direitos individualmente comprovados e homologação separada. Rastreamento: [issue #17](https://github.com/SladeSouzaSantos/ierc-rn/issues/17).
+
+## Foco editorial — orientação para o Radar (11/11/2026)
+
+O resultado de descoberta preserva o score lexical, mas inclui a classificação heurística `editorialFocus`:
+- `visual_direta`: há referência explícita à cegueira, baixa visão, Braille, goalball, audiodescrição ou leitura por tecnologia assistiva;
+- `contextual`: notícia relevante em fonte especializada, sem evidência textual suficiente para afirmar ligação visual direta;
+- `inclusao_geral`: PcD, paradesporto ou acessibilidade em geral, sem relação explícita com cegueira ou baixa visão;
+- `fora_do_escopo`: descartada da lista de notícias candidatas.
+
+O relatório `/reports/latest.json` mantém a ordem **cronológica decrescente** e adiciona `summary.editorialFocus` com contagens por classificação. Essa classificação não atesta fatos, nem autorização para reproduzir conteúdo. O resumo de cards da RNIB continua **exclusivo da memória transitória**, sem ser persistido no relatório.
+
+**A publicação automática por IA permanece como funcionalidade ativa do worker DEV** e NÃO é desativada por este refinamento. O worker `compose.curator.dev.yml` mantém os horários 08h, 13h e 19h e a sequência `fonte licenciada EBC → artigo integral verificado → geração IA → revisão IA independente → Strapi`, com bloqueio quando algum gate falha. As cinco fontes novas são `previewOnly`, monitoradas apenas para descoberta, até que direitos e procedimento editorial sejam documentados. O monitor de leitura não executa LLM, mas **isso não substitui nem desliga o worker que publica**.
+
+Depois de atualizar o código no MiniMac, reconstrua apenas o monitor `ierc-rn-monitor-dev`; não reinicie o worker de IA sem necessidade.

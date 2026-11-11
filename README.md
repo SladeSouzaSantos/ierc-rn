@@ -14,9 +14,9 @@ O operador aprovou a preparação de geração agendada e publicação automáti
 
 Guia: [Ativação supervisionada no MiniMac e preparação MAIN](docs/ATIVACAO-CURADORIA-AUTOMATICA-MINIMAC.md). O monitor RSS somente leitura continua independente.
 
-### Descoberta RSS ampliada — 11/11/2026
+### Descoberta RSS ampliada e foco editorial — 11/11/2026
 
-A `dev` acrescenta **Diário PcD, Jornalista Inclusivo, Fundação Dorina, European Blind Union e IAPB** como fontes **somente para monitoramento/prévia** (`previewOnly=true`), sem autorização de IA editorial ou publicação automática. O adaptador da RNIB utiliza a descrição curta apenas como sinal temporário de relevância, sem reproduzi-la em relatórios. O monitor apresenta os resultados por data decrescente. Consulte [o guia MiniMac atualizado](docs/MONITOR-NOTICIAS-MINIMAC.md) e a [issue #17](https://github.com/SladeSouzaSantos/ierc-rn/issues/17) para executar o smoke real dos endpoints RSS, ainda pendente; o worker de publicação da Agência Brasil **não foi alterado**.
+A `dev` acrescenta **Diário PcD, Jornalista Inclusivo, Fundação Dorina, European Blind Union e IAPB** como fontes **somente para monitoramento/prévia** (`previewOnly=true`), sem autorização de IA editorial ou publicação automática. O adaptador da RNIB utiliza a descrição curta apenas como sinal temporário de relevância, sem reproduzi-la em relatórios. O monitor apresenta resultados por data decrescente e sinaliza foco visual direto, contexto especializado ou inclusão geral. Consulte [o guia MiniMac atualizado](docs/MONITOR-NOTICIAS-MINIMAC.md) e a [issue #17](https://github.com/SladeSouzaSantos/ierc-rn/issues/17) para executar o smoke real dos endpoints RSS, ainda pendente; o worker de publicação da Agência Brasil **não foi alterado**.
 
 ## Tecnologia
 

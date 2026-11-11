@@ -104,3 +104,35 @@ test('monitor report sorts published dates descending without altering preview-o
  assert.equal(report.articles[0].previewOnly,true);
  assert.ok(!('summary' in report.articles[0]));
 });
+
+test('monitor records visual/general focus without compromising date order or writing CMS',async()=>{
+ const {SOURCES}=await import('../src/feeds.mjs');
+ const src=SOURCES.find(x=>x.id==='diario-pcd');
+ const now=Date.parse('2026-11-11T12:00:00Z');
+ const xml='<rss><channel>'+
+  '<item><title>Paratleta vence campeonato inclusivo</title>'+
+  '<link>https://diariopcd.com.br/paratleta-exemplo/</link>'+
+  '<pubDate>Tue, 10 Nov 2026 12:00:00 GMT</pubDate>'+
+  '<description>Esporte adaptado e atletas paralímpicos.</description></item>'+
+  '<item><title>Braille para estudantes cegos</title>'+
+  '<link>https://diariopcd.com.br/braille-exemplo/</link>'+
+  '<pubDate>Mon, 09 Nov 2026 12:00:00 GMT</pubDate>'+
+  '<description>Leitura tátil acessível a pessoas com deficiência visual.</description></item>'+
+  '</channel></rss>';
+ let llm=0,cmsWrites=0;
+ const events=[];
+ const scan=await runOnce({sources:[src],dryRun:true,now,maxArticles:20,
+   fetchImpl:async()=>new Response(xml),logger:event=>events.push(event),
+   router:{async complete(){llm++;}},cms:{async create(){cmsWrites++;}}});
+ assert.equal(llm,0);assert.equal(cmsWrites,0);
+ assert.equal(scan.results.length,2);
+ const report=buildMonitoringReport({scan,events,reason:'startup'});
+ assert.deepEqual(report.summary.editorialFocus,
+   {visualDirect:1,contextual:0,generalInclusion:1});
+ assert.deepEqual(report.articles.map(x=>x.editorialFocus),
+   ['inclusao_geral','visual_direta']);
+ assert.equal(report.articles[0].previewOnly,true);
+ assert.equal(report.published,false);
+ assert.equal(report.cmsWrites,false);
+ assert.ok(!JSON.stringify(report).includes('discoveryText'));
+});
