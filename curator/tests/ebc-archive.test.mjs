@@ -188,7 +188,8 @@ test('real Agência Brasil education URLs from Nov 2026 category markup are acce
     '</main></html>',{section:'educacao',now:at,diagnostics:diag});
   assert.equal(actual.length,3);
   assert.deepEqual(diag,{cardsFound:3,linksMissing:0,titlesInvalid:0,
-    urlsRejected:0,datesUnrecognized:0,datesOutsideWindow:0,duplicates:0,accepted:3});
+    urlsRejected:0,datesUnrecognized:0,datesOutsideWindow:0,duplicates:0,accepted:3,
+    hrefFormats:{absolute_https:3}});
   assert.equal(actual.find(x=>x.title.includes('apoio emocional')).discoveryHint,true);
   assert.ok(actual.every(x=>x.url.startsWith('https://agenciabrasil.ebc.com.br/educacao/noticia/')));
 });
