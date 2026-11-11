@@ -31,7 +31,11 @@ A lista de atletas citados pela CBDV na Série A de 2026 permanece como
 **arquivo daquela competição**. A novidade NÃO cria elenco atual, nem
 transforma participantes históricos em pessoas atualmente vinculadas ao IERC.
 Outras competições do calendário CBDV tampouco comprovam que o Instituto
-estará presente; a página declara essa limitação.
+estará presente; a página declara essa limitação **uma única vez na introdução**,
+sem imprimir "Participação do IERC-RN: não confirmada" em cada cartão da CBDV.
+Essa opção evita passar a impressão de negar participações já documentadas.
+Os eventos manuais aprovados pelo IERC-RN mantêm seu próprio campo de
+participação confirmada/não confirmada, e o acervo histórico continua intacto.
 
 ## Intervalo de atualização real
 
