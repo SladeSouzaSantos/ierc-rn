@@ -9,13 +9,14 @@
     "once": "node src/cli.mjs once",
     "schedule": "node src/cli.mjs schedule",
     "monitor": "node src/monitor.mjs",
-    "check": "node --check src/monitor.mjs && node --check src/monitor-report.mjs && node --check src/router.mjs && node --check src/pipeline.mjs && node --check src/cli.mjs && node --check src/auto-config.mjs && node --check src/duplicate-check.mjs && node --check src/article-evidence.mjs && node --check src/full-article-review.mjs && node --check src/auto-review.mjs && node --check src/cms-publish.mjs && node --check src/redis-connection.mjs && node --check src/check-cms.mjs && node --check src/listings.mjs && node --check src/relevance.mjs && node --check src/check-discovery.mjs",
+    "check": "node --check src/monitor.mjs && node --check src/monitor-report.mjs && node --check src/router.mjs && node --check src/pipeline.mjs && node --check src/cli.mjs && node --check src/auto-config.mjs && node --check src/duplicate-check.mjs && node --check src/article-evidence.mjs && node --check src/full-article-review.mjs && node --check src/auto-review.mjs && node --check src/cms-publish.mjs && node --check src/redis-connection.mjs && node --check src/check-cms.mjs && node --check src/listings.mjs && node --check src/relevance.mjs && node --check src/check-discovery.mjs && node --check src/check-ebc-readiness.mjs",
     "preview": "node src/cli.mjs preview",
     "generate:preview": "node src/cli.mjs generate-preview",
     "review:preview": "node src/cli.mjs review-preview",
     "review:full-preview": "node src/cli.mjs review-full-preview",
     "cms:check": "node src/check-cms.mjs",
-    "sources:check": "node src/check-discovery.mjs"
+    "sources:check": "node src/check-discovery.mjs",
+    "sources:ebc": "node src/check-ebc-readiness.mjs"
   },
   "engines": {
     "node": ">=22 <27"
