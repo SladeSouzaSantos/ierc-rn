@@ -215,5 +215,8 @@ test('strict category URLs reject malformed paths, private endpoints and offsite
   assert.equal(res.length,0);
   assert.equal(diag.urlsRejected,invalid.length);
   assert.equal(diag.accepted,0);
+  assert.equal(Object.values(diag.urlRejectReasons).reduce((sum,n)=>sum+n,0),invalid.length);
+  assert.ok((diag.urlRejectReasons.unsafe_origin||0)>=3);
+  assert.ok((diag.urlRejectReasons.path_shape||0)>=3);
   assert.equal(good.hostname,'agenciabrasil.ebc.com.br');
 });
