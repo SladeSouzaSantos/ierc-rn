@@ -183,7 +183,7 @@ export async function processArticle(source,{router,store,cms,dryRun=true,logger
             licenseReference:verdict.licenseReference,
           });
           status='draft_published';
-          logger({event:'auto_published',documentIdHash,review:'rss_only'});
+          logger({event:'auto_published',documentIdHash,review:'full_article'});
         }catch{
           status='draft_created_publish_failed';
           logger({event:'auto_publish_failed',reason:'cms_rejected_or_unavailable',documentIdHash});
