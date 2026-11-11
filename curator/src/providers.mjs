@@ -56,7 +56,7 @@ export function providersFromEnv(env = process.env) {
     // Gemini 2.5 Flash spends output tokens on thinking by default, which can
     // truncate short editorial JSON. Google's OpenAI-compatible API accepts
     // reasoning_effort:none for 2.5 Flash (not 2.5 Pro or Gemini 3).
-    if(id==='gemini' && /^gemini-2\\.5-flash(?:-|$)/.test(out[out.length-1].model))
+    if(id==='gemini' && /^gemini-2\.5-flash(?:-|$)/.test(out[out.length-1].model))
       out[out.length-1].reasoningEffort='none';
   }
   if (env.CURATOR_OLLAMA_MODEL?.trim()) {
