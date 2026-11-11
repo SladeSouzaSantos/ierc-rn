@@ -52,6 +52,31 @@ test("Navegação interna da seção Apoie utiliza âncoras existentes", async (
   await expect(page).toHaveURL(/\/apoie#formas-de-apoio$/);
 });
 
+test("Ícones das três formas de apoio ficam centralizados em seus fundos", async ({ page }) => {
+  for (const width of [320, 375, 768, 1440]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/apoie");
+    const positions = await page.locator(".support-choice > .support-choice-icon")
+      .evaluateAll(wrappers => wrappers.map(element => {
+        const icon = element.querySelector("svg");
+        if (!icon) return null;
+        const wrapper = element.getBoundingClientRect();
+        const svg = icon.getBoundingClientRect();
+        return {
+          layout: getComputedStyle(element).display,
+          dx: (svg.left + svg.width / 2) - (wrapper.left + wrapper.width / 2),
+          dy: (svg.top + svg.height / 2) - (wrapper.top + wrapper.height / 2),
+        };
+      }));
+    expect(positions).toHaveLength(3);
+    for (const position of positions) {
+      expect(position?.layout).toBe("flex");
+      expect(Math.abs(position?.dx ?? Infinity), `Desvio horizontal no viewport ${width}px`).toBeLessThanOrEqual(1);
+      expect(Math.abs(position?.dy ?? Infinity), `Desvio vertical no viewport ${width}px`).toBeLessThanOrEqual(1);
+    }
+  }
+});
+
 test("Apoie preserva responsividade e não cria rolagem horizontal", async ({ page }) => {
   for (const width of [320, 375, 768, 1440]) {
     await page.setViewportSize({ width, height: 800 });
