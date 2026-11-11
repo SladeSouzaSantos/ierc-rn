@@ -61,6 +61,10 @@ jobs:
           node-version: "22"
       - name: Install curator dependencies (no external AI calls)
         run: npm install --prefix curator --no-audit --no-fund
+      - name: Validate MiniMac read-only monitor Compose
+        run: |
+          docker compose -f compose.curator.monitor.yml config --quiet
+          docker compose -f compose.curator.monitor.yml config | grep -q 'CURATOR_MONITOR_READ_ONLY: "true"'
       - name: Check curator syntax
         run: npm run --prefix curator check
       - name: Run deterministic fallback, quota and draft safety tests
