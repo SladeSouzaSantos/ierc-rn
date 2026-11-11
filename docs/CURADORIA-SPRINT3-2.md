@@ -674,3 +674,28 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml --profile cura
 ```
 
 **Esperado:** evento `llm_attempt` com `provider=gemini`, `result=success`, resposta `draft_ready`. Se persistir `token_limit`, registrar a falha e não remover as proteções; o fallback para Groq continua disponível. Não executar `docker compose up worker` antes de aprovação de ativação.
+
+
+## Prioridade editorial Groq → Gemini → OpenRouter — 11/11/2026
+
+A pedido do operador, a prioridade foi ajustada com base em três prévias comparáveis (mesmo RSS Perkins, `generate-preview`, sem escrita no Strapi):
+
+| Provedor | Tempo observado | Gate | Observação |
+| --- | ---: | --- | --- |
+| GroqCloud `openai/gpt-oss-120b` | 2369 ms | `draft_ready` | Prosa mais estruturada no conjunto observado; ainda pode ampliar benefícios além da evidência RSS. |
+| Gemini `gemini-2.5-flash` | 2720 ms após `reasoning_effort:none` | `draft_ready` | JSON válido, mas o campo `whyItMatters` terminou em `programas e pol` (frase interrompida). |
+| OpenRouter `nvidia/nemotron-3.5-super-vl:free` | 1688 ms | `draft_ready` | Mais rápido, porém conteúdo mais superficial. |
+
+**Decisão inicial:** `Groq → Gemini → OpenRouter → Ollama (opcional)` quando todas as credenciais/contas gratuitas estiverem habilitadas. `providersFromEnv()` retorna os providers nessa ordem, independente da ordem de variáveis no `.env`; roteador, orçamento Redis, cooldown, permissões, limites e fallback por saída inválida permanecem comuns. Isso é uma preferência **provisória** baseada em amostra pequena, não um benchmark geral de acurácia.
+
+**Gate adicional de conteúdo incompleto:** `validateDraft()` recusa `body` e `whyItMatters` quando não terminam com pontuação de fim de sentença, inclusive quando o JSON sintaticamente válido contém palavra cortada. Assim uma resposta como a última do Gemini não será considerada `draft_ready` para escrita. A recusa aciona fallback no roteador. A validação de fatos continua dependendo da leitura humana; pontuação final não demonstra factualidade. Testes unitários cobrem mudança de ordem e fallback de três provedores, limites de cota e rejeição de narrativa interrompida.
+
+**Nenhuma automação ativada:** `CURATOR_ENABLED=false`, `CURATOR_WRITE_DRAFTS=false`, `CURATOR_AUTO_PUBLISH_ENABLED=false` no MiniMac DEV, e `main` permanece intacta. Para aplicar no MiniMac: após CI verde, `git pull --ff-only origin dev` e `docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator build worker` (apenas imagem; não iniciar serviço permanente).
+
+Verificar a ordem **sem chamadas externas** com:
+```bash
+docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm --no-deps -T worker node --input-type=module -e 'import {providersFromEnv} from "./src/providers.mjs"; console.log(providersFromEnv().map(p=>p.id).join(" -> "))'
+```
+
+Prévia integrada segura (sem CMS write): `docker compose --env-file curator/.env -f compose.curator.dev.yml --profile curator run --rm --no-deps -e CURATOR_AI_PREVIEW_LIMIT=1 worker node src/cli.mjs generate-preview`. Esperado `provider=groq` se houver cota. Se Groq falhar ou estiver em cooldown, Gemini tenta antes do OpenRouter. Para comparar qualidade, repetir com outras matérias/fontes e revisão humana de fidelidade.
+
