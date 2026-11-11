@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight, CalendarDays, HeartHandshake, Instagram, MapPin, ShoppingBag, Trophy, Users } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Instagram, MapPin, Trophy, Users } from "lucide-react";
 import { PageHero } from "@/components/page-hero";
 import { getDisplayActivities, getCmsNews, getCmsEvents, getCmsAthletes } from "@/lib/cms";
 import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsInstitutionalEventNews, CmsAthletesList } from "@/components/cms-public";
 import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
 import { AthleteStories } from "@/components/athlete-stories";
+import { SupportPage } from "@/components/support-page";
 
 // CMS-backed sections must use runtime credentials, not their empty build-time fallback.
 export const dynamic = "force-dynamic";
@@ -135,7 +136,7 @@ export default async function ContentPage({ params }: RouteProps) {
           <Note>Não há reserva ativa por este portal. Antes de visitar, confirme com o IERC as orientações e a disponibilidade da equipe.</Note>
         </>}
 
-        {slug === "apoie" && <><div className="detail-intro"><p className="eyebrow">Solidariedade que movimenta</p><h2>Pequenos gestos também abrem caminhos.</h2><p>Há diferentes formas de participar do cotidiano do IERC-RN. Uma delas é o Bazar Solidário, uma ação arrecadatória da instituição.</p></div><div className="bazar-detail"><div><ShoppingBag size={36} aria-hidden="true"/><p className="eyebrow">Toda terça-feira</p><h2>Bazar Solidário</h2><p>Você pode doar itens para o bazar ou visitar o espaço para comprar. A arrecadação contribui com as atividades do Instituto.</p></div><div className="bazar-detail-secondary"><h3>Antes de visitar</h3><p>Horário de funcionamento, itens aceitos, local de entrega e orientações ainda serão confirmados com a equipe.</p></div></div><div className="detail-grid"><article className="detail-card"><HeartHandshake size={32} aria-hidden="true"/><h3>Doe itens</h3><p>Ajude a manter o bazar por meio de doações, seguindo os critérios que serão divulgados.</p></article><article className="detail-card"><ShoppingBag size={32} aria-hidden="true"/><h3>Compre no bazar</h3><p>Visite o espaço às terças-feiras, depois de confirmar horário e endereço com o Instituto.</p></article></div><Note>Doações financeiras e pagamentos não estão disponíveis neste protótipo. A integração será realizada apenas após definição do recebedor e das regras institucionais.</Note></>}
+        {slug === "apoie" && <SupportPage />}
 
         {slug === "contato" && <>
           <div className="detail-intro"><p className="eyebrow">Estamos no Alecrim, Natal</p><h2>Vamos manter essa conversa aberta.</h2><p>O endereço do Instituto consta no cadastro da CBDV e em publicação do TRE-RN. Os números de telefone, CEP, e-mail e horários disponíveis em diretórios externos ainda precisam de confirmação atual pela equipe.</p></div>
