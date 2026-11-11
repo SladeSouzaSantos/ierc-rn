@@ -8,6 +8,9 @@ import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsAthletesList } from "@
 import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
 import { AthleteStories } from "@/components/athlete-stories";
 
+// CMS-backed sections must use runtime credentials, not their empty build-time fallback.
+export const dynamic = "force-dynamic";
+
 const pages = {
   instituto: { eyebrow: "Nossa história", title: "O Instituto", description: "Uma história construída com educação, reabilitação, participação e compromisso com a autonomia." },
   atividades: { eyebrow: "Nossa atuação", title: "Atividades que ampliam caminhos", description: "Conheça as experiências de aprendizagem, cultura, movimento e autonomia oferecidas pelo Instituto." },
