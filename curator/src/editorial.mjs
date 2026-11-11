@@ -17,6 +17,7 @@ export const SYSTEM=[
   'Se a fonte for insuficiente, responda apenas {"skip":true}.',
   'Caso contrário, responda apenas JSON com title, summary, body, whyItMatters e category.',
   'Mantenha title até 150 caracteres, summary até 250, body até 1000 e whyItMatters até 350.',
+  'Finalize body e whyItMatters com frases completas e pontuação final. Não deixe palavras ou frases interrompidas.',
 ].join(' ');
 const str=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
 /** Canonical editorial labels, independent from the free-form LLM answer. */
@@ -55,6 +56,10 @@ export function validateDraft(raw){
   };
   if(article.title.length<15||article.summary.length<60||
      article.body.length<100||article.whyItMatters.length<40)throw new Error('Incomplete model draft');
+  // Valid JSON can still contain clipped prose (e.g. whyItMatters ending in 'pol').
+  // Never accept an unfinished sentence as a ready-to-review editorial draft.
+  if(![article.body,article.whyItMatters].every(value=>/[.!?…][)\]\"'”’]*$/u.test(value)))
+    throw new Error('Incomplete model draft');
   if(/<\s*script|javascript:|<iframe/i.test(Object.values(article).join(' ')))
     throw new Error('Unsafe draft markup');
   return article;
