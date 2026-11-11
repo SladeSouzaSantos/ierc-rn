@@ -8,6 +8,9 @@ import { HeroArt } from "@/components/hero-art";
 import { GoalballScene } from "@/components/goalball-scene";
 import { getDisplayActivities } from "@/lib/cms";
 
+// Activities can be editorially updated after the portal image was built.
+export const dynamic = "force-dynamic";
+
 const icons = [Music2, Laptop2, Compass, BookOpenText, BookOpenText, PersonStanding, Sparkles, Volleyball];
 
 export default async function Home() {
