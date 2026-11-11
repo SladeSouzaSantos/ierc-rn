@@ -61,7 +61,7 @@ test('transient EBC errors are counted without leaking raw errors or checking ar
     }});
   assert.equal(result.completed.unavailable,1);
   const failure=result.events.find(x=>x.source==='agencia-brasil-educacao');
-  assert.equal(failure.reason,'network_or_parser_error');
+  assert.equal(failure.reason,'http_error');
   assert.equal(failure.event,'ebc_source_unavailable');
   assert.equal(result.completed.potentialRightsChecks,3);
 });
