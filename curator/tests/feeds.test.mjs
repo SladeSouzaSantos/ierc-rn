@@ -138,3 +138,44 @@ test('RSS retry fails closed on 403 and unsafe redirects; recurrent outages stop
   }));
   assert.equal(attempts,2);
 });
+
+test('New publisher RSS sources are parsed only for safe preview metadata',()=>{
+ const recent=Date.parse('2026-11-11T11:00:00Z');
+ for(const id of ['diario-pcd','jornalista-inclusivo','fundacao-dorina','ebu','iapb']){
+   const src=SOURCES.find(x=>x.id===id);
+   assert.equal(src.previewOnly,true);
+   assert.equal(src.fullTextAccess,undefined);
+   const articleUrl='https://'+src.hostname+'/noticia-sobre-braille/';
+   const xml='<?xml version="1.0"?><rss version="2.0"><channel><item>'+
+     '<title><![CDATA[Educação em Braille para estudantes cegos]]></title>'+
+     '<link>'+articleUrl+'</link>'+
+     '<pubDate>Tue, 10 Nov 2026 11:00:00 GMT</pubDate>'+
+     '<description><![CDATA[Novas iniciativas de leitura tátil e inclusão escolar.]]></description>'+
+     '</item></channel></rss>';
+   const found=parseFeed(xml,src,recent,45);
+   assert.equal(found.length,1,id);
+   assert.equal(found[0].url,articleUrl.slice(0,-1));
+   assert.match(found[0].dedupeKey,/^[a-f0-9]{64}$/);
+   assert.equal(parseFeed(xml.replace(articleUrl,'https://untrusted.example/news'),src,recent,45).length,0);
+   assert.equal(parseFeed(xml,src,Date.parse('2027-02-01T11:00:00Z'),45).length,0);
+ }
+});
+
+test('Discovery-only publisher feeds cannot be selected by automatic publication',async()=>{
+ const {runOnce}=await import('../src/pipeline.mjs');
+ const src=SOURCES.find(x=>x.id==='diario-pcd');
+ let fetches=0,modelCalls=0,writes=0;
+ const report=await runOnce({sources:[src],maxArticles:1,dryRun:false,autoPublish:true,
+   autoPublishSources:['agencia-brasil-esportes'],
+   publisher:{async publishApprovedDraft(){writes++;}},
+   articleReader:async()=>{writes++;throw Error('not permitted');},
+   cms:{async create(){writes++;}},
+   store:{async set(){writes++;}},
+   router:{async complete(){modelCalls++;}},
+   fetchImpl:async()=>{fetches++;throw Error('must not fetch in publish mode');},
+ });
+ assert.equal(report.count,0);
+ assert.equal(fetches,0);
+ assert.equal(modelCalls,0);
+ assert.equal(writes,0);
+});
