@@ -8,6 +8,12 @@ O site apresenta as frentes de educação, reabilitação, cultura e esporte, co
 
 A separação entre CMS DEV existente e PROD futura (Docker, PostgreSQL, volumes e credenciais) está documentada em [CMS: ambientes e diagnóstico](docs/CMS-ENVIRONMENTS.md). **Não é necessário alterar o Docker local para consultar a lentidão do painel.**
 
+## Ativação da curadoria automática (DEV)
+
+O operador aprovou a preparação de geração agendada e publicação automática controlada. A ativação **não acontece por git pull**: é necessário criar um token Custom separado para o publicador, conferir licença da matéria, fazer backup com restauração ensaiada, executar o pré-check e homologar `once` antes de iniciar o worker persistente. O cron DEV roda às **08h, 13h e 19h (America/Fortaleza)**, com uma única candidata por horário e fallback **Groq → Gemini → OpenRouter**. Somente fontes EBC originais autorizadas podem publicar automaticamente; se não houver evidência suficiente, a matéria não será publicada. A `main` e a PROD continuam bloqueadas até os gates de lançamento.
+
+Guia: [Ativação supervisionada no MiniMac e preparação MAIN](docs/ATIVACAO-CURADORIA-AUTOMATICA-MINIMAC.md). O monitor RSS somente leitura continua independente.
+
 ## Tecnologia
 
 A `dev` possui um módulo experimental de **geração, revisão com IA e publicação automatizada opt-in**, **desativada por padrão**. A revisão integral é exigida para publicar: a primeira IA produz uma síntese original e a segunda analisa os blocos de evidências numerados da matéria. O modo `npm run --prefix curator review:preview` usa somente título+resumo RSS, sem escrita; `npm run --prefix curator review:full-preview` faz a verificação do artigo quando os direitos da fonte permitirem, igualmente sem escrita. O catálogo admite notícias **próprias da Agência Brasil (EBC)** e da **Comissão Europeia** condicionadas a direitos e autoria por artigo; materiais de parceiros, WAI e Perkins sem permissão de leitura integral permanecem bloqueados. Para a publicação real, exige token Custom separado, licença documentada e confirmação explícita no DEV. Também gera slugs legíveis para novos artigos. Consulte [Revisão IA e publicação controlada (DEV)](docs/REVISAO-IA-PUBLICACAO-DEV.md) e [Revisão baseada na fonte integral](docs/FONTE-INTEGRAL-REVIEW-DEV.md). 
