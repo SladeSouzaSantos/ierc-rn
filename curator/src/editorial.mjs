@@ -58,7 +58,7 @@ export function validateDraft(raw){
      article.body.length<100||article.whyItMatters.length<40)throw new Error('Incomplete model draft');
   // Valid JSON can still contain clipped prose (e.g. whyItMatters ending in 'pol').
   // Never accept an unfinished sentence as a ready-to-review editorial draft.
-  if(![article.body,article.whyItMatters].every(value=>/[.!?…][)\]\"'”’]*$/u.test(value)))
+  if(![article.body,article.whyItMatters].every(value=>/[.!?…]$/u.test(value)))
     throw new Error('Incomplete model draft');
   if(/<\s*script|javascript:|<iframe/i.test(Object.values(article).join(' ')))
     throw new Error('Unsafe draft markup');
