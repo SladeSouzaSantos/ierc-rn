@@ -100,3 +100,41 @@ test('EU Commission RSS can supply international accessibility policy coverage',
  assert.equal(items.length,1);
  assert.equal(relevant(items[0]),true);
 });
+
+test('bounded RSS retry recovers transient network and 503 failures',async()=>{
+  const {fetchSource}=await import('../src/feeds.mjs');
+  const perkins=SOURCES.find(x=>x.id==='perkins');
+  const xml='<rss><channel><title>Sample</title></channel></rss>';
+  for(const first of [
+    ()=>{throw new TypeError('temporary transport reset');},
+    ()=>new Response('',{status:503}),
+    ()=>{throw Object.assign(new Error('timeout'),{name:'TimeoutError'});},
+  ]){
+    let calls=0;
+    const body=await fetchSource(perkins,async()=>{
+      calls++;
+      return calls===1?first():new Response(xml,{status:200});
+    });
+    assert.equal(calls,2);assert.equal(body,xml);
+  }
+});
+
+test('RSS retry fails closed on 403 and unsafe redirects; recurrent outages stop at two attempts',async()=>{
+  const {fetchSource}=await import('../src/feeds.mjs');
+  const perkins=SOURCES.find(x=>x.id==='perkins');
+  for(const response of [
+    ()=>new Response('',{status:403}),
+    ()=>new Response(null,{status:302,headers:{location:'https://evil.example/feed/'}}),
+  ]){
+    let calls=0;
+    await assert.rejects(fetchSource(perkins,async()=>{
+      calls++;return response();
+    }));
+    assert.equal(calls,1);
+  }
+  let attempts=0;
+  await assert.rejects(fetchSource(perkins,async()=>{
+    attempts++;throw new TypeError('repeated failure');
+  }));
+  assert.equal(attempts,2);
+});
