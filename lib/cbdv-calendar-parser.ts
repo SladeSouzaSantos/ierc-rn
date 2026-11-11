@@ -74,6 +74,8 @@ export function parseCbdvGoalballCalendar(html:string,{now=new Date(),limit=20}:
     if(end<0)continue;
     const table=source.slice(0,end+8);
     for(const row of table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)){
+      // Never turn scripts, iframes or styling in scraped rows into content.
+      if(/<(?:script|style|iframe|object|form)\b/i.test(row[1]))continue;
       const cells=[...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map(m=>textFrom(m[1]));
       if(cells.length<5)continue;
       const [startRaw,endRaw,titleRaw,locationRaw,modalityRaw]=cells;
@@ -84,7 +86,7 @@ export function parseCbdvGoalballCalendar(html:string,{now=new Date(),limit=20}:
       const starts=monthDay(startRaw,year),ends=monthDay(endRaw,year);
       if(!starts||!ends)continue;
       if(ends.getTime()<starts.getTime())ends.setUTCFullYear(year+1);
-      if(ends<from||starts>to)continue;
+      if(ends.getTime()<from.getTime()||starts.getTime()>to.getTime())continue;
       const key=normalize(title)+"|"+dateIso(starts);
       if(unique.has(key))continue;
       unique.add(key);
