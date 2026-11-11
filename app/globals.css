@@ -921,8 +921,27 @@ html[data-high-contrast="true"] .radar-group > h3 { color: #000; }
 .support-options > .interior-subtitle, .support-guidance > .interior-subtitle { max-width: 850px; }
 .support-choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 30px; }
 .support-choice { display: flex; flex-direction: column; min-width: 0; min-height: 325px; }
-.support-choice-icon { display: inline-flex; justify-content: center; align-items: center; width: 61px; height: 61px; margin-bottom: 24px; border-radius: 14px; color: #512b7a; background: #f0e8f7; }
-.support-choice-icon svg, .support-choice .inline-link svg { margin: 0; }
+/* The generic .detail-card > span { display:block } rule otherwise overrides
+   the icon wrapper's flex layout and leaves the SVG in its top-left corner. */
+.support-choice > .support-choice-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  align-self: flex-start;
+  flex: 0 0 auto;
+  width: 61px;
+  height: 61px;
+  margin-bottom: 24px;
+  border-radius: 14px;
+  color: #512b7a;
+  background: #f0e8f7;
+}
+.support-choice > .support-choice-icon > svg {
+  display: block;
+  flex: 0 0 auto;
+  margin: 0;
+}
+.support-choice .inline-link svg { margin: 0; }
 .support-choice h3 { font-size: 1.45rem; }
 .support-choice p { line-height: 1.75; margin-bottom: 24px; }
 .support-choice .inline-link { margin-top: auto; gap: 8px; color: #502a7a; text-decoration: underline; text-decoration-color: currentColor; }
