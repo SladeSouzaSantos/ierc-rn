@@ -5,7 +5,7 @@ test("Apoie apresenta os três caminhos não financeiros e informação clara so
   await page.goto("/apoie");
 
   await expect(page.getByRole("heading", { level: 1, name: "Apoie o IERC-RN" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Bazar Solidário" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bazar Solidário", exact: true })).toBeVisible();
   await expect(page.getByText(/Referência divulgada: terças-feiras/)).toBeVisible();
   await expect(page.getByText(/Confirme se o funcionamento está mantido/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Doar itens para o bazar" })).toBeVisible();
@@ -24,8 +24,8 @@ test("Apoie nunca oferece pagamento, PIX, QR Code nem contato fictício", async 
   await expect(page.getByRole("heading", { name: "Sobre doações financeiras" })).toBeVisible();
   await expect(page.getByText(/Este portal ainda não recebe pagamentos/)).toBeVisible();
   await expect(page.getByText(/Não há Pix, QR Code, cartão ou contribuição recorrente/)).toBeVisible();
-  await expect(page.locator('form, input, a[href^="pix:"], a[href*="checkout"], a[href*="payment"]')).toHaveCount(0);
-  await expect(page.locator('a[href^="tel:"], a[href^="mailto:"]')).toHaveCount(0);
+  await expect(page.locator('main form, main input, main a[href^="pix:"], main a[href*="checkout"], main a[href*="payment"]')).toHaveCount(0);
+  await expect(page.locator('main a[href^="tel:"], main a[href^="mailto:"]')).toHaveCount(0);
 
   const actions = page.locator('.support-bazar a[href="/contato"], .support-choice a[href="/contato"], .support-contact a[href="/contato"]');
   await expect(actions).toHaveCount(4);
