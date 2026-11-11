@@ -67,8 +67,10 @@ jobs:
         run: |
           docker compose -f compose.curator.monitor.yml config --quiet
           docker compose -f compose.curator.monitor.yml config | grep -q 'CURATOR_MONITOR_READ_ONLY: "true"'
-      - name: Validate DEV-only CMS backup helper shell syntax
-        run: bash -n scripts/backup-cms-dev.sh
+      - name: Validate DEV-only backup and auto-publication preflight shell syntax
+        run: |
+          bash -n scripts/backup-cms-dev.sh
+          bash -n scripts/preflight-curator-autopublish-dev.sh
       - name: Validate isolated MiniMac portal Compose
         run: |
           docker compose -f compose.portal.dev.yml config --quiet
