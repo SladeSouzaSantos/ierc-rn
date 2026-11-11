@@ -99,7 +99,7 @@ export default async function ContentPage({ params }: RouteProps) {
         </>}
 
         {slug === "noticias" && <>
-          <div className="detail-intro"><p className="eyebrow">Acontece e aconteceu</p><h2>Fontes confiáveis para acompanhar o IERC.</h2><p>Reunimos notícias institucionais aprovadas e referências verificáveis sobre a participação esportiva e comunitária do IERC-RN. Reportagens sobre iniciativas de outras organizações ficam em uma área separada, o Radar da Inclusão.</p></div>
+          <div className="detail-intro"><p className="eyebrow">Acontece e aconteceu</p><h2>Acompanhe as notícias do IERC-RN.</h2><p>Este espaço prioriza os comunicados e acontecimentos divulgados pela equipe do Instituto. Reportagens de terceiros sobre o IERC-RN aparecem identificadas separadamente; notícias sobre outras organizações ficam no Radar da Inclusão.</p></div>
           <CmsNewsList items={cmsNews} />
           <CmsIercPressList items={cmsNews} />
           <ExternalClippings />
