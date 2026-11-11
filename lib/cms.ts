@@ -171,7 +171,7 @@ export async function getCmsNewsBySlug(slug: string): Promise<CmsArticle | null>
   return verified.length===1?verified[0]:null;
 }
 export async function getCmsEvents(): Promise<CmsEvent[]> {
-  return (await find("events")).map(v => ({
+  return (await find("events")).map((v): CmsEvent => ({
     slug: string(v.slug, 90), title: string(v.title, 200), summary: string(v.summary),
     startsAt: string(v.startsAt, 40), endsAt: string(v.endsAt, 40) || undefined,
     location: string(v.location, 300) || undefined,
