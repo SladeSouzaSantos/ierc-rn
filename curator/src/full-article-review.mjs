@@ -18,6 +18,7 @@ export const VERIFIED_WRITER_SYSTEM=[
   'Mantenha nomes, gênero da instituição e conceitos educacionais; não chame relatório de avaliação educacional de laudo médico.',
   'Se os blocos não sustentarem uma notícia original informativa, responda somente {"skip":true}.',
   'Caso contrário, responda JSON com title, summary, body, whyItMatters e category; body até 1000 caracteres. Sem Markdown ou HTML.',
+  'Finalize body e whyItMatters com frases completas e pontuação de encerramento; não encerre campos com palavras ou frases interrompidas.',
   'Não diga que a reportagem não traz informações ausentes dos blocos extraídos.',
 ].join(' ');
 
