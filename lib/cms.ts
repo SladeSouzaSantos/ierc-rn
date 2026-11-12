@@ -202,7 +202,9 @@ export async function getCmsSportCompetitions(): Promise<CmsSportCompetition[]> 
     sportModality: string(v.sportModality, 80),
     organizer: string(v.organizer, 160) || undefined,
     calendarLabel: string(v.calendarLabel, 100) || undefined,
-    participationStatus: v.participationStatus === "confirmada" ? "confirmada" : "nao_confirmada",
+    // Explicit participation requires a recorded editorial approval reference.
+    participationStatus: v.participationStatus === "confirmada" &&
+      !!string(v.approvalReference, 200) ? "confirmada" : "nao_confirmada",
     sourceUrl: url(v.sourceUrl),
     sourceName: string(v.sourceName, 120) || undefined,
   })).filter(v => /^[a-z0-9-]{1,90}$/.test(v.slug) && v.title && v.summary &&
