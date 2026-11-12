@@ -4,6 +4,9 @@
 set -Eeuo pipefail
 umask 077
 cd "$(git rev-parse --show-toplevel)"
+# Compare table names by exact membership, independent of PostgreSQL,
+# shell and host collation order.
+source scripts/lib/cms-table-preservation.sh
 
 abort() { printf 'ABORT: %s\n' "$*" >&2; exit 2; }
 dc() { docker compose --env-file cms/.env -f compose.cms.yml "$@"; }
@@ -117,9 +120,8 @@ after=$(sql "SELECT count(*) FROM information_schema.tables WHERE table_schema='
 events_after=$(sql 'SELECT count(*) FROM public.ierc_events')
 [[ "$events_before" == "$events_after" ]] || abort "Existing event rows changed"
 tables_after=$(sql "SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY table_name")
-missing=$(comm -23 <(printf '%s\n' "$tables_before" | sort) \
-  <(printf '%s\n' "$tables_after" | sort))
-[[ -z "$missing" ]] || abort "At least one previous table disappeared"
+cms_tables_preserved "$tables_before" "$tables_after" ||
+  abort "At least one original table is missing or the table lists are invalid"
 [[ "$(dc ps -q db)" == "$live_db" && "$(dc ps -q cms)" == "$live_cms" ]] ||
   abort "Original DEV services changed unexpectedly"
 printf 'SANDBOX_CMS=HEALTHY\nSANDBOX_TABLES_AFTER=%s\n' "$after"
