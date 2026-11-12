@@ -52,18 +52,19 @@ test("leitor CBDV deduplica, descarta datas inválidas e títulos suspeitos",()=
   expect(results.every(x=>x.participation==="nao_confirmada")).toBe(true);
 });
 
-test("competição institucional aprovada prevalece sobre duplicação CBDV, sem mudar vínculo automaticamente",()=>{
+test("competição editorial aprovada prevalece sobre CBDV duplicada sem afirmar presença",()=>{
   const data=parseCbdvGoalballCalendar(calendar(row("10/nov","15/nov",
     "Campeonato Brasileiro de Goalball - Série B")),{now});
   const manual=[
-    {slug:"encontro-cultura",title:"Encontro cultural",summary:"Atividade",
-      startsAt:"2026-11-15T12:00:00.000Z",eventType:"institucional" as const},
     {slug:"serie-b",title:"Campeonato Brasileiro de Goalball - Série B",
       summary:"Participação a confirmar",startsAt:"2026-11-10T12:00:00.000Z",
-      eventType:"competicao_esportiva" as const,participationStatus:"nao_confirmada" as const},
+      sportModality:"Goalball",participationStatus:"nao_confirmada" as const},
+    {slug:"torneio-comunitario",title:"Torneio comunitário de Goalball",
+      summary:"Evento documentado pela instituição",startsAt:"2026-12-10T12:00:00.000Z",
+      sportModality:"Goalball",participationStatus:"confirmada" as const},
   ];
   const {institutional,external}=organizeSportCompetitions(data,manual);
-  expect(institutional.map(e=>e.slug)).toEqual(["serie-b"]);
+  expect(institutional.map(e=>e.slug)).toEqual(["serie-b","torneio-comunitario"]);
   expect(institutional[0].participationStatus).toBe("nao_confirmada");
   expect(external).toHaveLength(0);
 });
