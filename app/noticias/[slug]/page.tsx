@@ -45,7 +45,7 @@ export default async function NewsDetail({ params }: Props) {
       </time>}
     </header>
     {entry.body && <div className="cms-article-body">{entry.body}</div>}
-    {entry.originType === "externa" && entry.whyItMatters && <section aria-labelledby="cms-impact-title">
+    {entry.originType === "externa" && entry.whyItMatters && <section className="cms-article-impact" aria-labelledby="cms-impact-title">
       <h2 id="cms-impact-title">Por que isso importa para a inclusão no Brasil?</h2>
       <p>{entry.whyItMatters}</p>
     </section>}
