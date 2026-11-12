@@ -93,10 +93,10 @@ export function SupportPage() {
         <article className="detail-card support-choice">
           <span className="support-choice-icon" aria-hidden="true"><Megaphone size={30} /></span>
           <h3>Voluntariado e parcerias</h3>
-          <p>O Instituto informou que recebe voluntários e parcerias
-            com empresas. Para oferecer tempo, habilidades ou serviços,
-            consulte a equipe sobre as necessidades e os procedimentos.
-            Você também pode divulgar suas iniciativas.</p>
+          <p>O IERC-RN recebe voluntários e parcerias com empresas,
+            inclusive apoio com materiais ou serviços. Para oferecer
+            tempo, habilidades, produtos ou outro tipo de contribuição,
+            consulte a equipe sobre as necessidades e o recebimento.</p>
           <a className="inline-link" href="https://www.instagram.com/iercrn/"
             target="_blank" rel="noopener noreferrer">
             Conhecer o perfil informado <ArrowUpRight size={17} aria-hidden="true" />
