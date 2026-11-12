@@ -62,19 +62,30 @@ test('Radar da Inclusão exige origem externa e não afeta as noticias instituci
   assert.ok(schema.attributes.whyItMatters);
 });
 
-test('competicoes esportivas manuais exigem revisao editorial e nunca confirmam participacao por padrao', () => {
-  const schema = JSON.parse(readFileSync(
-    path.join(root, 'src/api/event/content-types/event/schema.json'), 'utf8'
+test('competicoes esportivas possuem colecao propria; Eventos nao ganham campos de esporte', () => {
+  const sport = JSON.parse(readFileSync(
+    path.join(root, 'src/api/sport-competition/content-types/sport-competition/schema.json'),'utf8'
   ));
-  assert.equal(schema.options.draftAndPublish, true);
-  assert.deepEqual(schema.attributes.eventType.enum, ['institucional','competicao_esportiva']);
-  assert.equal(schema.attributes.eventType.default, 'institucional');
-  assert.equal(schema.attributes.eventType.required, undefined);
-  assert.deepEqual(schema.attributes.participationStatus.enum, ['nao_confirmada','confirmada']);
-  assert.equal(schema.attributes.participationStatus.default, 'nao_confirmada');
-  assert.equal(schema.attributes.participationStatus.required, undefined);
-  assert.equal(schema.attributes.sportModality.type, 'string');
-  assert.equal(schema.attributes.editorialStatus.default, 'em_preparacao');
-  assert.ok(schema.attributes.sourceName);
-  assert.ok(schema.attributes.sourceUrl);
+  const events = JSON.parse(readFileSync(
+    path.join(root, 'src/api/event/content-types/event/schema.json'),'utf8'
+  ));
+
+  assert.equal(sport.collectionName, 'ierc_sport_competitions');
+  assert.equal(sport.info.displayName, 'Competições esportivas');
+  assert.equal(sport.kind, 'collectionType');
+  assert.equal(sport.options.draftAndPublish, true);
+  for (const required of ['title','slug','summary','startsAt','sportModality']) {
+    assert.equal(sport.attributes[required].required, true, required);
+  }
+  for (const field of ['endsAt','location','organizer','calendarLabel','sourceName',
+    'sourceUrl','approvalReference','approvalNote']) {
+    assert.ok(sport.attributes[field], field);
+  }
+  assert.equal(sport.attributes.participationStatus.default,'nao_confirmada');
+  assert.deepEqual(sport.attributes.participationStatus.enum,['nao_confirmada','confirmada']);
+  assert.equal(sport.attributes.editorialStatus.default,'em_preparacao');
+  assert.equal(sport.attributes.editorialStatus.required,true);
+  assert.ok(!events.attributes.eventType);
+  assert.ok(!events.attributes.sportModality);
+  assert.ok(!events.attributes.participationStatus);
 });
