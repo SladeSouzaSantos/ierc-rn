@@ -7,14 +7,16 @@ sem alterações no Strapi 5, no PostgreSQL ou em `main`.
 
 A seção **Programação da instituição** em `/eventos` separa melhor os
 grupos **Em andamento**, **Próximos eventos** e **Eventos realizados pelo
-Instituto**. O espaço antes dos grupos e entre eles é responsivo, e a
-imagem autorizada aparece no topo do cartão.
+Instituto**. O espaço antes dos grupos e entre eles é responsivo. Cartões
+com imagem autorizada usam duas colunas: **convite à esquerda e detalhes
+à direita** em telas maiores que 540 px. Abaixo disso, o convite fica
+acima dos detalhes para manter o texto legível e evitar rolagem horizontal.
 
 As artes de convite podem ter texto importante. Por isso, a área de imagem
 usa `object-fit: contain`, **sem recortar o convite**. Dados essenciais
-(título, data, local) permanecem escritos abaixo da imagem e disponíveis
-a leitores de tela. Se o evento não tem imagem válida, o cartão exibe
-apenas texto, sem imagem quebrada ou espaço reservado.
+(título, data, local) permanecem em texto HTML adjacente à imagem e
+disponíveis a leitores de tela. Se o evento não tem imagem válida, o
+cartão exibe apenas texto, sem imagem quebrada ou espaço reservado.
 
 ## Preenchimento no Strapi
 
@@ -68,8 +70,14 @@ despublicar/apagar após conferência — **não mantê-los em produção**.
 - [ ] Confirmar imagem autorizada da Festa Natalina no cartão.
 - [ ] Confirmar ausência de imagem quando `imageRightsStatus`
       está `pendente` e quando `image` não foi anexada.
+- [ ] Confirmar que a imagem aparece à esquerda e o conteúdo à
+      direita em desktop/tablet, sem recortar o convite.
+- [ ] Confirmar empilhamento abaixo de 541 px e cartões sem imagem
+      ocupando toda a largura, sem espaço em branco.
 - [ ] Confirmar cartões antigos com texto, Datas/Local/Alt e
       acessibilidade de teclado, leitor de tela e reflow 320–1440 px.
+- [x] Adicionar cobertura Playwright para layout lateral em desktop,
+      cartão sem imagem e reflow a 375 px (execução depende do CI).
 - [ ] Confirmar ausência do evento fictício de teste na agenda pública.
 - [ ] Preservar Strapi, banco, Redis, worker da curadoria e `main`.
 
