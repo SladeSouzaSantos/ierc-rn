@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PixDonationKey } from "@/components/pix-donation-key";
 import {
   ArrowUpRight, CalendarDays, HeartHandshake, Megaphone,
   MessageCircle, ShoppingBag, ShieldCheck, Repeat2, HandCoins,
@@ -6,9 +7,9 @@ import {
 
 /**
  * Bazaar logistics from an institutional contact (11 Nov 2026).
- * Purchases can be paid at the physical bazaar by Pix or cash; the website
- * does not receive funds or display financial identifiers. No new forms,
- * sensitive data, unverified phone numbers or QR codes.
+ * Purchases can be paid at the physical bazaar by Pix or cash. The
+ * site separately displays the donation Pix CNPJ supplied by the operator.
+ * No online checkout, recurring charge, bank-account verification or QR code.
  */
 export function SupportPage() {
   return <>
@@ -119,10 +120,13 @@ export function SupportPage() {
         <ShieldCheck size={27} aria-hidden="true" />
         <div>
           <h3 id="support-finance-title">Sobre doações financeiras</h3>
-          <p>O IERC-RN informou que possui um Pix oficial para doações financeiras
-            e autoriza sua futura divulgação. <strong>A chave e a titularidade
-            ainda não foram verificadas para publicação neste portal.</strong>
-            Não há cobrança, QR Code ou pagamento on-line disponível aqui.
+          <p>O IERC-RN informou a chave Pix por CNPJ abaixo para receber
+            doações financeiras. Antes de concluir uma transferência, confira
+            no aplicativo do seu banco se o destinatário corresponde ao
+            Instituto. <strong>Se o nome do recebedor não corresponder, não
+            transfira e entre em contato com o IERC-RN.</strong></p>
+          <PixDonationKey />
+          <p>Este portal não processa pagamentos nem possui cobrança ou QR Code.
             O Pix e o dinheiro aceitos no bazar referem-se a compras presenciais.</p>
         </div>
       </aside>
