@@ -69,14 +69,14 @@ test("Bazar exibe horários, local, itens aceitos e compra presencial conforme i
   await expect(page.locator('main a[href^="pix:"], main img[src*="qr"], main form')).toHaveCount(0);
 });
 
-test("Doação única e apoio mensal são opções informativas sem iniciar cobranças", async ({ page }) => {
+test("Doação única por Pix é manual e apoio mensal permanece não implementado", async ({ page }) => {
   await page.goto("/apoie");
 
   const modes = page.locator(".support-donation-modes");
-  await expect(modes.getByRole("heading", { name: "Duas maneiras de contribuir financeiramente" })).toBeVisible();
-  await expect(modes.getByRole("heading", { name: "Doação única" })).toBeVisible();
+  await expect(modes.getByRole("heading", { name: "Opções para contribuições financeiras" })).toBeVisible();
+  await expect(modes.getByRole("heading", { name: "Doação única por Pix" })).toBeVisible();
   await expect(modes.getByRole("heading", { name: "Apoio mensal recorrente" })).toBeVisible();
-  await expect(modes.getByText("Em preparação — sem pagamento disponível")).toBeVisible();
+  await expect(modes.getByText("Transferência externa — sem checkout no portal")).toBeVisible();
   await expect(modes.getByText("Em preparação — sem assinatura ativa")).toBeVisible();
   await expect(modes.getByText(/cancelar a recorrência/)).toBeVisible();
 
