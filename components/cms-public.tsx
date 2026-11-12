@@ -122,12 +122,12 @@ function eventDateTimeLabel(value: string) {
 }
 
 function CmsEventCard({ item }: { item: CmsEvent }) {
-  return <article className="detail-card editorial-event editorial-event-card" key={item.slug}>
+  return <article className={`detail-card editorial-event editorial-event-card${item.image ? " editorial-event-card--with-image" : ""}`} key={item.slug}>
     {item.image && <figure className="editorial-event-media">
       <Image
         src={`/api/event-image/${encodeURIComponent(item.slug)}`}
         width={800} height={500} unoptimized loading="lazy"
-        sizes="(max-width: 760px) 100vw, (max-width: 1200px) 50vw, 440px"
+        sizes="(max-width: 540px) 100vw, (max-width: 760px) 34vw, (max-width: 1200px) 18vw, 220px"
         alt={item.image.alt}
       />
       {item.image.credit && <figcaption>Imagem: {item.image.credit}</figcaption>}
