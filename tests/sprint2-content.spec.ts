@@ -1,4 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
+import { IERC_MAPS_LINK, IERC_MAPS_EMBED } from "../lib/location";
 import { expect, test } from "@playwright/test";
 
 test("instituto documenta fundação e linha do tempo com fontes", async ({ page }) => {
@@ -57,7 +58,11 @@ test("endereço de contato é verificável e não há telefone fictício", async
   await page.goto("/contato");
   await expect(page.locator(".verified-address")).toContainText("Rua Fonseca e Silva, 1113");
   await expect(page.locator('a[href^="tel:"],a[href^="mailto:"]')).toHaveCount(0);
-  await expect(page.getByRole("link", { name: /Ver endereço citado pelo TRE-RN/ })).toHaveAttribute("target", "_blank");
+  await expect(page.getByRole("link", { name: /Abrir no Google Maps/ })).toHaveAttribute("href", IERC_MAPS_LINK);
+  await expect(page.getByRole("heading", { name: "Como chegar ao IERC-RN" })).toBeVisible();
+  await expect(page.locator(".location-map iframe")).toHaveCount(0);
+  await page.getByRole("button", { name: "Carregar mapa interativo" }).click();
+  await expect(page.getByTitle(/Mapa interativo: IERC-RN/)).toHaveAttribute("src", IERC_MAPS_EMBED);
 });
 
 test("visitas usa formulário oficial sem agenda paralela e sem prometer reserva", async ({ page }) => {
@@ -71,6 +76,13 @@ test("visitas usa formulário oficial sem agenda paralela e sem prometer reserva
   await expect(page.getByText(/aguarde a confirmação da equipe/)).toBeVisible();
   await expect(page.getByText(/serviço externo que recebe as informações preenchidas/)).toBeVisible();
   await expect(page.locator("form, iframe")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /Abrir no Google Maps/ })).toHaveAttribute("href", IERC_MAPS_LINK);
+  const notice = page.locator(".visit-form-disclosure");
+  await expect(notice).toBeVisible();
+  const gap = await notice.evaluate(el => Number.parseFloat(window.getComputedStyle(el).marginTop));
+  expect(gap).toBeGreaterThanOrEqual(24);
+  await page.getByRole("button", { name: "Carregar mapa interativo" }).click();
+  await expect(page.getByTitle(/Mapa interativo: IERC-RN/)).toHaveAttribute("src", IERC_MAPS_EMBED);
 });
 
 test("seções editoriais mantêm reflow e testes automáticos de acessibilidade", async ({ page }) => {
