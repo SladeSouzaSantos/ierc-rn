@@ -34,11 +34,20 @@ export type CmsEvent = {
   endsAt?: string;
   location?: string;
   registrationUrl?: string;
-  eventType?: "institucional" | "competicao_esportiva";
-  participationStatus?: "nao_confirmada" | "confirmada";
-  sportModality?: string;
-  sourceUrl?: string;
+};
+export type CmsSportCompetition = {
+  slug: string;
+  title: string;
+  summary: string;
+  startsAt: string;
+  endsAt?: string;
+  location?: string;
+  sportModality: string;
+  organizer?: string;
+  calendarLabel?: string;
+  participationStatus: "nao_confirmada" | "confirmada";
   sourceName?: string;
+  sourceUrl?: string;
 };
 export type CmsActivity = {
   id: string;
@@ -76,7 +85,7 @@ function environment(): { endpoint: string; token: string } | null {
   if (!endpoint || !token) return null;
   return { endpoint: endpoint.replace(/\/$/, ""), token };
 }
-const slugs = new Set(["news-articles", "events", "activities", "athletes"]);
+const slugs = new Set(["news-articles", "events", "sport-competitions", "activities", "athletes"]);
 async function find(collection: string, filters?: Record<string, string>): Promise<Json[]> {
   const env = environment();
   if (!env || !slugs.has(collection)) return [];
@@ -176,13 +185,30 @@ export async function getCmsEvents(): Promise<CmsEvent[]> {
     startsAt: string(v.startsAt, 40), endsAt: string(v.endsAt, 40) || undefined,
     location: string(v.location, 300) || undefined,
     registrationUrl: url(v.registrationUrl),
-    eventType: v.eventType === "competicao_esportiva" ? "competicao_esportiva" : "institucional",
+  })).filter(v => /^[a-z0-9-]{1,90}$/.test(v.slug) && v.title && v.summary &&
+     !Number.isNaN(Date.parse(v.startsAt)));
+}
+/** Dedicated sport records: only published and editorially approved documents.
+ * The read-only public token never creates, updates or approves a competition.
+ */
+export async function getCmsSportCompetitions(): Promise<CmsSportCompetition[]> {
+  return (await find("sport-competitions")).map((v): CmsSportCompetition => ({
+    slug: string(v.slug, 90),
+    title: string(v.title, 200),
+    summary: string(v.summary, 4000),
+    startsAt: string(v.startsAt, 40),
+    endsAt: string(v.endsAt, 40) || undefined,
+    location: string(v.location, 300) || undefined,
+    sportModality: string(v.sportModality, 80),
+    organizer: string(v.organizer, 160) || undefined,
+    calendarLabel: string(v.calendarLabel, 100) || undefined,
     participationStatus: v.participationStatus === "confirmada" ? "confirmada" : "nao_confirmada",
-    sportModality: string(v.sportModality, 80) || undefined,
     sourceUrl: url(v.sourceUrl),
     sourceName: string(v.sourceName, 120) || undefined,
   })).filter(v => /^[a-z0-9-]{1,90}$/.test(v.slug) && v.title && v.summary &&
-     !Number.isNaN(Date.parse(v.startsAt)));
+    !!v.sportModality && !Number.isNaN(Date.parse(v.startsAt)) &&
+    (!v.endsAt || (!Number.isNaN(Date.parse(v.endsAt)) &&
+      Date.parse(v.endsAt) >= Date.parse(v.startsAt))));
 }
 export async function getCmsActivities(): Promise<CmsActivity[]> {
   return (await find("activities")).map(v => ({
