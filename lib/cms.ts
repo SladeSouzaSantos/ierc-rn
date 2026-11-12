@@ -215,7 +215,11 @@ export async function getCmsNewsBySlug(slug: string): Promise<CmsArticle | null>
  * Never expose internal CMS hosts, upload paths or the read-only API token.
  */
 export async function getCmsEvents(): Promise<CmsEvent[]> {
-  return (await find("events", { populate: "image" })).map((v): CmsEvent => {
+  const populated = await find("events", { populate: "image" });
+  // A Custom read-only token may be able to list events while lacking the
+  // media population permission. Never hide approved event text as a result.
+  const records = populated.length ? populated : await find("events");
+  return records.map((v): CmsEvent => {
     const media = approvedEventImage(v);
     return {
       slug: string(v.slug, 90), title: string(v.title, 200), summary: string(v.summary),
