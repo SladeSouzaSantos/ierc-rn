@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowUpRight, CalendarDays, Instagram, MapPin, Trophy, Users } from "lucide-react";
 import { PageHero } from "@/components/page-hero";
-import { getDisplayActivities, getCmsNews, getCmsEvents, getCmsAthletes } from "@/lib/cms";
+import { getDisplayActivities, getCmsNews, getCmsEvents, getCmsAthletes, getCmsSportCompetitions } from "@/lib/cms";
 import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsInstitutionalEventNews, CmsAthletesList } from "@/components/cms-public";
 import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
 import { AthleteStories } from "@/components/athlete-stories";
@@ -51,7 +51,8 @@ export default async function ContentPage({ params }: RouteProps) {
   const entry = pages[slug as Slug];
   const displayActivities = slug === "atividades" ? await getDisplayActivities() : [];
   const cmsNews = slug === "noticias" || slug === "eventos" ? await getCmsNews() : [];
-  const cmsEvents = slug === "eventos" || slug === "esportes" ? await getCmsEvents() : [];
+  const cmsEvents = slug === "eventos" ? await getCmsEvents() : [];
+  const cmsSportCompetitions = slug === "esportes" ? await getCmsSportCompetitions() : [];
   const cbdvCompetitions = slug === "esportes" ? await getCbdvGoalballCalendar() : [];
   const cmsAthletes = slug === "historias" ? await getCmsAthletes() : [];
 
@@ -86,7 +87,7 @@ export default async function ContentPage({ params }: RouteProps) {
             <article className="detail-card"><Users size={32} aria-hidden="true" /><h3>Regional Nordeste</h3><p>A instituição foi relacionada nas categorias masculina e feminina da edição de abril de 2026.</p></article>
             <article className="detail-card"><CalendarDays size={32} aria-hidden="true" /><h3>Próximos jogos</h3><p>Escalações atuais, resultados detalhados e agenda futura dependem de confirmação com a coordenação esportiva.</p></article>
           </div>
-          <SportCompetitions cbdv={cbdvCompetitions} events={cmsEvents} />
+          <SportCompetitions cbdv={cbdvCompetitions} competitions={cmsSportCompetitions} />
           <SportRecords />
           <Note>Os nomes de atletas são transcritos de uma lista pública da CBDV de 2026, sem implicar vínculo atual. Fotografias e biografias individuais dependem de autorização.</Note>
           <Callout title="Histórias que atravessam gerações" href="/historias" label="Explorar histórias">Conheça nove trajetórias com vínculos documentados ao IERC-RN, fontes de carreira e fotografias de referência em homologação.</Callout>
