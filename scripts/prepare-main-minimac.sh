@@ -25,7 +25,7 @@ if [[ "$#" -ne 1 ]]; then usage >&2; exit 2; fi
 
 abort() { printf 'BLOQUEADO: %s\n' "$*" >&2; exit 2; }
 
-for tool in git docker grep sed; do
+for tool in git docker grep sed stat; do
   command -v "$tool" >/dev/null 2>&1 || abort "programa ausente: $tool"
 done
 [[ "$(pwd -P)" == /opt/projects/ierc-rn ]] ||
@@ -62,6 +62,11 @@ fi
 [[ -s cms/.env.prod ]] || abort "cms/.env.prod ausente ou vazio; execute --prepare"
 [[ -s deploy/.env.portal.prod ]] ||
   abort "deploy/.env.portal.prod ausente ou vazio; execute --prepare"
+for file in cms/.env.prod deploy/.env.portal.prod; do
+  permission=$(stat -c '%a' "$file")
+  [[ "$permission" == 600 || "$permission" == 400 ]] ||
+    abort "permissões muito abertas em $file; use chmod 600"
+done
 for value in 'DATABASE_NAME=ierc_cms_prod' 'DATABASE_USERNAME=ierc_cms_prod' \
              'DATABASE_HOST=db' 'DATABASE_PORT=5432'; do
   grep -qxF "$value" cms/.env.prod ||
