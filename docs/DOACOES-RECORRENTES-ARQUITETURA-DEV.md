@@ -1,21 +1,23 @@
 # IERC-RN — arquitetura para doações únicas e recorrentes (DEV)
 
-**Data:** 11/11/2026. **Status:** planejamento de integração; a UI informativa está na `dev`, **nenhuma cobrança está habilitada**.
+**Data:** 11/11/2026. **Atualizado em:** 12/11/2026. **Status:** integração de checkout/recorrência ainda em planejamento; o portal exibe a chave Pix por CNPJ informada institucionalmente para transferência manual no aplicativo bancário. **Nenhuma cobrança pelo portal está habilitada.**
 
 ## Decisão atual
 
-A página `/apoie` mostra duas alternativas futuras, ambas com o estado
-inequívoco **Em preparação**:
+A página `/apoie` distingue duas alternativas:
 
-1. **Doação única:** um pagamento isolado, sem vínculo recorrente.
-2. **Apoio mensal recorrente:** cobranças mensais *somente* após autorização
-   explícita da pessoa doadora e mecanismo de cancelamento.
+1. **Doação única por Pix:** o operador informou como chave institucional o CNPJ
+   **08.049.504/0001-08**. A pessoa copia a chave e realiza a transferência
+   **por conta própria** no aplicativo bancário, após conferir a identidade do
+   destinatário. Não há cobrança ou checkout no portal.
+2. **Apoio mensal recorrente:** **Em preparação** — cobranças mensais somente
+   após autorização explícita da pessoa doadora e mecanismo de cancelamento.
 
-O IERC-RN já informou possuir uma chave Pix institucional para doações e
-aceitar sua futura divulgação, mas **a chave, a titularidade jurídica, as
-contas, o provedor e os termos de cancelamento ainda não foram validados**.
-Não criar uma chave fictícia, QR Code, redirecionamento, sessão de pagamento,
-assinatura ou endpoint de webhook antes dessas aprovações.
+O número foi fornecido como chave Pix da instituição em 12/11/2026,
+mas **não há comprovação bancária independente de titularidade nesta revisão**.
+Não criar QR Code, redirecionamento, sessão de pagamento, assinatura
+ou endpoint de webhook antes das aprovações financeiras e da segurança.
+A chave Pix é pública, mas segredos bancários e credenciais não são coletados.
 
 Pagamento presencial por Pix ou dinheiro **na compra do Bazar Solidário**
 não é o mesmo que doação online; não reutilizar a identificação recebida
@@ -131,9 +133,11 @@ a instituição já esteja elegível ou tenha aberto uma conta nele.
 
 ## Estado atual e limites de testes
 
-- UI: dois cartões explicativos e status `Em preparação` em `/apoie`.
+- UI: chave Pix de doação única com botão de copiar, aviso de conferência
+  do destinatário e cartão de recorrência `Em preparação` em `/apoie`.
 - Backend de pagamentos: **não implementado**.
-- Sessões, Pix, webhook e recorrência reais: **não implementados**.
+- Sessões de pagamento, geração de cobranças Pix, webhook e recorrência:
+  **não implementados**. Pix manual externo é possível pelo aplicativo bancário.
 - E2E: ausência de formulários financeiros, links de checkout,
   botões de cobrança e endpoints financeiros ativos (404).
 - A página Bazar e as compras presenciais permanecem independentes.

@@ -1115,6 +1115,49 @@ html[data-high-contrast="true"] .radar-group > h3 { color: #000; }
 .support-finance > svg { flex: none; color: #512b7a; margin-top: 3px; }
 .support-finance h3 { font-size: 1.4rem; margin-bottom: 12px; }
 .support-finance p { max-width: 780px; margin-bottom: 0; line-height: 1.8; color: #2b495b; }
+.support-pix-key {
+  margin: 18px 0;
+  padding: 17px 20px;
+  background: #fff;
+  border: 1px solid #abc3c8;
+  border-radius: 12px;
+}
+.support-pix-key .support-pix-label {
+  font-weight: 750;
+  color: #244c55;
+  margin-bottom: 10px;
+}
+.support-pix-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; }
+.support-pix-value {
+  font-size: clamp(1.05rem, 2.3vw, 1.35rem);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+  overflow-wrap: anywhere;
+  user-select: text;
+  color: #183d53;
+}
+.support-pix-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  background: #163f5c;
+  color: #fff;
+  border: 2px solid #163f5c;
+  border-radius: 8px;
+  font: inherit;
+  font-size: .94rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.support-pix-copy:hover { background: #245576; }
+.support-pix-copy:focus-visible { outline: 3px solid #6a349e; outline-offset: 3px; }
+.support-pix-key .support-pix-status { min-height: 1.5em; margin-top: 8px; font-size: .9rem; }
+html[data-high-contrast="true"] .support-pix-key { border: 2px solid #000; background: #fff; }
+html[data-high-contrast="true"] .support-pix-copy { background: #000; color: #fff; border-color: #000; }
+html[data-high-contrast="true"] .support-pix-value,
+html[data-high-contrast="true"] .support-pix-key .support-pix-label { color: #000; }
 .support-contact { margin-top: clamp(54px, 7vw, 95px); }
 .support-contact > svg { margin-bottom: 20px; }
 .support-contact .eyebrow { color: #ffdb69; }

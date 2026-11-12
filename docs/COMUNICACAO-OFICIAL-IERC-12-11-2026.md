@@ -10,7 +10,7 @@
 - Entrega presencial dos itens: **segunda a quinta-feira, 8h às 11h**, na sede. **Não há coleta domiciliar**.
 - Entrega conduzida pela equipe da instituição. A informação de nomes informais de funcionárias **não será divulgada publicamente**, sem autorização explícita.
 - O IERC aceita **parcerias, ajuda em serviços e materiais**, e voluntariado a combinar.
-- Doações financeiras: existe **Pix oficial** e a instituição autoriza sua divulgação futura. **Ainda não foram fornecidos e confirmados a chave, o titular e o procedimento seguro de doação**. Não inventar QR Code, chave, valor ou recorrência.
+- Doações financeiras: o operador informou em 12/11/2026 a chave **Pix por CNPJ 08.049.504/0001-08** como chave do IERC-RN. O site a exibe em `/apoie` para **transferências manuais feitas pelo doador no aplicativo bancário**, orientando verificar o destinatário antes de concluir. A informação foi fornecida institucionalmente; **não houve consulta bancária independente para comprovar titularidade**. Não gerar QR Code, checkout, valor obrigatório ou recorrência automática.
 
 ## Contatos confirmados para divulgação
 
@@ -21,8 +21,10 @@
 - O formulário de visitas já confirmado permanece em
   `https://forms.gle/NY35YEEkbL6HM2YF9`.
 
-A aplicação mantém contatos em `lib/institutional-contact.ts`, exibidos na
-página `/contato` e rodapé, sem inserir os dados bancários em código.
+A aplicação mantém e-mail e WhatsApp em `lib/institutional-contact.ts`, exibidos na
+página `/contato` e no rodapé. A chave Pix por CNPJ também fica
+centralizada nesse arquivo e aparece apenas na página `/apoie`.
+Não há contas bancárias, tokens financeiros ou segredos de pagamento no frontend.
 
 O Strapi possui os campos `phone` e `email` em **Configurações institucionais**.
 A equipe poderá preencher e aprovar esses campos para registro editorial.

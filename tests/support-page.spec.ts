@@ -18,12 +18,13 @@ test("Apoie apresenta os três caminhos não financeiros e informação clara so
   await expect(page.getByText(/Entrega: presencial, no IERC-RN/)).toBeVisible();
 });
 
-test("Apoie distingue pagamentos presenciais e doações financeiras sem divulgar credenciais", async ({ page }) => {
+test("Apoie apresenta chave Pix CNPJ informada sem iniciar cobranças online", async ({ page }) => {
   await page.goto("/apoie");
 
   await expect(page.getByRole("heading", { name: "Sobre doações financeiras" })).toBeVisible();
-  await expect(page.getByText(/O IERC-RN informou que possui um Pix oficial para doações financeiras/)).toBeVisible();
-  await expect(page.getByText(/A chave e a titularidade ainda não foram verificadas/)).toBeVisible();
+  await expect(page.getByText("08.049.504/0001-08", { exact: true })).toBeVisible();
+  await expect(page.getByText(/confira no aplicativo do seu banco se o destinatário corresponde/)).toBeVisible();
+  await expect(page.getByText(/Se o nome do recebedor não corresponder/)).toBeVisible();
   await expect(page.getByText(/O Pix e o dinheiro aceitos no bazar referem-se a compras presenciais/)).toBeVisible();
   await expect(page.locator('main form, main input, main a[href^="pix:"], main a[href*="checkout"], main a[href*="payment"]')).toHaveCount(0);
   await expect(page.locator('main a[href^="tel:"], main a[href^="mailto:"]')).toHaveCount(0);
@@ -34,6 +35,20 @@ test("Apoie distingue pagamentos presenciais e doações financeiras sem divulga
   await expect(social).toHaveAttribute("target", "_blank");
   await expect(social).toHaveAttribute("rel", /noopener noreferrer/);
   await expect(social.getByText(/abre em nova aba/)).toHaveCount(1);
+});
+
+test("Botão Pix copia apenas os dígitos do CNPJ e anuncia o resultado", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async (value: string) => { (window as typeof window & { __pixCopied?: string }).__pixCopied = value; } },
+    });
+  });
+  await page.goto("/apoie");
+  await page.getByRole("button", { name: "Copiar chave Pix" }).click();
+  await expect(page.getByRole("status")).toContainText("Chave Pix copiada");
+  const copied = await page.evaluate(() => (window as typeof window & { __pixCopied?: string }).__pixCopied);
+  expect(copied).toBe("08049504000108");
 });
 
 test("Bazar exibe horários, local, itens aceitos e compra presencial conforme informação recebida", async ({ page }) => {
@@ -48,20 +63,20 @@ test("Bazar exibe horários, local, itens aceitos e compra presencial conforme i
   await expect(bazar.getByText(/dinheiro ou Pix/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Voluntariado e parcerias" })).toBeVisible();
 
-  // Institutional contacts and financial identifiers are deliberately absent.
+  // Staff names stay private; Pix CNPJ is intentionally public.
   const publicText = await page.locator("main").innerText();
   expect(publicText).not.toMatch(/Nat[aá]lia|tia Gleide/i);
   await expect(page.locator('main a[href^="pix:"], main img[src*="qr"], main form')).toHaveCount(0);
 });
 
-test("Doação única e apoio mensal são opções informativas sem iniciar cobranças", async ({ page }) => {
+test("Doação única por Pix é manual e apoio mensal permanece não implementado", async ({ page }) => {
   await page.goto("/apoie");
 
   const modes = page.locator(".support-donation-modes");
-  await expect(modes.getByRole("heading", { name: "Duas maneiras de contribuir financeiramente" })).toBeVisible();
-  await expect(modes.getByRole("heading", { name: "Doação única" })).toBeVisible();
+  await expect(modes.getByRole("heading", { name: "Opções para contribuições financeiras" })).toBeVisible();
+  await expect(modes.getByRole("heading", { name: "Doação única por Pix" })).toBeVisible();
   await expect(modes.getByRole("heading", { name: "Apoio mensal recorrente" })).toBeVisible();
-  await expect(modes.getByText("Em preparação — sem pagamento disponível")).toBeVisible();
+  await expect(modes.getByText("Transferência externa — sem checkout no portal")).toBeVisible();
   await expect(modes.getByText("Em preparação — sem assinatura ativa")).toBeVisible();
   await expect(modes.getByText(/cancelar a recorrência/)).toBeVisible();
 

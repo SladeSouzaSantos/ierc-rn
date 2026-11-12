@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PixDonationKey } from "@/components/pix-donation-key";
 import {
   ArrowUpRight, CalendarDays, HeartHandshake, Megaphone,
   MessageCircle, ShoppingBag, ShieldCheck, Repeat2, HandCoins,
@@ -6,9 +7,9 @@ import {
 
 /**
  * Bazaar logistics from an institutional contact (11 Nov 2026).
- * Purchases can be paid at the physical bazaar by Pix or cash; the website
- * does not receive funds or display financial identifiers. No new forms,
- * sensitive data, unverified phone numbers or QR codes.
+ * Purchases can be paid at the physical bazaar by Pix or cash. The
+ * site separately displays the donation Pix CNPJ supplied by the operator.
+ * No online checkout, recurring charge, bank-account verification or QR code.
  */
 export function SupportPage() {
   return <>
@@ -119,26 +120,31 @@ export function SupportPage() {
         <ShieldCheck size={27} aria-hidden="true" />
         <div>
           <h3 id="support-finance-title">Sobre doações financeiras</h3>
-          <p>O IERC-RN informou que possui um Pix oficial para doações financeiras
-            e autoriza sua futura divulgação. <strong>A chave e a titularidade
-            ainda não foram verificadas para publicação neste portal.</strong>
-            Não há cobrança, QR Code ou pagamento on-line disponível aqui.
+          <p>O IERC-RN informou a chave Pix por CNPJ abaixo para receber
+            doações financeiras. Antes de concluir uma transferência, confira
+            no aplicativo do seu banco se o destinatário corresponde ao
+            Instituto. <strong>Se o nome do recebedor não corresponder, não
+            transfira e entre em contato com o IERC-RN.</strong></p>
+          <PixDonationKey />
+          <p>Este portal não processa pagamentos nem possui cobrança ou QR Code.
             O Pix e o dinheiro aceitos no bazar referem-se a compras presenciais.</p>
         </div>
       </aside>
 
       <section className="support-donation-modes" aria-labelledby="support-donation-modes-title">
         <p className="eyebrow">Planejamento de doações</p>
-        <h3 id="support-donation-modes-title">Duas maneiras de contribuir financeiramente</h3>
-        <p className="support-donation-lead">As modalidades abaixo estão previstas para uma próxima etapa.
-          Nenhuma delas realiza cobrança ou solicita dados bancários neste portal.</p>
+        <h3 id="support-donation-modes-title">Opções para contribuições financeiras</h3>
+        <p className="support-donation-lead">A chave Pix acima permite realizar uma
+          transferência avulsa diretamente no aplicativo do banco. A opção de
+          contribuições mensais ainda está em planejamento. Este portal não
+          solicita dados bancários nem processa cobranças.</p>
         <div className="support-donation-grid">
           <article className="support-donation-card">
             <span className="support-donation-icon" aria-hidden="true"><HandCoins size={27}/></span>
-            <h4>Doação única</h4>
-            <p>Uma contribuição feita uma só vez, no valor escolhido pelo doador
-              dentro das condições que serão divulgadas pelo IERC-RN.</p>
-            <p className="support-donation-status">Em preparação — sem pagamento disponível</p>
+            <h4>Doação única por Pix</h4>
+            <p>Copie a chave Pix indicada acima, acesse o aplicativo do banco
+              e confirme o nome da instituição antes de transferir.</p>
+            <p className="support-donation-status">Transferência externa — sem checkout no portal</p>
           </article>
           <article className="support-donation-card">
             <span className="support-donation-icon" aria-hidden="true"><Repeat2 size={27}/></span>
