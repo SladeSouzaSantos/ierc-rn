@@ -1,4 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
+import { IERC_MAPS_LINK, IERC_MAPS_EMBED } from "../lib/location";
+import { IERC_OFFICIAL_EMAIL, IERC_OFFICIAL_EMAIL_LINK, IERC_OFFICIAL_WHATSAPP, IERC_OFFICIAL_WHATSAPP_LINK } from "../lib/institutional-contact";
 import { expect, test } from "@playwright/test";
 
 test("instituto documenta fundação e linha do tempo com fontes", async ({ page }) => {
@@ -31,8 +33,18 @@ test("histórias apresentam trajetórias documentadas e não atribuem vínculo s
 test("notícias exibem clippings de terceiros com links e datas", async ({ page }) => {
   await page.goto("/noticias");
   await expect(page.getByRole("heading", { name: "Registros publicados sobre o IERC-RN" })).toBeVisible();
-  await expect(page.locator(".editorial-news")).toHaveCount(3);
-  await expect(page.locator('.editorial-news a[target="_blank"]')).toHaveCount(3);
+  await expect(page.locator(".editorial-section:has(#clippings-title) .editorial-news")).toHaveCount(6);
+  await expect(page.locator('.editorial-section:has(#clippings-title) .editorial-news a[target="_blank"]')).toHaveCount(6);
+  await expect(page.getByRole("heading", {name:/IERC-RN é citado em seleção de entidades/i})).toBeVisible();
+  await expect(page.getByRole("heading", {name:/Tribuna do Norte destaca autonomia/i})).toBeVisible();
+  // Clippings keep their own publication date, not their insertion order.
+  // Newest items must appear first regardless of when they were added to the archive.
+  const dates = await page.locator(".editorial-section:has(#clippings-title) .editorial-news time[datetime]")
+    .evaluateAll(nodes => nodes.map(node => node.getAttribute("datetime")));
+  expect(dates).toEqual([
+    "2026-11-05", "2026-08-18", "2026-07-18",
+    "2026-04-15", "2026-03-27", "2025-09-16",
+  ]);
   await expect(page.getByText(/Não foram criadas notícias fictícias/)).toBeVisible();
 });
 
@@ -40,33 +52,62 @@ test("eventos arquivados não simulam agenda futura", async ({ page }) => {
   await page.goto("/eventos");
   await expect(page.locator(".editorial-event")).toHaveCount(2);
   await expect(page.getByRole("heading", { name: "Próximos eventos" })).toBeVisible();
-  await expect(page.getByText(/Não há inscrições, ingressos ou datas futuras/)).toBeVisible();
+  await expect(page.getByText(/Ainda não há eventos futuros confirmados e aprovados na agenda do portal/)).toBeVisible();
 });
 
-test("endereço de contato é verificável e não há telefone fictício", async ({ page }) => {
+test("contato apresenta e-mail e WhatsApp oficiais confirmados pelo IERC-RN", async ({ page }) => {
   await page.goto("/contato");
   await expect(page.locator(".verified-address")).toContainText("Rua Fonseca e Silva, 1113");
-  await expect(page.locator('a[href^="tel:"],a[href^="mailto:"]')).toHaveCount(0);
-  await expect(page.getByRole("link", { name: /Ver endereço citado pelo TRE-RN/ })).toHaveAttribute("target", "_blank");
+  await expect(page.getByRole("link", { name: IERC_OFFICIAL_EMAIL }).first()).toHaveAttribute("href", IERC_OFFICIAL_EMAIL_LINK);
+  await expect(page.getByRole("link", { name: /Conversar com o IERC-RN/ })).toHaveAttribute("href", IERC_OFFICIAL_WHATSAPP_LINK);
+  await expect(page.getByText(IERC_OFFICIAL_WHATSAPP).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /Abrir no Google Maps/ })).toHaveAttribute("href", IERC_MAPS_LINK);
+  await expect(page.getByRole("heading", { name: "Como chegar ao IERC-RN" })).toBeVisible();
+  await expect(page.locator(".location-map iframe")).toHaveCount(0);
+  await page.getByRole("button", { name: "Carregar mapa interativo" }).click();
+  await expect(page.getByTitle(/Mapa interativo: IERC-RN/)).toHaveAttribute("src", IERC_MAPS_EMBED);
 });
 
-test("visitas não ativa agendamento sem URL oficial", async ({ page }) => {
+test("rodapé disponibiliza contatos oficiais em todas as páginas", async ({ page }) => {
+  await page.goto("/apoie");
+  const footer = page.locator("footer");
+  await expect(footer.getByRole("link", { name: IERC_OFFICIAL_EMAIL })).toHaveAttribute("href", IERC_OFFICIAL_EMAIL_LINK);
+  await expect(footer.getByRole("link", { name: /WhatsApp/ })).toHaveAttribute("href", IERC_OFFICIAL_WHATSAPP_LINK);
+  await expect(page.getByText(/Terças-feiras, das 8h às 11h/)).toBeVisible();
+  await expect(page.getByText(/Não há coleta domiciliar/)).toBeVisible();
+});
+
+test("visitas usa formulário oficial sem agenda paralela e sem prometer reserva", async ({ page }) => {
   await page.goto("/visitas");
-  await expect(page.getByText(/não foi fornecido/)).toBeVisible();
-  await expect(page.locator("form")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Solicite uma visita ao IERC-RN" })).toBeVisible();
+  const link = page.getByRole("link", { name: /Solicitar agendamento de visita/ });
+  await expect(link).toHaveAttribute("href", "https://forms.gle/NY35YEEkbL6HM2YF9");
+  await expect(link).toHaveAttribute("target", "_blank");
+  await expect(link).toHaveAttribute("rel", /noopener/);
+  await expect(link).toHaveAttribute("rel", /noreferrer/);
+  await expect(page.getByText(/aguarde a confirmação da equipe/)).toBeVisible();
+  await expect(page.getByText(/serviço externo que recebe as informações preenchidas/)).toBeVisible();
+  await expect(page.locator("form, iframe")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /Abrir no Google Maps/ })).toHaveAttribute("href", IERC_MAPS_LINK);
+  const notice = page.locator(".visit-form-disclosure");
+  await expect(notice).toBeVisible();
+  const gap = await notice.evaluate(el => Number.parseFloat(window.getComputedStyle(el).marginTop));
+  expect(gap).toBeGreaterThanOrEqual(24);
+  await page.getByRole("button", { name: "Carregar mapa interativo" }).click();
+  await expect(page.getByTitle(/Mapa interativo: IERC-RN/)).toHaveAttribute("src", IERC_MAPS_EMBED);
 });
 
 test("seções editoriais mantêm reflow e testes automáticos de acessibilidade", async ({ page }) => {
   for (const width of [320, 375, 768, 1440]) {
     await page.setViewportSize({ width, height: 850 });
-    for (const route of ["/instituto", "/esportes", "/noticias", "/eventos", "/contato"]) {
+    for (const route of ["/instituto", "/esportes", "/noticias", "/eventos", "/visitas", "/contato"]) {
       await page.goto(route);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow, "Rolagem horizontal em " + route + " / " + width + "px").toBeLessThanOrEqual(1);
     }
   }
   await page.setViewportSize({ width: 1280, height: 900 });
-  for (const route of ["/instituto", "/esportes", "/noticias", "/contato"]) {
+  for (const route of ["/instituto", "/esportes", "/noticias", "/visitas", "/contato"]) {
     await page.goto(route);
     const audit = await new AxeBuilder({ page }).withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa"]).analyze();
     expect(audit.violations, "axe: " + route).toEqual([]);

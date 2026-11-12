@@ -14,7 +14,7 @@
 - **Gate de aprovação manual obrigatório:** NVDA, VoiceOver ou TalkBack, leitura linear, links, botões, modo alto contraste e revisão com usuários.
 
 ## Sprint 1.1 — Ilustrações institucionais
-**Acompanhamento:** [#10](https://github.com/SladeSouzaSantos/ierc-rn/issues/10)
+**Acompanhamento:** [#10](https://github.com/SladeSouzaSantos/ierc-rn/issues/10) **encerrada como entrega de código**; acessibilidade manual segue em [#6](https://github.com/SladeSouzaSantos/ierc-rn/issues/6).
 
 - Trocar capa abstrata por mãos, leitura tátil e percurso de autonomia.
 - Redesenhar goalball com quadra, meta e bola com aberturas sonoras.
@@ -30,16 +30,28 @@
 - Usar imagens e depoimentos autorizados; escrever descrições acessíveis.
 
 ## Sprint 3 — CMS editorial
+**Sprint 3.2.1 em DEV:** fundação do Radar da Inclusão — RSS internacional, fila de rascunhos, roteador gratuito no padrão Orbe (OpenRouter → Gemini → Groq → Ollama local), quotas e cooldown Redis, scheduler 08h/13h/19h America/Fortaleza, todas as gravações explícitas como Draft, worker Docker opt-in e zero publicação sem Editor. [Arquitetura e testes](CURADORIA-SPRINT3-2.md). Não ativado em produção; ampliação de fontes e homologação real pendentes.
+**Sprint 3.1 em DEV (09/11/2026):** estrutura isolada de Strapi 5/PostgreSQL, sete coleções editoriais, RBAC nativo, Draft & Publish, campos de licenças de mídia e integração server-only de conteúdos aprovados, com fallback para o acervo anterior. O painel necessita da primeira inicialização real no Docker e homologação manual antes do merge. [Guia CMS](CMS-SPRINT3.md).
 **Acompanhamento:** [#8](https://github.com/SladeSouzaSantos/ierc-rn/issues/8) · [#2](https://github.com/SladeSouzaSantos/ierc-rn/issues/2)
 
 - CMS, editor/administrador, permissões, revisão, notícias, agenda, galerias, atletas, eventos.
 - Acessibilidade também no painel e nos formulários.
 
+## Operação automatizada de notícias e futura implantação MiniMac
+
+**Código do monitor concluído na `dev`:** Compose independente `compose.curator.monitor.yml`, sem tokens Strapi/LLM, sem escrita de CMS e sem publicação. Faz uma varredura ao iniciar e três verificações diárias às **08h/13h/19h America/Fortaleza**. Resultados ficam em JSON no volume Docker, com proteção contra repetição de slot e reinício automático do serviço. **Não está ativo no MiniMac enquanto o operador não executar o Compose nesse host.** Guia: [Monitor MiniMac](MONITOR-NOTICIAS-MINIMAC.md).
+
+**Acompanhamento:** [#15](https://github.com/SladeSouzaSantos/ierc-rn/issues/15) para ativação/homologação do monitor no MiniMac; [#16](https://github.com/SladeSouzaSantos/ierc-rn/issues/16) para deploy do portal Next.js + Strapi e PostgreSQL, proxy HTTPS, backups e acessibilidade. As issues [#13](https://github.com/SladeSouzaSantos/ierc-rn/issues/13) e [#14](https://github.com/SladeSouzaSantos/ierc-rn/issues/14) continuam abertas: busca temática histórica na EBC, revisão editorial e eventual publicação automática exigem homologação separada. Não publicar automaticamente pelo simples fato de o monitor estar em execução.
+
 ## Sprint 4 — Participação e sustentabilidade
 **Acompanhamento:** [#9](https://github.com/SladeSouzaSantos/ierc-rn/issues/9) · [#3](https://github.com/SladeSouzaSantos/ierc-rn/issues/3) · [#4](https://github.com/SladeSouzaSantos/ierc-rn/issues/4)
 
+**Etapa 4.1 — Apoio comunitário e Bazar Solidário em DEV (11/11/2026):** página `/apoie` implantada e com layout homologado visualmente no MiniMac, incluindo correção de alinhamento dos ícones. Dados operacionais fornecidos pela instituição para homologação: bazar às terças **8h–11h**, compras por qualquer pessoa com **dinheiro ou Pix presencial**, doações de **roupas, sapatos e bolsas em bom estado** recebidas de segunda a quinta **8h–11h** na sede, **sem coleta domiciliar**; aceita voluntariado e parcerias. Site **não recebe pagamentos**. Pix institucional para doações financeiras foi informado/autorizado para futura divulgação, mas **chave/titularidade não verificadas** e nenhum meio de pagamento foi habilitado. Runbook: [Apoie o Instituto](APOIE-INSTITUICAO-DEV.md). **Confirmação editorial final e testes manuais com tecnologias assistivas permanecem pendentes.**
+
 - Link oficial de visitas (sem duplicar plataforma).
-- Doações via Pix/cartão/recorrência com provedor autorizado.
+- Confirmar funcionamento, itens aceitos e orientações do bazar.
+- **Etapa 4.2 — previsão de doação única e apoio mensal:** duas opções informativas em `/apoie` com estado "Em preparação", sem formulário de pagamento, checkout ou webhook exposto. Arquitetura e requisitos de proteção documentados em [Doações recorrentes e segurança](DOACOES-RECORRENTES-ARQUITETURA-DEV.md). Ativação bloqueada até escolher e homologar provedor e recebedor.
+- Doações via Pix/cartão/recorrência somente após aprovação da conta recebedora e provedor autorizado.
 - Política de privacidade, prestação de contas e jornada acessível.
 
 ## Critério geral de entrega

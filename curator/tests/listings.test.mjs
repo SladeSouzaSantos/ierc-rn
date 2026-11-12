@@ -1,0 +1,128 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { SOURCES } from '../src/feeds.mjs';
+import { listingDate, parseListing } from '../src/listings.mjs';
+
+const rnib = SOURCES.find(x => x.id === 'rnib');
+const ibsa = SOURCES.find(x => x.id === 'ibsa');
+const now = Date.parse('2026-11-10T12:00:00Z');
+const rnibHtml = '<html><div class="small-image-card listing__post">' +
+  '<h2 class="small-image-card__title"><a href="https://www.rnib.org.uk/news/report-finds-nhs-app-falls-short-on-accessibility/">' +
+  'Report finds NHS app falls short on accessibility</a></h2>' +
+  '<p class="small-image-card__description">Original RNIB copyrighted excerpt must not be reused.</p>' +
+  '<div class="small-image-card__meta-details"><span class="small-image-card__meta-item">Posted Monday, 2 November 2026</span></div>' +
+  '</div></html>';
+const ibsaHtml = '<div class="tekup-blog-wrap"><div class="tekup-blog-content">' +
+  '<div class="tekup-blog-meta"><ul><li><a href="/categories/16/">IBSA</a></li>' +
+  '<li>05 November 2026</li></ul></div>' +
+  '<a href="https://ibsasport.org/news/from-guatemala-to-new-opportunities-ibsa-expands-goalball-development-across-latin-america/">' +
+  '<h3>From Guatemala to New Opportunities: IBSA Expands Goalball Development Across Latin America</h3></a>' +
+  '</div></div>';
+
+test('RNIB allowlisted listing gets title/date/link, never copyrighted excerpt', () => {
+  const items = parseListing(rnibHtml, rnib, now, 45);
+  assert.equal(items.length, 1);
+  assert.equal(items[0].summary, '');
+  assert.equal(items[0].discoveryText, 'Original RNIB copyrighted excerpt must not be reused.');
+  assert.equal(items[0].country, 'Reino Unido');
+  assert.match(items[0].url, /^https:\/\/www\.rnib\.org\.uk\/news\//);
+  assert.equal(items[0].publishedAt, '2026-11-02T12:00:00.000Z');
+});
+test('IBSA listing extracts a goalball title without image or invented article body', () => {
+  const items = parseListing(ibsaHtml, ibsa, now, 45);
+  assert.equal(items.length, 1);
+  assert.equal(items[0].summary, '');
+  assert.ok(!('image' in items[0]));
+  assert.match(items[0].title, /Goalball Development/);
+});
+test('HTML outside verified article path is rejected, even on the source host', () => {
+  const altered = rnibHtml.replace('/news/report-finds-nhs-app', '/admin/report-finds-nhs-app');
+  assert.equal(parseListing(altered, rnib, now).length, 0);
+  const evil = ibsaHtml.replace('https://ibsasport.org/news/', 'https://evil.example/news/');
+  assert.equal(parseListing(evil, ibsa, now).length, 0);
+});
+test('no future or invalid date; stale listings excluded', () => {
+  assert.equal(listingDate('32 November 2026'), null);
+  assert.equal(listingDate('30 February 2026'), null);
+  assert.equal(parseListing(rnibHtml, rnib, Date.parse('2027-06-01T12:00:00Z')).length, 0);
+  assert.equal(parseListing(rnibHtml.replace('2 November 2026', '2 November 2027'), rnib, now).length, 0);
+});
+test('unapproved HTML source cannot be parsed as a publishable feed', () => {
+  assert.throws(() => parseListing(rnibHtml, {...rnib, previewOnly:false}, now), /preview-only/);
+  assert.throws(() => parseListing(rnibHtml, {...rnib, id:'unknown'}, now), /Unsupported HTML source/);
+});
+
+test('counter diagnostics distinguish empty listing, invalid dates and foreign links',()=>{
+ const none={};const date={};const link={};
+ assert.equal(parseListing('<html><div>no card</div></html>',rnib,now,45,none).length,0);
+ assert.equal(none.detectedCards,0);
+ assert.equal(parseListing(rnibHtml.replace('2 November 2026','unknown'),rnib,now,45,date).length,0);
+ assert.equal(date.invalidDate,1);
+ assert.equal(parseListing(rnibHtml.replace('https://www.rnib.org.uk/news/','https://evil.example/news/'),rnib,now,45,link).length,0);
+ assert.equal(link.invalidLink,1);
+});
+
+test('RNIB relative links remain preview-only and reject foreign origins', () => {
+  const original = 'https://www.rnib.org.uk/news/report-finds-nhs-app-falls-short-on-accessibility/';
+  const relative = rnibHtml.replace(original, '/news/report-finds-nhs-app-falls-short-on-accessibility/');
+  const accepted = {};
+  const articles = parseListing(relative, rnib, now, 45, accepted);
+  assert.equal(articles.length, 1);
+  assert.equal(articles[0].url, original.slice(0, -1));
+  assert.equal(articles[0].summary, '');
+  assert.equal(accepted.relativeHref, 1);
+  assert.equal(accepted.invalidLink, 0);
+  assert.equal(accepted.listingState, 'cards_detected');
+
+  const badHost = {};
+  assert.equal(parseListing(relative.replace('/news/report-finds-nhs-app', '//evil.example/news/report-finds-nhs-app'),
+    rnib, now, 45, badHost).length, 0);
+  assert.equal(badHost.externalHost, 1);
+  const badPath = {};
+  assert.equal(parseListing(relative.replace('/news/report-finds-nhs-app', '/admin/report-finds-nhs-app'),
+    rnib, now, 45, badPath).length, 0);
+  assert.equal(badPath.wrongArticlePath, 1);
+  const badScheme = {};
+  assert.equal(parseListing(rnibHtml.replace(original, 'javascript:alert(1)'),
+    rnib, now, 45, badScheme).length, 0);
+  assert.equal(badScheme.unsafeScheme, 1);
+});
+
+test('IBSA client-rendered placeholder gets a distinct safe diagnosis', () => {
+  const stats = {};
+  const articles = parseListing('<html><main>Loading news...</main></html>', ibsa, now, 120, stats);
+  assert.equal(articles.length, 0);
+  assert.equal(stats.detectedCards, 0);
+  assert.equal(stats.listingState, 'client_render_pending');
+  assert.ok(!JSON.stringify(stats).includes('https://'));
+});
+
+test('RNIB listing synopsis rescues relevant NHS story without leaking copyrighted text', async() => {
+  const {rankArticles}=await import('../src/relevance.mjs');
+  const html=rnibHtml.replace('Original RNIB copyrighted excerpt must not be reused.',
+    'Only 3 per cent of blind and partially sighted people find the NHS App fully accessible.');
+  const items=parseListing(html,rnib,now,45);
+  assert.equal(items.length,1);
+  assert.equal(items[0].summary,'');
+  assert.match(items[0].discoveryText,/blind and partially sighted/);
+  const selected=rankArticles(items,rnib);
+  assert.equal(selected.length,1);
+  assert.ok(selected[0].relevance.topics.includes('deficiência visual'));
+  assert.equal(selected[0].publishedAt,'2026-11-02T12:00:00.000Z');
+  // Preview never includes the extracted description in its public result.
+  const {runOnce}=await import('../src/pipeline.mjs');
+  const report=await runOnce({sources:[rnib],fetchImpl:async()=>new Response(html),
+    now,dryRun:true,maxArticles:2});
+  assert.equal(report.aiGenerated,false);
+  assert.equal(report.results.length,1);
+  assert.ok(!JSON.stringify(report).includes('Only 3 per cent'));
+  assert.ok(!JSON.stringify(report).includes('discoveryText'));
+});
+
+test('RNIB excerpt is ignored when source is not explicitly preview-only',async()=>{
+  const {relevanceAssessment}=await import('../src/relevance.mjs');
+  const article={title:'General annual report',summary:'',
+    discoveryText:'blind and partially sighted people and accessible technology'};
+  assert.equal(relevanceAssessment(article,{id:'rnib',previewOnly:false}).relevant,false);
+  assert.equal(relevanceAssessment(article,{id:'rnib',previewOnly:true}).relevant,true);
+});

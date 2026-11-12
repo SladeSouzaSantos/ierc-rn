@@ -1,0 +1,52 @@
+# Always-on, read-only RSS monitoring for MiniMac.
+# No Strapi network, CMS/LLM tokens, exposed ports or publication permissions.
+# Start independently: docker compose -f compose.curator.monitor.yml up -d --build
+name: ierc-rn-monitor
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server","--appendonly","yes","--maxmemory-policy","noeviction"]
+    volumes:
+      - monitor_redis:/data
+    healthcheck:
+      test: ["CMD","redis-cli","ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [monitor_private]
+  monitor:
+    build: {context: ./curator, dockerfile: Dockerfile}
+    command: ["node","src/monitor.mjs"]
+    init: true
+    restart: unless-stopped
+    depends_on:
+      redis: {condition: service_healthy}
+    environment:
+      CURATOR_INSTANCE_KIND: dev
+      CURATOR_MONITOR_READ_ONLY: "true"
+      CURATOR_ENABLED: "false"
+      CURATOR_WRITE_DRAFTS: "false"
+      CURATOR_AUTO_PUBLISH_ENABLED: "false"
+      CURATOR_REDIS_URL: redis://redis:6379
+      CURATOR_MONITOR_MAX_AGE_DAYS: "45"
+      CURATOR_MONITOR_MAX_ARTICLES: "20"
+      CURATOR_MONITOR_REPORT_DIR: /reports
+      CURATOR_MONITOR_BOOT_SCAN: "true"
+    volumes:
+      - monitor_reports:/reports
+    networks: [monitor_private]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 128
+    # No host ports, no environment file, no CMS private network.
+networks:
+  monitor_private: {}
+volumes:
+  monitor_redis: {}
+  monitor_reports: {}

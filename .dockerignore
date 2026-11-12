@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+build
+coverage
+test-results
+playwright-report
+.git
+.github
+**/.env*
+cms
+curator
+cms-backups
+*.log

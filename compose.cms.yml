@@ -1,0 +1,45 @@
+name: ierc-rn-cms
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:?Run node cms/scripts/init-env.mjs}
+      POSTGRES_USER: ${DATABASE_USERNAME:?Run node cms/scripts/init-env.mjs}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Run node cms/scripts/init-env.mjs}
+    volumes:
+      - ierc_cms_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [cms_private]
+  cms:
+    build: { context: ./cms, dockerfile: Dockerfile }
+    restart: unless-stopped
+    env_file: ./cms/.env
+    environment:
+      CMS_INSTANCE_KIND: dev
+      # Explicit, reversible local-only diagnostic. Disabled by default.
+      CMS_DIAGNOSTIC_UNSAFE_EVAL: ${CMS_DIAGNOSTIC_UNSAFE_EVAL:-false}
+    depends_on:
+      db: { condition: service_healthy }
+    ports:
+      - "127.0.0.1:1337:1337"
+    volumes:
+      - ierc_cms_uploads:/opt/app/public/uploads
+    networks: [cms_private, portal_read]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:1337/_health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      start_period: 90s
+      retries: 8
+networks:
+  cms_private: {}
+  portal_read:
+    name: ierc-rn-dev-cms-read
+volumes:
+  ierc_cms_pg: {}
+  ierc_cms_uploads: {}

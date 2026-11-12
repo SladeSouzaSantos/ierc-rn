@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight, CalendarDays, HeartHandshake, Instagram, MapPin, ShoppingBag, Trophy, Users } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Instagram, Mail, MapPin, MessageCircle, Trophy, Users } from "lucide-react";
 import { PageHero } from "@/components/page-hero";
-import { activities } from "@/lib/site-data";
+import { getDisplayActivities, getCmsNews, getCmsEvents, getCmsAthletes, getCmsSportCompetitions, getCmsVisitBookingUrl } from "@/lib/cms";
+import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsInstitutionalEventNews, CmsAthletesList } from "@/components/cms-public";
 import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
 import { AthleteStories } from "@/components/athlete-stories";
+import { SupportPage } from "@/components/support-page";
+import { LocationMap } from "@/components/location-map";
+import { IERC_MAPS_LINK } from "@/lib/location";
+import { IERC_OFFICIAL_EMAIL, IERC_OFFICIAL_EMAIL_LINK, IERC_OFFICIAL_WHATSAPP, IERC_OFFICIAL_WHATSAPP_LINK } from "@/lib/institutional-contact";
+import { SportCompetitions } from "@/components/sport-competitions";
+import { getCbdvGoalballCalendar } from "@/lib/cbdv-calendar";
+
+// CMS-backed sections must use runtime credentials, not their empty build-time fallback.
+export const dynamic = "force-dynamic";
 
 const pages = {
   instituto: { eyebrow: "Nossa história", title: "O Instituto", description: "Uma história construída com educação, reabilitação, participação e compromisso com a autonomia." },
@@ -42,6 +52,13 @@ export default async function ContentPage({ params }: RouteProps) {
   const { slug } = await params;
   if (!(slug in pages)) notFound();
   const entry = pages[slug as Slug];
+  const displayActivities = slug === "atividades" ? await getDisplayActivities() : [];
+  const cmsNews = slug === "noticias" || slug === "eventos" ? await getCmsNews() : [];
+  const cmsEvents = slug === "eventos" ? await getCmsEvents() : [];
+  const cmsSportCompetitions = slug === "esportes" ? await getCmsSportCompetitions() : [];
+  const cbdvCompetitions = slug === "esportes" ? await getCbdvGoalballCalendar() : [];
+  const visitBookingUrl = slug === "visitas" ? await getCmsVisitBookingUrl() : "";
+  const cmsAthletes = slug === "historias" ? await getCmsAthletes() : [];
 
   return (
     <>
@@ -62,7 +79,7 @@ export default async function ContentPage({ params }: RouteProps) {
         {slug === "atividades" && <>
           <div className="detail-intro"><p className="eyebrow">Oito frentes de atuação</p><h2>Aprendizado em diferentes formas.</h2><p>Cada atividade é uma oportunidade para desenvolver habilidades, ampliar repertórios e criar novas conexões. Informações sobre vagas e horários serão acrescentadas após confirmação institucional.</p></div>
           <div className="detail-grid detail-grid-activities">
-            {activities.map((activity, index) => <article className="detail-card" id={activity.id} key={activity.id}><span>{String(index + 1).padStart(2, "0")} / {activity.category}</span><h3>{activity.title}</h3><p>{activity.description}</p></article>)}
+            {displayActivities.map((activity, index) => <article className="detail-card" id={activity.id} key={activity.id}><span>{String(index + 1).padStart(2, "0")} / {activity.category}</span><h3>{activity.title}</h3><p>{activity.description}</p></article>)}
           </div>
           <Callout title="Quer saber como participar?" href="/contato" label="Canais de contato">As orientações para atendimento e inscrição estão sendo organizadas com a instituição.</Callout>
         </>}
@@ -74,6 +91,7 @@ export default async function ContentPage({ params }: RouteProps) {
             <article className="detail-card"><Users size={32} aria-hidden="true" /><h3>Regional Nordeste</h3><p>A instituição foi relacionada nas categorias masculina e feminina da edição de abril de 2026.</p></article>
             <article className="detail-card"><CalendarDays size={32} aria-hidden="true" /><h3>Próximos jogos</h3><p>Escalações atuais, resultados detalhados e agenda futura dependem de confirmação com a coordenação esportiva.</p></article>
           </div>
+          <SportCompetitions cbdv={cbdvCompetitions} competitions={cmsSportCompetitions} />
           <SportRecords />
           <Note>Os nomes de atletas são transcritos de uma lista pública da CBDV de 2026, sem implicar vínculo atual. Fotografias e biografias individuais dependem de autorização.</Note>
           <Callout title="Histórias que atravessam gerações" href="/historias" label="Explorar histórias">Conheça nove trajetórias com vínculos documentados ao IERC-RN, fontes de carreira e fotografias de referência em homologação.</Callout>
@@ -86,43 +104,76 @@ export default async function ContentPage({ params }: RouteProps) {
             <p>O IERC-RN faz parte de diferentes trajetórias de atletas potiguares. Esta seleção reúne pessoas com passagem pela instituição explicitamente documentada em fontes públicas. Conquistas posteriores são atribuídas a cada atleta, sem afirmar que representavam o IERC quando conquistaram suas medalhas.</p>
           </div>
           <AthleteStories />
+          <CmsAthletesList items={cmsAthletes} />
           <Note>A pesquisa biográfica continua em desenvolvimento. Histórias de outros atletas potiguares, incluindo Rosicleide Andrade, Romário Marques e Halyson Boto, seguem em análise porque o vínculo pessoal com o IERC ainda precisa ser documentado de forma inequívoca.</Note>
         </>}
 
         {slug === "noticias" && <>
-          <div className="detail-intro"><p className="eyebrow">Acontece e aconteceu</p><h2>Fontes confiáveis para acompanhar o IERC.</h2><p>Reunimos referências verificáveis sobre a instituição e sua participação esportiva e comunitária. O conteúdo editorial próprio será incorporado quando houver equipe autorizada e CMS.</p></div>
+          <div className="detail-intro"><p className="eyebrow">Acontece e aconteceu</p><h2>Acompanhe as notícias do IERC-RN.</h2><p>Este espaço prioriza os comunicados e acontecimentos divulgados pela equipe do Instituto. Reportagens de terceiros sobre o IERC-RN aparecem identificadas separadamente; notícias sobre outras organizações ficam no Radar da Inclusão.</p></div>
+          <CmsNewsList items={cmsNews} />
+          <CmsIercPressList items={cmsNews} />
           <ExternalClippings />
-          <Note>Não foram criadas notícias fictícias. Para comunicados atuais, consulte o <a href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer">Instagram informado do IERC<span className="sr-only"> (abre em nova aba)</span></a>.</Note>
+          <section className="radar-teaser" aria-labelledby="radar-teaser-title">
+            <div>
+              <p className="eyebrow">Conteúdo externo · Brasil e mundo</p>
+              <h2 id="radar-teaser-title">Conheça o Radar da Inclusão</h2>
+              <p>Um espaço para acompanhar experiências de esporte adaptado, educação, tecnologia assistiva e acessibilidade em outras instituições. Sínteses com fontes identificadas, publicadas somente após aprovação editorial.</p>
+            </div>
+            <Link className="button button-yellow" href="/radar-da-inclusao">
+              Explorar o Radar <ArrowUpRight size={18} aria-hidden="true"/>
+            </Link>
+          </section>
+          <Note>Não foram criadas notícias fictícias. Os registros acima referem-se a fontes verificáveis. Para comunicados atuais do Instituto, consulte o <a href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer">Instagram informado do IERC<span className="sr-only"> (abre em nova aba)</span></a>.</Note>
         </>}
 
         {slug === "eventos" && <>
-          <div className="detail-intro"><p className="eyebrow">Agenda e memória</p><h2>Eventos com informação verificável.</h2><p>Enquanto a instituição não envia sua programação futura, reunimos registros históricos de competições esportivas com participação do IERC-RN.</p></div>
+          <div className="detail-intro"><p className="eyebrow">Agenda, notícias e memória</p><h2>O que acontece no IERC-RN.</h2><p>Acompanhe eventos futuros confirmados, atividades internas já realizadas e o acervo histórico esportivo. Somente informações institucionais aprovadas entram na agenda e na cobertura de eventos.</p></div>
+          <CmsEventsList items={cmsEvents} />
+          <CmsInstitutionalEventNews items={cmsNews} />
           <PastEvents />
-          <div className="detail-card solo-card"><CalendarDays size={40} aria-hidden="true" /><h3>Próximos eventos</h3><p>A agenda ainda aguarda confirmação institucional. Não há inscrições, ingressos ou datas futuras anunciadas por este portal.</p></div>
         </>}
 
         {slug === "galeria" && <><div className="detail-intro"><p className="eyebrow">Acervo em organização</p><h2>Memórias para ver, ouvir e compartilhar.</h2><p>As galerias poderão reunir atividades, apresentações, competições e momentos da comunidade. Fotografias terão descrições alternativas; vídeos terão legendas e recursos adicionais conforme o conteúdo.</p></div><div className="detail-card solo-card"><h3>Imagens oficiais em preparação</h3><p>Aguardamos seleção de materiais e autorizações. Não utilizamos fotografias de terceiros como se fossem registros do IERC.</p></div></>}
 
         {slug === "visitas" && <>
-          <div className="detail-intro"><p className="eyebrow">Conheça de perto</p><h2>Uma visita pode aproximar pessoas e ideias.</h2><p>O Instituto está localizado no bairro do Alecrim, em Natal. Informações sobre excursões escolares e em grupo, acessibilidade e condições de visita ainda serão confirmadas pela equipe.</p></div>
+          <div className="detail-intro"><p className="eyebrow">Conheça de perto</p><h2>Uma visita pode aproximar pessoas e ideias.</h2><p>O IERC-RN recebe solicitações de visitas de escolas, universidades e outros grupos por meio de seu formulário oficial. O Instituto está localizado no Alecrim, em Natal. A data e o horário solicitados dependem de confirmação da equipe.</p></div>
           <div className="detail-grid">
-            <article className="detail-card"><Users size={32} aria-hidden="true" /><h3>Para grupos e instituições</h3><p>Perfil dos grupos, horários e orientações precisam ser confirmados com a instituição.</p></article>
-            <article className="detail-card"><MapPin size={32} aria-hidden="true" /><h3>Endereço documentado</h3><VerifiedAddress /><SourceLink source="tre" label="Ver referência do endereço — TRE-RN" /></article>
-            <article className="detail-card"><CalendarDays size={32} aria-hidden="true" /><h3>Agendamento oficial</h3><p>O link de agendamento já utilizado pela instituição não foi fornecido. A futura integração não criará uma agenda paralela.</p></article>
+            <article className="detail-card"><Users size={32} aria-hidden="true" /><h3>Para grupos e instituições</h3><p>Informe a instituição visitante, a quantidade e a faixa etária dos participantes, a turma e o objetivo da visita.</p></article>
+            <article className="detail-card"><MapPin size={32} aria-hidden="true" /><h3>Onde estamos</h3><VerifiedAddress /><p><a className="inline-link" href={IERC_MAPS_LINK} target="_blank" rel="noopener noreferrer">Abrir no Google Maps <ArrowUpRight size={17} aria-hidden="true"/><span className="sr-only"> (abre em nova aba)</span></a></p></article>
+            <article className="detail-card"><CalendarDays size={32} aria-hidden="true" /><h3>Agendamento oficial</h3><p>Indique a data, o horário e a duração desejados, além dos contatos do responsável pelo grupo. A solicitação será avaliada pela equipe do IERC-RN.</p></article>
           </div>
-          <Note>Não há reserva ativa por este portal. Antes de visitar, confirme com o IERC as orientações e a disponibilidade da equipe.</Note>
+          <section className="detail-callout" aria-labelledby="visitas-agendamento-title">
+            <h2 id="visitas-agendamento-title">Solicite uma visita ao IERC-RN</h2>
+            <p>Preencha o formulário de agendamento disponibilizado pelo Instituto. O pedido não garante a reserva: aguarde a confirmação da equipe antes de organizar o deslocamento.</p>
+            <a href={visitBookingUrl} className="button button-yellow" target="_blank" rel="noopener noreferrer">
+              Solicitar agendamento de visita <ArrowUpRight size={18} aria-hidden="true"/>
+              <span className="sr-only"> (abre em nova aba)</span>
+            </a>
+            <p className="visit-form-disclosure">Você será direcionado ao Google Forms, serviço externo que recebe as informações preenchidas. Informe apenas os dados solicitados e necessários ao agendamento.</p>
+          </section>
+          <LocationMap />
+          <Note>O agendamento é realizado pelo formulário oficial, não por este portal. Antes de visitar, confirme com a equipe do IERC-RN a disponibilidade, as condições de acessibilidade e as orientações para o grupo.</Note>
         </>}
 
-        {slug === "apoie" && <><div className="detail-intro"><p className="eyebrow">Solidariedade que movimenta</p><h2>Pequenos gestos também abrem caminhos.</h2><p>Há diferentes formas de participar do cotidiano do IERC-RN. Uma delas é o Bazar Solidário, uma ação arrecadatória da instituição.</p></div><div className="bazar-detail"><div><ShoppingBag size={36} aria-hidden="true"/><p className="eyebrow">Toda terça-feira</p><h2>Bazar Solidário</h2><p>Você pode doar itens para o bazar ou visitar o espaço para comprar. A arrecadação contribui com as atividades do Instituto.</p></div><div className="bazar-detail-secondary"><h3>Antes de visitar</h3><p>Horário de funcionamento, itens aceitos, local de entrega e orientações ainda serão confirmados com a equipe.</p></div></div><div className="detail-grid"><article className="detail-card"><HeartHandshake size={32} aria-hidden="true"/><h3>Doe itens</h3><p>Ajude a manter o bazar por meio de doações, seguindo os critérios que serão divulgados.</p></article><article className="detail-card"><ShoppingBag size={32} aria-hidden="true"/><h3>Compre no bazar</h3><p>Visite o espaço às terças-feiras, depois de confirmar horário e endereço com o Instituto.</p></article></div><Note>Doações financeiras e pagamentos não estão disponíveis neste protótipo. A integração será realizada apenas após definição do recebedor e das regras institucionais.</Note></>}
+        {slug === "apoie" && <SupportPage />}
 
         {slug === "contato" && <>
-          <div className="detail-intro"><p className="eyebrow">Estamos no Alecrim, Natal</p><h2>Vamos manter essa conversa aberta.</h2><p>O endereço do Instituto consta no cadastro da CBDV e em publicação do TRE-RN. Os números de telefone, CEP, e-mail e horários disponíveis em diretórios externos ainda precisam de confirmação atual pela equipe.</p></div>
+          <div className="detail-intro"><p className="eyebrow">Estamos no Alecrim, Natal</p><h2>Vamos manter essa conversa aberta.</h2><p>Visite-nos na Rua Fonseca e Silva, 1113, no Alecrim, em Natal/RN. Consulte o mapa abaixo para planejar o trajeto ou entre em contato pelo WhatsApp e e-mail oficiais. Para assuntos de atendimento, confirme o horário com a equipe.</p></div>
           <div className="detail-grid">
-            <article className="detail-card"><MapPin size={32} aria-hidden="true" /><h3>Onde fica o Instituto</h3><VerifiedAddress /><SourceLink source="tre" label="Ver endereço citado pelo TRE-RN" /></article>
+            <article className="detail-card"><MapPin size={32} aria-hidden="true" /><h3>Onde fica o Instituto</h3><VerifiedAddress /><p><a className="inline-link" href={IERC_MAPS_LINK} target="_blank" rel="noopener noreferrer">Abrir no Google Maps <ArrowUpRight size={17} aria-hidden="true"/><span className="sr-only"> (abre em nova aba)</span></a></p></article>
             <article className="detail-card"><Instagram size={32} aria-hidden="true" /><h3>Instagram informado</h3><p><a className="inline-link" href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer">@iercrn <ArrowUpRight size={17} aria-hidden="true" /><span className="sr-only">(abre em nova aba)</span></a></p></article>
-            <article className="detail-card"><Users size={32} aria-hidden="true" /><h3>Atendimento</h3><p>Contatos telefônicos publicados em fontes externas divergem. Não apresentamos telefone ou e-mail sem validação institucional.</p></article>
+            <article className="detail-card"><MessageCircle size={32} aria-hidden="true" /><h3>WhatsApp oficial</h3><p>{IERC_OFFICIAL_WHATSAPP}</p><p><a className="inline-link" href={IERC_OFFICIAL_WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">Conversar com o IERC-RN <ArrowUpRight size={17} aria-hidden="true"/><span className="sr-only"> (abre em nova aba)</span></a></p></article>
           </div>
-          <Note>Dados de atendimento não confirmados não são exibidos como canais oficiais.</Note>
+          <section className="detail-card contact-email" aria-labelledby="contact-email-title">
+            <Mail size={32} aria-hidden="true"/>
+            <div>
+              <h3 id="contact-email-title">E-mail institucional</h3>
+              <p><a className="inline-link" href={IERC_OFFICIAL_EMAIL_LINK}>{IERC_OFFICIAL_EMAIL}</a></p>
+              <p>Para informações sobre atividades, visitas, doações e parcerias, utilize os canais oficiais acima.</p>
+            </div>
+          </section>
+          <LocationMap />
+          <Note>WhatsApp e e-mail foram confirmados pela instituição. Horários de atendimento geral e outros telefones ainda dependem de confirmação.</Note>
         </>}
 
 

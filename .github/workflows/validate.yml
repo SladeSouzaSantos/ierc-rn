@@ -19,10 +19,14 @@ jobs:
           node-version: "22"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: CMS schema and editorial safety contract
+        run: node --test cms/tests/*.test.cjs
       - name: Build
         run: npm run build
       - name: Typecheck
         run: npm run typecheck
+      - name: Assert CMS pages are rendered at runtime
+        run: node scripts/assert-cms-runtime-render.mjs
       - name: Install browser
         run: npx playwright install --with-deps chromium
       - name: E2E, keyboard and axe checks
@@ -37,3 +41,145 @@ jobs:
             test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  curator-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install curator dependencies (no external AI calls)
+        run: npm install --prefix curator --no-audit --no-fund
+      - name: Validate MiniMac read-only monitor Compose
+        run: |
+          docker compose -f compose.curator.monitor.yml config --quiet
+          docker compose -f compose.curator.monitor.yml config | grep -q 'CURATOR_MONITOR_READ_ONLY: "true"'
+      - name: Validate DEV-only backup and auto-publication preflight shell syntax
+        run: |
+          bash -n scripts/backup-cms-dev.sh
+          bash -n scripts/preflight-curator-autopublish-dev.sh
+          bash -n scripts/rehearse-cms-sports-dev.sh
+          bash -n scripts/lib/cms-table-preservation.sh
+          bash -n scripts/tests/test-cms-table-preservation.sh
+          bash scripts/tests/test-cms-table-preservation.sh
+      - name: Validate isolated scheduled worker Compose without secrets
+        run: |
+          : > curator/.env
+          docker compose --profile curator -f compose.curator.dev.yml config --quiet
+          docker compose --profile curator -f compose.curator.dev.yml config | grep -q 'read_only: true'
+          rm curator/.env
+      - name: Validate isolated MiniMac portal Compose
+        run: |
+          docker compose -f compose.portal.dev.yml config --quiet
+          docker compose -f compose.portal.prod.yml config --quiet
+      - name: Check curator syntax
+        run: npm run --prefix curator check
+      - name: Run deterministic fallback, quota and draft safety tests
+        run: npm run --prefix curator test
+      - name: Redis readiness integration smoke without AI calls
+        run: |
+          node --input-type=module -e '
+            import {connectQuotaRedis, closeQuotaRedis} from "./curator/src/redis-connection.mjs";
+            const redis = await connectQuotaRedis("redis://127.0.0.1:6379");
+            try {
+              if (redis.status !== "ready") throw new Error("Redis readiness gate failed");
+              console.log("Redis ready; offline queue disabled; no AI or CMS calls");
+            } finally {
+              await closeQuotaRedis(redis);
+            }
+          '
+
+  cms-build:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: ierc_cms_ci
+          POSTGRES_USER: ierc_cms_ci
+          POSTGRES_PASSWORD: ci-secret-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ierc_cms_ci -d ierc_cms_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install isolated CMS dependencies
+        run: npm install --prefix cms --no-audit --no-fund
+      - name: Build Strapi editorial admin
+        run: npm run --prefix cms build
+        env:
+          APP_KEYS: ci-key-1,ci-key-2,ci-key-3,ci-key-4
+          ADMIN_JWT_SECRET: ci-admin-jwt-only
+          API_TOKEN_SALT: ci-api-token-salt-only
+          ENCRYPTION_KEY: 2f8a4b63eb7f4bbfa0674f63582d761b9b21292f4f38776fc7b8284939aedd85
+          TRANSFER_TOKEN_SALT: ci-transfer-only
+          JWT_SECRET: ci-jwt-only
+          DATABASE_HOST: 127.0.0.1
+          DATABASE_NAME: ierc_cms_ci
+          DATABASE_USERNAME: ierc_cms_ci
+          DATABASE_PASSWORD: ci-secret-only
+
+      - name: Run Strapi with PostgreSQL and verify private API
+        env:
+          NODE_ENV: production
+          HOST: 127.0.0.1
+          PORT: 1337
+          APP_KEYS: ci-key-1,ci-key-2,ci-key-3,ci-key-4
+          ADMIN_JWT_SECRET: ci-admin-jwt-only
+          API_TOKEN_SALT: ci-api-token-salt-only
+          ENCRYPTION_KEY: 2f8a4b63eb7f4bbfa0674f63582d761b9b21292f4f38776fc7b8284939aedd85
+          TRANSFER_TOKEN_SALT: ci-transfer-only
+          JWT_SECRET: ci-jwt-only
+          DATABASE_HOST: 127.0.0.1
+          DATABASE_PORT: 5432
+          DATABASE_NAME: ierc_cms_ci
+          DATABASE_USERNAME: ierc_cms_ci
+          DATABASE_PASSWORD: ci-secret-only
+          DATABASE_SSL: false
+        run: |
+          set -euo pipefail
+          npm run --prefix cms start > /tmp/ierc-strapi-smoke.log 2>&1 &
+          PID=$!
+          cleanup() {
+            CODE=$?
+            if [ "$CODE" -ne 0 ]; then tail -100 /tmp/ierc-strapi-smoke.log || true; fi
+            kill "$PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          READY=0
+          for ATTEMPT in $(seq 1 90); do
+            if curl --max-time 3 -fsS http://127.0.0.1:1337/_health > /dev/null; then READY=1; break; fi
+            if ! kill -0 "$PID" 2>/dev/null; then break; fi
+            sleep 2
+          done
+          [ "$READY" -eq 1 ]
+          # Sem token ou contas criadas, a API editorial deve recusar consulta pública.
+          HTTP_CODE=$(curl --max-time 5 -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:1337/api/news-articles)
+          [ "$HTTP_CODE" = "403" ] || [ "$HTTP_CODE" = "401" ]
+          ADMIN_STATUS=$(curl --max-time 5 -sS -L -o /dev/null -w '%{http_code}' http://127.0.0.1:1337/admin)
+          [ "$ADMIN_STATUS" = "200" ]
+          FAVICON_STATUS=$(curl --max-time 5 -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:1337/favicon.ico)
+          [ "$FAVICON_STATUS" = "200" ]
+          echo "CMS admin and favicon verified (HTTP 200)."
+          echo "CMS health OK; anonymous news API denied ($HTTP_CODE)."
