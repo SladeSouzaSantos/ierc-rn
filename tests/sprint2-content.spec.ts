@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { IERC_MAPS_LINK, IERC_MAPS_EMBED } from "../lib/location";
+import { IERC_OFFICIAL_EMAIL, IERC_OFFICIAL_EMAIL_LINK, IERC_OFFICIAL_WHATSAPP, IERC_OFFICIAL_WHATSAPP_LINK } from "../lib/institutional-contact";
 import { expect, test } from "@playwright/test";
 
 test("instituto documenta fundação e linha do tempo com fontes", async ({ page }) => {
@@ -54,15 +55,26 @@ test("eventos arquivados não simulam agenda futura", async ({ page }) => {
   await expect(page.getByText(/Ainda não há eventos futuros confirmados e aprovados na agenda do portal/)).toBeVisible();
 });
 
-test("endereço de contato é verificável e não há telefone fictício", async ({ page }) => {
+test("contato apresenta e-mail e WhatsApp oficiais confirmados pelo IERC-RN", async ({ page }) => {
   await page.goto("/contato");
   await expect(page.locator(".verified-address")).toContainText("Rua Fonseca e Silva, 1113");
-  await expect(page.locator('a[href^="tel:"],a[href^="mailto:"]')).toHaveCount(0);
+  await expect(page.getByRole("link", { name: IERC_OFFICIAL_EMAIL }).first()).toHaveAttribute("href", IERC_OFFICIAL_EMAIL_LINK);
+  await expect(page.getByRole("link", { name: /Conversar com o IERC-RN/ })).toHaveAttribute("href", IERC_OFFICIAL_WHATSAPP_LINK);
+  await expect(page.getByText(IERC_OFFICIAL_WHATSAPP).first()).toBeVisible();
   await expect(page.getByRole("link", { name: /Abrir no Google Maps/ })).toHaveAttribute("href", IERC_MAPS_LINK);
   await expect(page.getByRole("heading", { name: "Como chegar ao IERC-RN" })).toBeVisible();
   await expect(page.locator(".location-map iframe")).toHaveCount(0);
   await page.getByRole("button", { name: "Carregar mapa interativo" }).click();
   await expect(page.getByTitle(/Mapa interativo: IERC-RN/)).toHaveAttribute("src", IERC_MAPS_EMBED);
+});
+
+test("rodapé disponibiliza contatos oficiais em todas as páginas", async ({ page }) => {
+  await page.goto("/apoie");
+  const footer = page.locator("footer");
+  await expect(footer.getByRole("link", { name: IERC_OFFICIAL_EMAIL })).toHaveAttribute("href", IERC_OFFICIAL_EMAIL_LINK);
+  await expect(footer.getByRole("link", { name: /WhatsApp/ })).toHaveAttribute("href", IERC_OFFICIAL_WHATSAPP_LINK);
+  await expect(page.getByText(/Terças-feiras, das 8h às 11h/)).toBeVisible();
+  await expect(page.getByText(/Não há coleta domiciliar/)).toBeVisible();
 });
 
 test("visitas usa formulário oficial sem agenda paralela e sem prometer reserva", async ({ page }) => {
