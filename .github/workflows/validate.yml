@@ -72,6 +72,9 @@ jobs:
           bash -n scripts/backup-cms-dev.sh
           bash -n scripts/preflight-curator-autopublish-dev.sh
           bash -n scripts/rehearse-cms-sports-dev.sh
+          bash -n scripts/lib/cms-table-preservation.sh
+          bash -n scripts/tests/test-cms-table-preservation.sh
+          bash scripts/tests/test-cms-table-preservation.sh
       - name: Validate isolated scheduled worker Compose without secrets
         run: |
           : > curator/.env
