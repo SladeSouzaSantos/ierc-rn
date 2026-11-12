@@ -132,13 +132,22 @@ export default async function ContentPage({ params }: RouteProps) {
         {slug === "galeria" && <><div className="detail-intro"><p className="eyebrow">Acervo em organização</p><h2>Memórias para ver, ouvir e compartilhar.</h2><p>As galerias poderão reunir atividades, apresentações, competições e momentos da comunidade. Fotografias terão descrições alternativas; vídeos terão legendas e recursos adicionais conforme o conteúdo.</p></div><div className="detail-card solo-card"><h3>Imagens oficiais em preparação</h3><p>Aguardamos seleção de materiais e autorizações. Não utilizamos fotografias de terceiros como se fossem registros do IERC.</p></div></>}
 
         {slug === "visitas" && <>
-          <div className="detail-intro"><p className="eyebrow">Conheça de perto</p><h2>Uma visita pode aproximar pessoas e ideias.</h2><p>O Instituto está localizado no bairro do Alecrim, em Natal. Informações sobre excursões escolares e em grupo, acessibilidade e condições de visita ainda serão confirmadas pela equipe.</p></div>
+          <div className="detail-intro"><p className="eyebrow">Conheça de perto</p><h2>Uma visita pode aproximar pessoas e ideias.</h2><p>O IERC-RN recebe solicitações de visitas de escolas, universidades e outros grupos por meio de seu formulário oficial. O Instituto está localizado no Alecrim, em Natal. A data e o horário solicitados dependem de confirmação da equipe.</p></div>
           <div className="detail-grid">
-            <article className="detail-card"><Users size={32} aria-hidden="true" /><h3>Para grupos e instituições</h3><p>Perfil dos grupos, horários e orientações precisam ser confirmados com a instituição.</p></article>
-            <article className="detail-card"><MapPin size={32} aria-hidden="true" /><h3>Endereço documentado</h3><VerifiedAddress /><SourceLink source="tre" label="Ver referência do endereço — TRE-RN" /></article>
-            <article className="detail-card"><CalendarDays size={32} aria-hidden="true" /><h3>Agendamento oficial</h3><p>O link de agendamento já utilizado pela instituição não foi fornecido. A futura integração não criará uma agenda paralela.</p></article>
+            <article className="detail-card"><Users size={32} aria-hidden="true" /><h3>Para grupos e instituições</h3><p>Informe a instituição visitante, a quantidade e a faixa etária dos participantes, a turma e o objetivo da visita.</p></article>
+            <article className="detail-card"><MapPin size={32} aria-hidden="true" /><h3>Onde estamos</h3><VerifiedAddress /><SourceLink source="tre" label="Ver referência do endereço — TRE-RN" /></article>
+            <article className="detail-card"><CalendarDays size={32} aria-hidden="true" /><h3>Agendamento oficial</h3><p>Indique a data, o horário e a duração desejados, além dos contatos do responsável pelo grupo. A solicitação será avaliada pela equipe do IERC-RN.</p></article>
           </div>
-          <Note>Não há reserva ativa por este portal. Antes de visitar, confirme com o IERC as orientações e a disponibilidade da equipe.</Note>
+          <section className="detail-callout" aria-labelledby="visitas-agendamento-title">
+            <h2 id="visitas-agendamento-title">Solicite uma visita ao IERC-RN</h2>
+            <p>Preencha o formulário de agendamento disponibilizado pelo Instituto. O pedido não garante a reserva: aguarde a confirmação da equipe antes de organizar o deslocamento.</p>
+            <a href="https://forms.gle/NY35YEEkbL6HM2YF9" className="button button-yellow" target="_blank" rel="noopener noreferrer">
+              Solicitar agendamento de visita <ArrowUpRight size={18} aria-hidden="true"/>
+              <span className="sr-only"> (abre em nova aba)</span>
+            </a>
+            <p>Você será direcionado ao Google Forms, serviço externo que recebe as informações preenchidas. Informe apenas os dados solicitados e necessários ao agendamento.</p>
+          </section>
+          <Note>O agendamento é realizado pelo formulário oficial, não por este portal. Antes de visitar, confirme com a equipe do IERC-RN a disponibilidade, as condições de acessibilidade e as orientações para o grupo.</Note>
         </>}
 
         {slug === "apoie" && <SupportPage />}
