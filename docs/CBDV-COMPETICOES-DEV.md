@@ -183,6 +183,38 @@ CMS DEV real, revisar as permissões estritas do token, confirmar o
 formulário e cadastrar a primeira competição real. A coleta externa CBDV
 é independente. Não criar servidores ou bancos de produção.
 
+### Resultado do primeiro ensaio MiniMac — correção da comparação de tabelas
+
+Na execução do operador em 11/11/2026 (BRT), commit `6e69399`:
+
+- `BACKUP_INTEGRITY=OK` e `LIVE_CMS_AND_DB=HEALTHY`;
+- `SANDBOX_TABLES_BEFORE=49`;
+- imagem candidata Strapi foi construída (`CANDIDATE_IMAGE_BUILT=YES`);
+- o script chegou à comparação final depois das checagens de saúde,
+  criação da nova tabela, presença da tabela de eventos e contagem das
+  linhas de eventos; esses passos não emitiram erro;
+- `comm` acusou `file 1 is not in sorted order` e
+  `file 2 is not in sorted order`;
+- `SANDBOX_CLEANUP=COMPLETE` confirma a execução da rotina de limpeza
+  dos recursos temporários.
+
+**Não interpretar a saída como migração validada**, pois
+`SANDBOX_REHEARSAL=PASS` não foi emitido. As mensagens de `comm`
+decorrem da dependência do comparador anterior na ordenação/collation
+das listas; não são evidência de perda de tabelas.
+
+A verificação foi substituída por `cms_tables_preserved` em
+`scripts/lib/cms-table-preservation.sh`: busca correspondência exata
+de cada nome original na lista posterior, independentemente da ordem,
+com rejeição de nomes malformados ou tabelas ausentes. O teste offline
+`scripts/tests/test-cms-table-preservation.sh` cobre entradas
+reordenadas, nomes semelhantes e tabelas faltantes e é executado no CI.
+
+**Próximo gate:** repetir o ensaio com o HEAD corrigido e obter todas
+as linhas `SANDBOX_...=PASS` e `LIVE_DEV_CONTAINERS=UNCHANGED`
+antes de sequer planejar o deploy no Strapi DEV real. O backup original
+continuará sendo usado e não deve ser compartilhado nem commitado.
+
 ## Gates de aceitação
 
 - [ ] CI completo aprovado no HEAD da branch `dev`.
