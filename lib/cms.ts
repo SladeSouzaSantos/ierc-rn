@@ -1,6 +1,7 @@
 import "server-only";
 import { activities as baselineActivities } from "@/lib/site-data";
 import { OFFICIAL_VISIT_FORM_URL, safeGoogleVisitFormUrl } from "@/lib/visit-booking";
+import { approvedEventImage, type EventImage } from "@/lib/event-media";
 
 /**
  * Leitura de conteudo Strapi publicada, explicitamente aprovada e somente no servidor.
@@ -35,6 +36,7 @@ export type CmsEvent = {
   endsAt?: string;
   location?: string;
   registrationUrl?: string;
+  image?: { alt: string; credit?: string };
 };
 export type CmsSportCompetition = {
   slug: string;
@@ -209,14 +211,34 @@ export async function getCmsNewsBySlug(slug: string): Promise<CmsArticle | null>
   // Never guess when a partial digest is ambiguous.
   return verified.length===1?verified[0]:null;
 }
+/** Public event list: Strapi media is populated only for approved/published records.
+ * Never expose internal CMS hosts, upload paths or the read-only API token.
+ */
 export async function getCmsEvents(): Promise<CmsEvent[]> {
-  return (await find("events")).map((v): CmsEvent => ({
-    slug: string(v.slug, 90), title: string(v.title, 200), summary: string(v.summary),
-    startsAt: string(v.startsAt, 40), endsAt: string(v.endsAt, 40) || undefined,
-    location: string(v.location, 300) || undefined,
-    registrationUrl: url(v.registrationUrl),
-  })).filter(v => /^[a-z0-9-]{1,90}$/.test(v.slug) && v.title && v.summary &&
-     !Number.isNaN(Date.parse(v.startsAt)));
+  return (await find("events", { populate: "image" })).map((v): CmsEvent => {
+    const media = approvedEventImage(v);
+    return {
+      slug: string(v.slug, 90), title: string(v.title, 200), summary: string(v.summary),
+      startsAt: string(v.startsAt, 40), endsAt: string(v.endsAt, 40) || undefined,
+      location: string(v.location, 300) || undefined,
+      registrationUrl: url(v.registrationUrl),
+      image: media ? { alt: media.alt, ...(media.credit ? { credit: media.credit } : {}) } : undefined,
+    };
+  }).filter(v => /^[a-z0-9-]{1,90}$/.test(v.slug) && v.title && v.summary &&
+    !Number.isNaN(Date.parse(v.startsAt)));
+}
+
+/** Used exclusively by the same-origin image endpoint. Re-check approval
+ * on every request; never become an arbitrary remote-media proxy.
+ */
+export async function getCmsEventImageBySlug(slug: string): Promise<EventImage | null> {
+  if (!/^[a-z0-9-]{1,90}$/.test(slug)) return null;
+  const candidates = await find("events", {
+    "filters[slug][$eq]": slug,
+    populate: "image",
+  });
+  const match = candidates.find(item => item.slug === slug);
+  return match ? approvedEventImage(match) : null;
 }
 /** Dedicated sport records: only published and editorially approved documents.
  * The read-only public token never creates, updates or approves a competition.
