@@ -55,6 +55,6 @@ test('article impact heading and CBDV calendar have scoped responsive vertical s
   const css = read('app/globals.css');
   assert.match(news, /<section className="cms-article-impact" aria-labelledby="cms-impact-title">/);
   assert.match(sports, /<section className="sport-cbdv-calendar" aria-labelledby="cbdv-sport-competitions">/);
-  assert.match(css, /\\.cms-article-impact\\s*\\{\\s*margin-top:\\s*clamp\\(48px,\\s*5vw,\\s*80px\\);\\s*\\}/);
-  assert.match(css, /\\.sport-cbdv-calendar\\s*\\{\\s*margin-top:\\s*clamp\\(48px,\\s*6vw,\\s*88px\\);\\s*\\}/);
+  assert.match(css, /\.cms-article-impact\s*\{\s*margin-top:\s*clamp\(48px,\s*5vw,\s*80px\);\s*\}/);
+  assert.match(css, /\.sport-cbdv-calendar\s*\{\s*margin-top:\s*clamp\(48px,\s*6vw,\s*88px\);\s*\}/);
 });
