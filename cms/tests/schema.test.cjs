@@ -6,7 +6,7 @@ const { execFileSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 test('generator cria rotas e schemas reproduziveis do Strapi', () => {
   execFileSync(process.execPath, [path.join(root, 'scripts/generate.mjs')], { stdio: 'pipe' });
-  for (const singular of ['news-article','event','activity','athlete','gallery','media-record','site-setting']) {
+  for (const singular of ['news-article','event','sport-competition','activity','athlete','gallery','media-record','site-setting']) {
     const schemaPath = path.join(root, 'src/api', singular, 'content-types', singular, 'schema.json');
     const model = JSON.parse(readFileSync(schemaPath, 'utf8'));
     assert.equal(model.info.singularName, singular);
@@ -19,7 +19,7 @@ test('generator cria rotas e schemas reproduziveis do Strapi', () => {
   }
 });
 test('todos os modelos com retrato exigem aprovacao de imagem', () => {
-  for (const singular of ['news-article','event','activity','athlete']) {
+  for (const singular of ['news-article','event','sport-competition','activity','athlete']) {
     const schema = JSON.parse(readFileSync(path.join(root, 'src/api', singular, 'content-types', singular, 'schema.json')));
     assert.ok(schema.attributes.image);
     assert.equal(schema.attributes.imageRightsStatus.default, 'pendente');
