@@ -1,0 +1,47 @@
+# IERC-RN MAIN curadoria: independent PROD scheduler, Redis and Strapi network.
+# Never joins the DEV CMS network or shares its Redis, secrets or uploads.
+# Start only after PROD backup/restore rehearsal + explicit preflight approval.
+name: ierc-rn-curator-prod
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    profiles: [curator]
+    command: ["redis-server","--appendonly","yes","--maxmemory-policy","noeviction"]
+    volumes:
+      - curator_redis_prod:/data
+    healthcheck:
+      test: ["CMD","redis-cli","ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [worker_prod_private]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  worker:
+    build: {context: ./curator, dockerfile: Dockerfile}
+    command: ["node","src/cli.mjs","schedule"]
+    init: true
+    restart: unless-stopped
+    profiles: [curator]
+    env_file: ./curator/.env.prod
+    environment:
+      CURATOR_INSTANCE_KIND: prod
+      CURATOR_REDIS_URL: redis://redis:6379
+      CURATOR_CMS_URL: http://cms:1337
+    depends_on:
+      redis: {condition: service_healthy}
+    networks: [worker_prod_private,cms_prod_private]
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=32m"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    # No host ports; all publication is subjected to the CLI and preflight gates.
+networks:
+  worker_prod_private: {}
+  cms_prod_private:
+    external: true
+    name: ierc-rn-cms-prod_cms_prod_private
+volumes:
+  curator_redis_prod: {}
