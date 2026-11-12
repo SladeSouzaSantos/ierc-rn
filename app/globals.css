@@ -254,6 +254,47 @@ a:focus-visible,button:focus-visible,input:focus-visible { outline: 3px solid #d
 .detail-callout h2 { font-size:clamp(2rem,3.4vw,3.7rem); }
 .detail-callout p { max-width:720px; color:#e0edee; font-size:1.1rem; line-height:1.8; }
 .detail-callout .button { margin-top:14px; }
+
+/* Visit form privacy disclosure: visible separation from primary action. */
+.detail-callout .visit-form-disclosure {
+  max-width: 650px;
+  margin: 27px 0 0;
+  padding-top: 22px;
+  border-top: 1px solid #ffffff55;
+  font-size: .97rem;
+  line-height: 1.8;
+  color: #dcebed;
+}
+
+/* Accessible, consent-loaded Google Maps: no third-party iframe until click. */
+.location-map {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: clamp(22px, 4vw, 48px);
+  align-items: stretch;
+  margin-block: clamp(24px, 4vw, 48px) clamp(35px, 5vw, 65px);
+  padding: clamp(23px, 3vw, 38px);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+}
+.location-map-details { min-width: 0; }
+.location-map-details > svg { color: #593284; margin-bottom: 15px; }
+.location-map h2 { font-size: clamp(1.7rem, 2.7vw, 2.45rem); margin: 0 0 16px; }
+.location-map-details > p { max-width: 440px; color: var(--muted); line-height: 1.75; }
+.location-map-details .inline-link { margin-top: 12px; color: #553084; }
+.location-map-details .location-map-privacy { font-size: .91rem; margin-top: 27px; }
+.location-map-viewer { min-width: 0; min-height: 285px; overflow: hidden; border-radius: 14px; border: 1px solid var(--line); background: #eff2f0; }
+.location-map-viewer iframe { display: block; width: 100%; height: 100%; min-height: 285px; border: 0; }
+.location-map-placeholder { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; padding: 25px; text-align: center; min-height: 285px; }
+.location-map-placeholder svg { color: #593284; }
+.location-map-placeholder p { max-width: 370px; color: #29475b; line-height: 1.6; }
+.location-map-placeholder .button { max-width: 100%; }
+html[data-high-contrast="true"] .location-map { border: 2px solid #000; }
+@media (max-width: 760px) {
+  .location-map { grid-template-columns: 1fr; }
+  .location-map-viewer, .location-map-placeholder, .location-map-viewer iframe { min-height: 280px; }
+}
 .interior-subtitle { font-size:2.2rem; }
 .story-preview { min-height:210px; }
 .solo-card { max-width:650px; }
