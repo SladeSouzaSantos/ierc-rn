@@ -9,6 +9,7 @@ import {fetchArticleEvidence} from './article-evidence.mjs';
 import {autoPublishSettingsFromEnv,ebcArchivePublishingFromEnv} from './auto-config.mjs';
 import {runOnce} from './pipeline.mjs';
 import {scheduleDraftLimitFromEnv} from './schedule-config.mjs';
+import {summarizeRunForLog} from './run-summary.mjs';
 
 const cmd=process.argv[2];
 if(!['preview','generate-preview','review-preview','review-full-preview','once','schedule'].includes(cmd)){
@@ -110,7 +111,8 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
         if(acquired!=='OK')return;
         try{
           const report=await execute();
-          log({event:'run_completed',count:report.count,preview:dryRun});
+          log({event:'run_completed',count:report.count,preview:dryRun,
+            ...summarizeRunForLog(report)});
         }catch{log({event:'run_failed'});}
       };
       await tick();
