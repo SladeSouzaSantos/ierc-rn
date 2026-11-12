@@ -71,3 +71,54 @@ test("o bloco Eventos apresenta separação legível entre grupos", async ({ pag
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });
+
+
+test("cartão com imagem mantém o convite ao lado em desktop e reflow no celular", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/eventos");
+  await page.locator(".cms-events-list .event-group").first().evaluate(section => {
+    // Fixture local: CI não tem token do CMS e não deve depender de mídia publicada.
+    const panel = document.createElement("div");
+    panel.className = "editorial-panels";
+    panel.innerHTML = `
+      <article class="detail-card editorial-event editorial-event-card editorial-event-card--with-image">
+        <figure class="editorial-event-media">
+          <img alt="Convite de evento para testes" width="200" height="300"
+               src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=">
+          <figcaption>Imagem: IERC-RN</figcaption>
+        </figure>
+        <div class="editorial-event-content">
+          <span class="editorial-event-date">13 de dezembro</span>
+          <h4>Festa Natalina 2026</h4>
+          <p>Evento institucional aprovado e publicado.</p>
+        </div>
+      </article>
+      <article class="detail-card editorial-event editorial-event-card">
+        <div class="editorial-event-content"><h4>Evento sem imagem</h4></div>
+      </article>`;
+    section.append(panel);
+  });
+
+  const illustrated = page.locator(".cms-events-list .editorial-event-card--with-image");
+  const unillustrated = page.locator(".cms-events-list .editorial-event-card:not(.editorial-event-card--with-image)");
+  await expect(illustrated).toHaveCSS("display", "grid");
+  await expect(unillustrated).toHaveCSS("display", "flex");
+  const desktop = await illustrated.evaluate(card => {
+    const media = card.querySelector(".editorial-event-media")!.getBoundingClientRect();
+    const content = card.querySelector(".editorial-event-content")!.getBoundingClientRect();
+    return { mediaRight: media.right, contentLeft: content.left, mediaTop: media.top, contentTop: content.top };
+  });
+  expect(desktop.mediaRight).toBeLessThanOrEqual(desktop.contentLeft + 1);
+  expect(Math.abs(desktop.mediaTop - desktop.contentTop)).toBeLessThanOrEqual(1);
+
+  await page.setViewportSize({ width: 375, height: 800 });
+  const mobile = await illustrated.evaluate(card => {
+    const media = card.querySelector(".editorial-event-media")!.getBoundingClientRect();
+    const content = card.querySelector(".editorial-event-content")!.getBoundingClientRect();
+    return { mediaBottom: media.bottom, contentTop: content.top };
+  });
+  expect(mobile.mediaBottom).toBeLessThanOrEqual(mobile.contentTop + 1);
+  const overflow = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+});
