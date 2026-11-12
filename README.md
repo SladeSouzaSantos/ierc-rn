@@ -56,7 +56,9 @@ Para rodar os testes e2e, a aplicação deve estar compilada (`npm run build`); 
 
 ## Deploy Docker no MiniMac
 
-Os portais DEV/PROD, redes de leitura Strapi exclusivas, portas locais e os endereços futuros `dev.iercrn.org.br`, `iercrn.org.br`, `strapi-dv.iercrn.org.br` e `strapi.iercrn.org.br` estão documentados em [MiniMac e domínios](docs/MINIMAC-PORTAL-DOMINIOS.md). DNS, Cloudflare Access e proxy HTTPS ainda precisam de homologação. O portal MAIN não deve ser iniciado antes de aprovação e merge.
+Os portais DEV/PROD, redes de leitura Strapi exclusivas, portas locais e os endereços planejados `dev.iercrn.org.br`, `iercrn.org.br`, `strapi-dv.iercrn.org.br` e `strapi.iercrn.org.br` estão documentados em [MiniMac e domínios](docs/MINIMAC-PORTAL-DOMINIOS.md).
+
+O código da MAIN foi integrado. Para **preparar e iniciar localmente** o CMS/portal MAIN no MiniMac, consulte o [runbook MAIN](docs/MAIN-MINIMAC-BOOTSTRAP.md) e use `bash scripts/prepare-main-minimac.sh --prepare`, `--check` ou `--start-local`. Nenhum desses passos libera domínio público, usa o banco da DEV ou ativa publicação automática em produção. DNS, Cloudflare Access, backups e aprovação institucional ainda precisam de homologação antes do lançamento.
 
 ## Fluxo de desenvolvimento
 
