@@ -68,6 +68,8 @@ docker exec -i "$db" pg_restore -U postgres -d postgres -C --no-owner --no-acl \
 sql() { docker exec "$db" psql -X -v ON_ERROR_STOP=1 -U postgres -d "$dbname" -Atqc "$1"; }
 baseline=$(sql "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
 [[ "$baseline" =~ ^[0-9]+$ && "$baseline" -ge 1 ]] || abort "Scratch restoration invalid"
+baseline_recorded=$(sed -n 's/.*public_tables=\([0-9][0-9]*\).*/\1/p' "$backup/RESTORE_VERIFIED.txt")
+[[ "$baseline" == "$baseline_recorded" ]] || abort "Sandbox table count differs from verified restore"
 [[ "$(sql "SELECT to_regclass('public.ierc_events') IS NOT NULL")" == t ]] ||
   abort "Existing institutional event table not restored"
 [[ "$(sql "SELECT to_regclass('public.ierc_sport_competitions') IS NULL")" == t ]] ||
@@ -88,7 +90,7 @@ docker run -d --rm --name "$app" --network "$net" \
   --env-file cms/.env \
   -e DATABASE_HOST=db -e DATABASE_NAME="$dbname" \
   -e DATABASE_PORT=5432 -e DATABASE_USERNAME=postgres \
-  -e DATABASE_PASSWORD=sandbox-only \
+  -e DATABASE_PASSWORD=sandbox-only -e DATABASE_SSL=false \
   -e CMS_INSTANCE_KIND=dev -e CMS_DIAGNOSTIC_UNSAFE_EVAL=false \
   -e PUBLIC_URL=http://127.0.0.1:1337 \
   -e NODE_ENV=production \
