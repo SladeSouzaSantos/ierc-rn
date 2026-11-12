@@ -8,7 +8,8 @@ import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsInstitutionalEventNews
 import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
 import { AthleteStories } from "@/components/athlete-stories";
 import { SupportPage } from "@/components/support-page";
-import { LocationMap, IERC_MAPS_LINK } from "@/components/location-map";
+import { LocationMap } from "@/components/location-map";
+import { IERC_MAPS_LINK } from "@/lib/location";
 import { SportCompetitions } from "@/components/sport-competitions";
 import { getCbdvGoalballCalendar } from "@/lib/cbdv-calendar";
 
