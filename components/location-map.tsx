@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ExternalLink, MapPin } from "lucide-react";
+import { IERC_MAPS_LINK, IERC_MAPS_EMBED } from "@/lib/location";
 
 /**
  * A permanent public location, provided by IERC-RN and corroborated by
@@ -9,9 +10,6 @@ import { ExternalLink, MapPin } from "lucide-react";
  * Google Maps does not receive a visitor's request until they opt in to
  * loading the iframe; the external link works without JavaScript.
  */
-export const IERC_MAPS_LINK = "https://share.google/OVtuMFCv8vWI0scey";
-export const IERC_MAPS_EMBED = "https://www.google.com/maps?q=Instituto%20de%20Educa%C3%A7%C3%A3o%20e%20Reabilita%C3%A7%C3%A3o%20de%20Cegos%20do%20RN%2C%20Rua%20Fonseca%20e%20Silva%201113%2C%20Alecrim%2C%20Natal%2C%20RN&output=embed";
-
 export function LocationMap() {
   const [showMap, setShowMap] = useState(false);
   return (
