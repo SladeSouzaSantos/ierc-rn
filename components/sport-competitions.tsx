@@ -58,7 +58,7 @@ export function SportCompetitions({cbdv,competitions}:{
             CBDV cadastradas, publicadas e aprovadas pela instituição.</p>}
     </section>
 
-    <section aria-labelledby="cbdv-sport-competitions">
+    <section className="sport-cbdv-calendar" aria-labelledby="cbdv-sport-competitions">
       <h3 id="cbdv-sport-competitions">Calendário oficial da CBDV · Goalball</h3>
       {external.length
         ? <div className="editorial-panels">
