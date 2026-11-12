@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight, CalendarDays } from "lucide-react";
 import { athleteProfiles } from "@/lib/athlete-stories";
 import type { CmsArticle, CmsEvent, CmsAthlete } from "@/lib/cms";
@@ -121,37 +122,48 @@ function eventDateTimeLabel(value: string) {
 }
 
 function CmsEventCard({ item }: { item: CmsEvent }) {
-  return <article className="detail-card editorial-event" key={item.slug}>
-    <span><CalendarDays size={17} aria-hidden="true"/>
-      <time dateTime={item.startsAt}>{eventDateTimeLabel(item.startsAt)}</time>
-    </span>
-    <h4>{item.title}</h4>
-    <p>{item.summary}</p>
-    {item.endsAt && <p>Encerramento: <time dateTime={item.endsAt}>{eventDateTimeLabel(item.endsAt)}</time></p>}
-    {item.location && <p className="editorial-place">Local: {item.location}</p>}
-    {item.registrationUrl && <a className="editorial-source" href={item.registrationUrl} target="_blank" rel="noopener noreferrer">
-      Inscrição ou informações oficiais <ArrowUpRight size={16} aria-hidden="true"/>
-      <span className="sr-only"> (abre em nova aba)</span>
-    </a>}
+  return <article className="detail-card editorial-event editorial-event-card" key={item.slug}>
+    {item.image && <figure className="editorial-event-media">
+      <Image
+        src={`/api/event-image/${encodeURIComponent(item.slug)}`}
+        width={800} height={500} unoptimized loading="lazy"
+        sizes="(max-width: 760px) 100vw, (max-width: 1200px) 50vw, 440px"
+        alt={item.image.alt}
+      />
+      {item.image.credit && <figcaption>Imagem: {item.image.credit}</figcaption>}
+    </figure>}
+    <div className="editorial-event-content">
+      <span className="editorial-event-date"><CalendarDays size={17} aria-hidden="true"/>
+        <time dateTime={item.startsAt}>{eventDateTimeLabel(item.startsAt)}</time>
+      </span>
+      <h4>{item.title}</h4>
+      <p>{item.summary}</p>
+      {item.endsAt && <p>Encerramento: <time dateTime={item.endsAt}>{eventDateTimeLabel(item.endsAt)}</time></p>}
+      {item.location && <p className="editorial-place">Local: {item.location}</p>}
+      {item.registrationUrl && <a className="editorial-source" href={item.registrationUrl} target="_blank" rel="noopener noreferrer">
+        Inscrição ou informações oficiais <ArrowUpRight size={16} aria-hidden="true"/>
+        <span className="sr-only"> (abre em nova aba)</span>
+      </a>}
+    </div>
   </article>;
 }
 
 export function CmsEventsList({ items }: { items: CmsEvent[] }) {
   const { upcoming, ongoing, completed } = groupInstitutionalEvents(items);
-  return <section className="editorial-section" aria-labelledby="cms-events-title">
+  return <section className="editorial-section cms-events-list" aria-labelledby="cms-events-title">
     <p className="eyebrow">Agenda aprovada · IERC-RN</p>
     <h2 className="interior-subtitle" id="cms-events-title">Programação da instituição</h2>
-    {ongoing.length > 0 && <section aria-labelledby="ongoing-events-title">
+    {ongoing.length > 0 && <section className="event-group" aria-labelledby="ongoing-events-title">
       <h3 id="ongoing-events-title">Em andamento</h3>
       <div className="editorial-panels">{ongoing.map(item => <CmsEventCard key={item.slug} item={item}/>)}</div>
     </section>}
-    <section aria-labelledby="upcoming-events-title">
+    <section className="event-group" aria-labelledby="upcoming-events-title">
       <h3 id="upcoming-events-title">Próximos eventos</h3>
       {upcoming.length > 0
         ? <div className="editorial-panels">{upcoming.map(item => <CmsEventCard key={item.slug} item={item}/>)}</div>
         : <p className="editorial-intro">Ainda não há eventos futuros confirmados e aprovados na agenda do portal. Consulte os canais oficiais do Instituto antes de planejar uma visita.</p>}
     </section>
-    {completed.length > 0 && <section aria-labelledby="completed-events-title">
+    {completed.length > 0 && <section className="event-group" aria-labelledby="completed-events-title">
       <h3 id="completed-events-title">Eventos realizados pelo Instituto</h3>
       <p className="editorial-intro">Registros institucionais aprovados, preservados como memória. Não representam inscrições abertas ou eventos futuros.</p>
       <div className="editorial-panels">{completed.map(item => <CmsEventCard key={item.slug} item={item}/>)}</div>
