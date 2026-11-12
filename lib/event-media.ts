@@ -13,20 +13,10 @@ function obj(value: unknown): Bag | null {
 /** Allows only Strapi's own image uploads, not arbitrary remote URLs or files. */
 export function safeEventUploadPath(value: unknown): string | null {
   if (typeof value !== "string" || value.length > 400) return null;
-  const candidate = value.trim();
-  let pathname = candidate;
-  if (candidate.startsWith("http:") || candidate.startsWith("https:")) {
-    try {
-      const u = new URL(candidate);
-      // Absolute hosts cannot be trusted here. Strapi occasionally emits
-      // absolute URLs, but we require a path-only /uploads URL to avoid SSRF.
-      if (u.search || u.hash || u.username || u.password) return null;
-      pathname = u.pathname;
-    } catch { return null; }
-  }
-  if (!/^\/uploads\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_.-]+\.(?:png|jpe?g|webp|avif|gif)$/i.test(pathname)) {
-    return null;
-  }
+  const pathname = value.trim();
+  // Strapi's own uploads are path-only. Never resolve a URL supplied by
+  // the CMS, even one that looks like an internal host.
+  if (!/^\/uploads\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_.-]+\.(?:png|jpe?g|webp|avif|gif)$/i.test(pathname)) return null;
   if (pathname.includes("..") || pathname.includes("//")) return null;
   return pathname;
 }
