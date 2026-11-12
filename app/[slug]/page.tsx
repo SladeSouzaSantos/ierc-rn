@@ -8,6 +8,7 @@ import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsInstitutionalEventNews
 import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
 import { AthleteStories } from "@/components/athlete-stories";
 import { SupportPage } from "@/components/support-page";
+import { LocationMap, IERC_MAPS_LINK } from "@/components/location-map";
 import { SportCompetitions } from "@/components/sport-competitions";
 import { getCbdvGoalballCalendar } from "@/lib/cbdv-calendar";
 
@@ -136,7 +137,7 @@ export default async function ContentPage({ params }: RouteProps) {
           <div className="detail-intro"><p className="eyebrow">Conheça de perto</p><h2>Uma visita pode aproximar pessoas e ideias.</h2><p>O IERC-RN recebe solicitações de visitas de escolas, universidades e outros grupos por meio de seu formulário oficial. O Instituto está localizado no Alecrim, em Natal. A data e o horário solicitados dependem de confirmação da equipe.</p></div>
           <div className="detail-grid">
             <article className="detail-card"><Users size={32} aria-hidden="true" /><h3>Para grupos e instituições</h3><p>Informe a instituição visitante, a quantidade e a faixa etária dos participantes, a turma e o objetivo da visita.</p></article>
-            <article className="detail-card"><MapPin size={32} aria-hidden="true" /><h3>Onde estamos</h3><VerifiedAddress /><SourceLink source="tre" label="Ver referência do endereço — TRE-RN" /></article>
+            <article className="detail-card"><MapPin size={32} aria-hidden="true" /><h3>Onde estamos</h3><VerifiedAddress /><p><a className="inline-link" href={IERC_MAPS_LINK} target="_blank" rel="noopener noreferrer">Abrir no Google Maps <ArrowUpRight size={17} aria-hidden="true"/><span className="sr-only"> (abre em nova aba)</span></a></p></article>
             <article className="detail-card"><CalendarDays size={32} aria-hidden="true" /><h3>Agendamento oficial</h3><p>Indique a data, o horário e a duração desejados, além dos contatos do responsável pelo grupo. A solicitação será avaliada pela equipe do IERC-RN.</p></article>
           </div>
           <section className="detail-callout" aria-labelledby="visitas-agendamento-title">
@@ -146,20 +147,22 @@ export default async function ContentPage({ params }: RouteProps) {
               Solicitar agendamento de visita <ArrowUpRight size={18} aria-hidden="true"/>
               <span className="sr-only"> (abre em nova aba)</span>
             </a>
-            <p>Você será direcionado ao Google Forms, serviço externo que recebe as informações preenchidas. Informe apenas os dados solicitados e necessários ao agendamento.</p>
+            <p className="visit-form-disclosure">Você será direcionado ao Google Forms, serviço externo que recebe as informações preenchidas. Informe apenas os dados solicitados e necessários ao agendamento.</p>
           </section>
+          <LocationMap />
           <Note>O agendamento é realizado pelo formulário oficial, não por este portal. Antes de visitar, confirme com a equipe do IERC-RN a disponibilidade, as condições de acessibilidade e as orientações para o grupo.</Note>
         </>}
 
         {slug === "apoie" && <SupportPage />}
 
         {slug === "contato" && <>
-          <div className="detail-intro"><p className="eyebrow">Estamos no Alecrim, Natal</p><h2>Vamos manter essa conversa aberta.</h2><p>O endereço do Instituto consta no cadastro da CBDV e em publicação do TRE-RN. Os números de telefone, CEP, e-mail e horários disponíveis em diretórios externos ainda precisam de confirmação atual pela equipe.</p></div>
+          <div className="detail-intro"><p className="eyebrow">Estamos no Alecrim, Natal</p><h2>Vamos manter essa conversa aberta.</h2><p>Visite-nos na Rua Fonseca e Silva, 1113, no Alecrim, em Natal/RN. Consulte o mapa abaixo para planejar o trajeto. Telefones, e-mail e horários de atendimento continuam aguardando confirmação pela equipe.</p></div>
           <div className="detail-grid">
-            <article className="detail-card"><MapPin size={32} aria-hidden="true" /><h3>Onde fica o Instituto</h3><VerifiedAddress /><SourceLink source="tre" label="Ver endereço citado pelo TRE-RN" /></article>
+            <article className="detail-card"><MapPin size={32} aria-hidden="true" /><h3>Onde fica o Instituto</h3><VerifiedAddress /><p><a className="inline-link" href={IERC_MAPS_LINK} target="_blank" rel="noopener noreferrer">Abrir no Google Maps <ArrowUpRight size={17} aria-hidden="true"/><span className="sr-only"> (abre em nova aba)</span></a></p></article>
             <article className="detail-card"><Instagram size={32} aria-hidden="true" /><h3>Instagram informado</h3><p><a className="inline-link" href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer">@iercrn <ArrowUpRight size={17} aria-hidden="true" /><span className="sr-only">(abre em nova aba)</span></a></p></article>
             <article className="detail-card"><Users size={32} aria-hidden="true" /><h3>Atendimento</h3><p>Contatos telefônicos publicados em fontes externas divergem. Não apresentamos telefone ou e-mail sem validação institucional.</p></article>
           </div>
+          <LocationMap />
           <Note>Dados de atendimento não confirmados não são exibidos como canais oficiais.</Note>
         </>}
 
