@@ -89,12 +89,37 @@ Para cadastrar um *calendário* de várias competições, criar uma
 entrada por competição e usar o mesmo `calendarLabel`/ano.
 Importação em lote ainda não foi implementada.
 
-## Migração DEV: ainda NÃO executada
+## Migração DEV: executada e homologada tecnicamente no MiniMac
 
-A captura fornecida pelo operador mostra que o Strapi em execução
-ainda tem a coleção antiga **Eventos**, sem campos esportivos.
-Portanto, a nova coleção **não aparecerá no painel antes de implantar
-a versão atualizada do CMS DEV**.
+O operador comprovou em 12/11/2026 a instalação da nova coleção
+**Competições esportivas** no Content Manager Strapi DEV. A captura mostra
+oito tipos de coleção, incluindo `Competições esportivas` (0 entradas).
+A execução controlada fez `docker compose ... build cms` e
+`up -d --no-deps --no-build cms` exclusivamente no projeto `ierc-rn-cms`.
+
+O log da implantação passou os gates:
+- `PRE_DEPLOY_CHECKS=PASS` e backup validado
+  `cms-backups/dev-20261112T021301Z`;
+- imagem anterior preservada em `ierc-rn-cms:pre-sports-dev-291916c`;
+- `DATABASE_CONTAINER_PRESERVED=YES`, `CMS_DEV_HEALTHY=YES`;
+- `TABLES_BEFORE=49` e `TABLES_AFTER=50`;
+- `EXISTING_TABLES_PRESERVED=YES`;
+- `SPORT_COMPETITIONS_COLLECTION=CREATED`;
+- `ANONYMOUS_SPORTS_API_DENIED=401`;
+- `CONTROLLED_CMS_DEV_DEPLOY=PASS`.
+
+A tabela `ierc_events` tinha **zero registros** antes e depois do
+deploy (`EVENT_ROWS_BEFORE=0`), de modo que esse gate comprova
+preservação de estrutura/contagem, não equivalência linha a linha de
+eventos preexistentes. Não houve deploy na `main` ou produção.
+
+**Pendente:** autorização `find` para o token privado do portal
+em `/api/sport-competitions` (HTTP 200), revisão dos papéis editoriais,
+primeiro cadastro real com rascunho invisível, aprovação/publicação
+visível em `/esportes` e testes finais de acessibilidade. O portal
+poderá precisar de rebuild separado para carregar a versão de código
+com `getCmsSportCompetitions()`. O worker automático de notícias
+permanece independente.
 
 A migração adiciona uma coleção/tabela, não somente campos opcionais.
 O script read-only de schemas atual
@@ -217,9 +242,9 @@ continuará sendo usado e não deve ser compartilhado nem commitado.
 
 ## Gates de aceitação
 
-- [ ] CI completo aprovado no HEAD da branch `dev`.
-- [ ] Backup e preflight reais no MiniMac DEV sem diferenças inesperadas.
-- [ ] Nova coleção aparece no Strapi DEV, Eventos antigos preservados.
+- [x] CI completo aprovado no HEAD usado para deploy (`291916c`).
+- [x] Backup e preflight reais no MiniMac DEV sem diferenças inesperadas.
+- [x] Nova coleção aparece no Strapi DEV; tabela de Eventos mantida (0 registros antes/depois).
 - [ ] Token público restrito lê apenas competições aprovadas e publicadas.
 - [ ] Um campeonato real cadastrado e conferido na página `/esportes`.
 - [ ] Datas, deduplicação e calendário CBDV preservados.
