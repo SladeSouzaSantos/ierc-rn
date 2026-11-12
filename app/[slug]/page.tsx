@@ -54,7 +54,7 @@ export default async function ContentPage({ params }: RouteProps) {
   const cmsEvents = slug === "eventos" ? await getCmsEvents() : [];
   const cmsSportCompetitions = slug === "esportes" ? await getCmsSportCompetitions() : [];
   const cbdvCompetitions = slug === "esportes" ? await getCbdvGoalballCalendar() : [];
-  const visitBookingUrl = slug === "visitas" ? await getCmsVisitBookingUrl() : null;
+  const visitBookingUrl = slug === "visitas" ? await getCmsVisitBookingUrl() : "";
   const cmsAthletes = slug === "historias" ? await getCmsAthletes() : [];
 
   return (
@@ -142,7 +142,7 @@ export default async function ContentPage({ params }: RouteProps) {
           <section className="detail-callout" aria-labelledby="visitas-agendamento-title">
             <h2 id="visitas-agendamento-title">Solicite uma visita ao IERC-RN</h2>
             <p>Preencha o formulário de agendamento disponibilizado pelo Instituto. O pedido não garante a reserva: aguarde a confirmação da equipe antes de organizar o deslocamento.</p>
-            <a href={visitBookingUrl ?? "#"} className="button button-yellow" target="_blank" rel="noopener noreferrer">
+            <a href={visitBookingUrl} className="button button-yellow" target="_blank" rel="noopener noreferrer">
               Solicitar agendamento de visita <ArrowUpRight size={18} aria-hidden="true"/>
               <span className="sr-only"> (abre em nova aba)</span>
             </a>
