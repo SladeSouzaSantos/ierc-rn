@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowUpRight, CalendarDays, Instagram, MapPin, Trophy, Users } from "lucide-react";
 import { PageHero } from "@/components/page-hero";
-import { getDisplayActivities, getCmsNews, getCmsEvents, getCmsAthletes, getCmsSportCompetitions } from "@/lib/cms";
+import { getDisplayActivities, getCmsNews, getCmsEvents, getCmsAthletes, getCmsSportCompetitions, getCmsVisitBookingUrl } from "@/lib/cms";
 import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsInstitutionalEventNews, CmsAthletesList } from "@/components/cms-public";
 import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
 import { AthleteStories } from "@/components/athlete-stories";
@@ -54,6 +54,7 @@ export default async function ContentPage({ params }: RouteProps) {
   const cmsEvents = slug === "eventos" ? await getCmsEvents() : [];
   const cmsSportCompetitions = slug === "esportes" ? await getCmsSportCompetitions() : [];
   const cbdvCompetitions = slug === "esportes" ? await getCbdvGoalballCalendar() : [];
+  const visitBookingUrl = slug === "visitas" ? await getCmsVisitBookingUrl() : null;
   const cmsAthletes = slug === "historias" ? await getCmsAthletes() : [];
 
   return (
@@ -141,7 +142,7 @@ export default async function ContentPage({ params }: RouteProps) {
           <section className="detail-callout" aria-labelledby="visitas-agendamento-title">
             <h2 id="visitas-agendamento-title">Solicite uma visita ao IERC-RN</h2>
             <p>Preencha o formulário de agendamento disponibilizado pelo Instituto. O pedido não garante a reserva: aguarde a confirmação da equipe antes de organizar o deslocamento.</p>
-            <a href="https://forms.gle/NY35YEEkbL6HM2YF9" className="button button-yellow" target="_blank" rel="noopener noreferrer">
+            <a href={visitBookingUrl ?? "#"} className="button button-yellow" target="_blank" rel="noopener noreferrer">
               Solicitar agendamento de visita <ArrowUpRight size={18} aria-hidden="true"/>
               <span className="sr-only"> (abre em nova aba)</span>
             </a>
