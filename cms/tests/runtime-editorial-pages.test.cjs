@@ -34,3 +34,17 @@ test('the Radar filters attributable external news and uses a server-only CMS fe
   assert.match(cms, /item\.scope !== ["']local["']/);
   assert.match(cms, /attributableExternalArticle\(item\)/);
 });
+
+test('sport competitions use a dedicated read-only CMS collection, distinct from institutional events', () => {
+  const cms=read('lib/cms.ts');
+  const page=read('app/[slug]/page.tsx');
+  const render=read('components/sport-competitions.tsx');
+  assert.match(cms,/["']sport-competitions["']/);
+  assert.match(cms,/getCmsSportCompetitions\(\)/);
+  assert.match(cms,/find\(["']sport-competitions["']\)/);
+  assert.match(page,/slug === ["']esportes["'] \? await getCmsSportCompetitions\(\)/);
+  assert.match(page,/slug === ["']eventos["'] \? await getCmsEvents\(\)/);
+  assert.match(render,/organizeSportCompetitions\(cbdv,competitions\)/);
+  assert.match(cms,/v\.participationStatus === ["']confirmada["'] &&/);
+  assert.match(cms,/v\.approvalReference/);
+});
