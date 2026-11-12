@@ -1,5 +1,6 @@
 import "server-only";
 import { activities as baselineActivities } from "@/lib/site-data";
+import { OFFICIAL_VISIT_FORM_URL, safeGoogleVisitFormUrl } from "@/lib/visit-booking";
 
 /**
  * Leitura de conteudo Strapi publicada, explicitamente aprovada e somente no servidor.
@@ -85,6 +86,35 @@ function environment(): { endpoint: string; token: string } | null {
   if (!endpoint || !token) return null;
   return { endpoint: endpoint.replace(/\/$/, ""), token };
 }
+/**
+ * Strapi single type: Configurações institucionais → visitBookingUrl.
+ * The verified official form is always available even before the CMS's
+ * site-settings single type is published or its find permission is granted.
+ * Never allow a CMS-provided destination outside Google Forms.
+ */
+export async function getCmsVisitBookingUrl(): Promise<string> {
+  const env = environment();
+  if (!env) return OFFICIAL_VISIT_FORM_URL;
+  try {
+    const response = await fetch(env.endpoint + "/api/site-setting?status=published", {
+      headers: { Authorization: "Bearer " + env.token, Accept: "application/json" },
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(3500),
+    });
+    if (!response.ok) return OFFICIAL_VISIT_FORM_URL;
+    const body: unknown = await response.json();
+    if (!validRecord(body) || !validRecord(body.data)) return OFFICIAL_VISIT_FORM_URL;
+    const config = body.data;
+    if (config.editorialStatus !== "aprovado" ||
+        typeof config.publishedAt !== "string" || !config.publishedAt) {
+      return OFFICIAL_VISIT_FORM_URL;
+    }
+    return safeGoogleVisitFormUrl(config.visitBookingUrl) ?? OFFICIAL_VISIT_FORM_URL;
+  } catch {
+    return OFFICIAL_VISIT_FORM_URL;
+  }
+}
+
 const slugs = new Set(["news-articles", "events", "sport-competitions", "activities", "athletes"]);
 async function find(collection: string, filters?: Record<string, string>): Promise<Json[]> {
   const env = environment();
