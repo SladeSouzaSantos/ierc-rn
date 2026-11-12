@@ -130,6 +130,59 @@ Sequência segura antes de reconstruir o CMS:
 alterar Strapi PROD, PostgreSQL PROD, worker IA, Redis ou `main`.
 PR #12 deve continuar Draft até a homologação da nova coleção.
 
+## Evidência operacional do preflight no MiniMac — 12/11/2026
+
+No commit `96c34fd`, o operador confirmou:
+
+- `scripts/backup-cms-dev.sh`: dump + mídias + segredos em área privada,
+  restauração testada com **49 tabelas públicas** no banco descartável;
+  diretório `cms-backups/dev-20261112T010249Z`;
+- `sha256sum`: `BACKUP_INTEGRITY_OK`;
+- Comparador de schemas em `node:22-alpine` com Docker `--network none`:
+  `manual_review_required`, exatamente **um** hazard:
+  `source_content_type_not_deployed: sport-competition`, sem outras
+  adições, mudanças ou remoções de modelos existentes, `PREFLIGHT_EXIT=3`;
+- SQL `BEGIN READ ONLY`: **49 tabelas**, `ierc_sport_competitions=ABSENT`,
+  `ierc_events` presente.
+
+**Conclusão:** somente a nova coleção está ausente no schema declarativo e
+no catálogo SQL; isso **não é aprovação para migrar diretamente no banco
+DEV**, mas atende ao gate preliminar de integridade e compatibilidade dos
+modelos. O preflight não simula os efeitos das migrações do Strapi no banco.
+
+### Ensaio da migração em sandbox descartável
+
+O script versionado `scripts/rehearse-cms-sports-dev.sh` faz uma
+restauração de **cópia do backup verificado** e inicia um CMS candidato
+**somente** contra esse clone:
+
+```bash
+cd /opt/projects/ierc-rn-dev
+git pull --ff-only origin dev
+bash scripts/rehearse-cms-sports-dev.sh cms-backups/dev-20261112T010249Z
+```
+
+Proteções: exige branch `dev`, manifestos e checksums, CMS/DB originais
+saudáveis, rede Docker **`--internal`** exclusiva e sem portas publicadas;
+a imagem é construída a partir do código atualizado, `cms/.dockerignore`
+exclui `.env`, e os segredos só são injetados no contêiner sandbox em
+tempo de execução. Endereço/usuário/senha de banco são sobrepostos para
+o Postgres descartável. Se o ensaio falhar, o script aborta e remove os
+contêineres e a rede temporários, sem tocar no Strapi DEV real.
+
+**Critérios de sucesso:** `SANDBOX_REHEARSAL=PASS`,
+`SANDBOX_NEW_SPORT_COLLECTION=CREATED`,
+`SANDBOX_EXISTING_TABLES=PRESERVED`,
+`SANDBOX_EVENT_ROWS=PRESERVED`,
+`LIVE_DEV_CONTAINERS=UNCHANGED`,
+`SANDBOX_CLEANUP=COMPLETE`.
+O ensaio não concede permissões no Strapi real nem publica eventos.
+
+Mesmo um PASS ainda requer autorização operacional para reconstruir o
+CMS DEV real, revisar as permissões estritas do token, confirmar o
+formulário e cadastrar a primeira competição real. A coleta externa CBDV
+é independente. Não criar servidores ou bancos de produção.
+
 ## Gates de aceitação
 
 - [ ] CI completo aprovado no HEAD da branch `dev`.
