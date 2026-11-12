@@ -49,11 +49,22 @@ O portal usa o conteúdo-base enquanto `CMS_ENABLED=false`. Só depois de cadast
 
 **Não utilizar `docker compose down -v`**, nem remover volumes PostgreSQL ou Redis existentes.
 
-## Preparação MAIN — não ativar ainda
+## Preparação MAIN após o merge do PR #20 (12/11/2026)
 
-A `main` atual não contém a Sprint CMS/Curadoria da `dev`. Os arquivos acima foram preparados na `dev`, mas **não foram mesclados nem instalados no MAIN**. Depois de homologação, aprovação da instituição e PR, criar segredos **novos** em `cms/.env.prod` (`node cms/scripts/init-env.mjs --prod` via container Docker), configurar `deploy/.env.portal.prod` com token somente leitura do próprio Strapi PROD, e somente então utilizar `compose.cms.prod.yml` e `compose.portal.prod.yml` na pasta MAIN. Não usar CMS/Redis/volumes DEV em MAIN.
+O código CMS/curadoria e o PIX institucional agora existe em ambas as branches.
+**Merge não equivale a deploy local, domínio público habilitado ou publicação
+automática PROD.** A preparação no MiniMac usa `/opt/projects/ierc-rn`,
+`cms/.env.prod`, `deploy/.env.portal.prod` e os dois Compose PROD isolados.
 
-## Amanhã: túnel, Nginx, Cloudflare Access e HTTPS
+Runbook atualizado: [MAIN — preparação segura no MiniMac](MAIN-MINIMAC-BOOTSTRAP.md).
+O script `scripts/prepare-main-minimac.sh` tem `--prepare` (gera apenas arquivos
+privados), `--check` (somente leitura) e `--start-local` (CMS + portal PROD
+somente em 127.0.0.1). Não faz transferências de dados DEV nem inicia worker IA.
+
+A publicação do domínio oficial permanece dependente de validação institucional,
+segurança e HTTPS. Nunca copiar os volumes, uploads, bancos e tokens DEV.
+
+## Acesso externo futuro: túnel, Nginx, Cloudflare Access e HTTPS
 
 O MiniMac já possui `nginx-proxy` e `cloudflared`. **Não presumir** que `localhost` de um desses containers seja o host: `127.0.0.1` dentro do container corresponde a ele mesmo. Antes de configurar rotas, levantar a topologia real sem revelar o token do túnel:
 
@@ -127,7 +138,11 @@ bash scripts/backup-cms-dev.sh
 
 **Segurança:** a pasta contém o `cms.env` com chaves reais; permissões 0700 da pasta raiz e umask 077 limitam o acesso no MiniMac. Nunca mostre, cole ou suba esses arquivos ao GitHub. Crie também uma cópia **criptografada fora do MiniMac**, com política de retenção adequada; backup e cópia no mesmo disco não protegem contra perda do host. Uma restauração do banco não prova que licenças de mídia/editorial e autenticação do Strapi estejam homologadas.
 
-Após backup e ensaio aprovados, o primeiro teste da curadoria deve continuar **manual**, no ambiente DEV, com `CURATOR_ONCE_LIMIT=1` e sem publicação automática; só habilitar as flags durante a execução especificamente autorizada, nunca ativar o agendador recorrente por acidente. Não reutilizar `CMS_READ_TOKEN` como token de gravação.
+A curadoria DEV já recebeu autorização de ativação automática em 11/11,
+mas a publicação real ponta a ponta ainda precisa de evidência e acompanhamento
+na issue #14. O preparo da MAIN **não deve parar nem reiniciar** o agendador
+da DEV, tampouco transportar seu token, Redis ou banco para produção.
+Não reutilizar `CMS_READ_TOKEN` como token de gravação.
 
 
 ## Correção: CMS publicado não aparece no Radar (11/11/2026)
