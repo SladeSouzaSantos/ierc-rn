@@ -16,8 +16,9 @@ export const SYSTEM=[
   'Classifique category com um destes rótulos: Esporte adaptado, Educação inclusiva, Tecnologia assistiva, Direitos e acessibilidade, Cultura e participação ou Inclusão e acessibilidade.',
   'Se a fonte for insuficiente, responda apenas {"skip":true}.',
   'Caso contrário, responda apenas JSON com title, summary, body, whyItMatters e category.',
-  'Mantenha title até 150 caracteres, summary até 250, body até 1000 e whyItMatters até 350.',
-  'Finalize body e whyItMatters com frases completas e pontuação final. Não deixe palavras ou frases interrompidas.',
+  'Respeite os mínimos e máximos do validador: title 15–150 caracteres, summary 60–250, body 100–1000, whyItMatters 40–350; todos como strings em JSON válido, sem Markdown.',
+  'Finalize body e whyItMatters com frases completas e pontuação final (., ! ou ?). Não deixe palavras ou frases interrompidas.',
+  'Se os fatos do título/resumo RSS forem insuficientes para os mínimos, responda somente {"skip":true}; jamais invente fatos para alongar a síntese.',
 ].join(' ');
 const str=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
 /** Canonical editorial labels, independent from the free-form LLM answer. */
