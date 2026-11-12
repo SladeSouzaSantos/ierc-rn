@@ -28,6 +28,8 @@ abort() { printf 'BLOQUEADO: %s\n' "$*" >&2; exit 2; }
 for tool in git docker grep sed; do
   command -v "$tool" >/dev/null 2>&1 || abort "programa ausente: $tool"
 done
+[[ "$(pwd -P)" == /opt/projects/ierc-rn ]] ||
+  abort "use a pasta isolada /opt/projects/ierc-rn no MiniMac, nunca a DEV"
 [[ "$(git branch --show-current)" == main ]] || abort "execute no checkout da branch main"
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] ||
   abort "existem mudanças rastreadas locais; faça revisão antes de iniciar"
@@ -55,6 +57,8 @@ if [[ "$mode" == --prepare ]]; then
   fi
 fi
 
+[[ ! -L cms/.env.prod && ! -L deploy/.env.portal.prod ]] ||
+  abort "arquivos de configuração PROD não podem ser links simbólicos"
 [[ -s cms/.env.prod ]] || abort "cms/.env.prod ausente ou vazio; execute --prepare"
 [[ -s deploy/.env.portal.prod ]] ||
   abort "deploy/.env.portal.prod ausente ou vazio; execute --prepare"
