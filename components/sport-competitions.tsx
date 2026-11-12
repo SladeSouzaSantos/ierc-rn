@@ -1,5 +1,5 @@
 import { ArrowUpRight, CalendarDays, MapPin } from "lucide-react";
-import type { CmsEvent } from "@/lib/cms";
+import type { CmsSportCompetition } from "@/lib/cms";
 import type { CbdvCompetition } from "@/lib/cbdv-calendar";
 import { CBDV_CALENDAR_URL } from "@/lib/cbdv-calendar";
 import {organizeSportCompetitions} from "@/lib/sport-competition-utils";
@@ -14,11 +14,11 @@ const dateRange = (start:string,end?:string) => {
   return dateLabel(start)+" a "+dateLabel(end);
 };
 
-export function SportCompetitions({cbdv,events}:{
+export function SportCompetitions({cbdv,competitions}:{
   cbdv:CbdvCompetition[];
-  events:CmsEvent[];
+  competitions:CmsSportCompetition[];
 }) {
-  const {institutional,external}=organizeSportCompetitions(cbdv,events);
+  const {institutional,external}=organizeSportCompetitions(cbdv,competitions);
   return <section className="editorial-section" aria-labelledby="sport-competitions-title">
     <p className="eyebrow">Programação em atualização</p>
     <h2 id="sport-competitions-title" className="interior-subtitle">Competições e calendário esportivo</h2>
@@ -34,8 +34,10 @@ export function SportCompetitions({cbdv,events}:{
       {institutional.length
         ? <div className="editorial-panels">
           {institutional.map(item => <article key={item.slug} className="detail-card editorial-event">
-            <span>Cadastro institucional · {item.sportModality || "Esporte"}</span>
+            <span>Cadastro institucional · {item.sportModality}</span>
             <h4>{item.title}</h4>
+            {item.calendarLabel && <p>Calendário: {item.calendarLabel}</p>}
+            {item.organizer && <p>Organização: {item.organizer}</p>}
             <p><CalendarDays size={17} aria-hidden="true"/> <time dateTime={item.startsAt}>
               {dateRange(item.startsAt,item.endsAt)}
             </time></p>
