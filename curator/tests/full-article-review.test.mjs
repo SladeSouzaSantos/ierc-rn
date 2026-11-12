@@ -66,6 +66,15 @@ test('second model call validates source quotes and exposes only review status, 
  assert.equal(output.reviewerProvider,'openrouter');
  assert.equal(JSON.stringify(output).includes('An educational team shares an accessible classroom report with teachers'),false);
 });
+test('full article model prompt states complete validated JSON without fabricating facts',()=>{
+  assert.match(VERIFIED_WRITER_SYSTEM,/title com 15 a 150 caracteres/);
+  assert.match(VERIFIED_WRITER_SYSTEM,/summary de 60 a 250/);
+  assert.match(VERIFIED_WRITER_SYSTEM,/body de 100 a 1000/);
+  assert.match(VERIFIED_WRITER_SYSTEM,/whyItMatters de 40 a 350/);
+  assert.match(VERIFIED_WRITER_SYSTEM,/somente \{"skip":true\}/);
+  assert.match(VERIFIED_WRITER_SYSTEM,/jamais preencha espaço inventando fatos/);
+});
+
 test('invalid or unavailable full article evidence never invokes a model',async()=>{
  let called=0;
  await assert.rejects(generateFullArticleDraft(article,null,{router:{async complete(){called++;}}}),
