@@ -92,12 +92,25 @@ no Strapi. Se a presidência autorizar, usar a mesma pauta em uma
 
 ### Atenção sobre a imagem
 
-O Strapi **aceita** `image` em Eventos. Na implementação corrente do
-frontend, porém, **os cartões de `/eventos` ainda não renderizam a mídia
-do evento**; exibem título, resumo, data e local. O upload do convite
-preserva o arquivo no CMS para posterior integração visual, mas não
-garante sua exibição como banner. A imagem otimizada foi preparada
-separadamente a partir do PDF fornecido pelo operador, sem alterar a arte.
+O Strapi já aceita `image` em Eventos. A partir da atualização do
+portal DEV com a implementação de mídia, os cartões de `/eventos`
+**exibem a imagem no topo somente quando** o evento está publicado,
+`editorialStatus=aprovado`, `imageRightsStatus=autorizado`, o campo
+`imageAlt` está preenchido e o arquivo é uma imagem segura do próprio
+CMS. Também pode ser exibido o crédito `imageCredit`.
+
+A imagem é servida por rota interna do **portal**, sem revelar o token nem
+o hostname privado do Strapi; os cartões sem foto mantêm apenas texto.
+O enquadramento usa `object-fit:contain` para preservar o convite inteiro,
+sem recortar datas e letras da arte. A equipe deve manter as informações
+essenciais (data, hora, endereço) também em texto. O campo
+`imageRightsProof` deve apontar para a autorização documental real da
+arte; não marcar `autorizado` sem comprovação.
+
+Se a imagem não aparecer, verificar os campos acima e o arquivo no Strapi,
+além de confirmar que o **portal DEV foi reconstruído**. O upload
+anterior permanece no CMS; não é necessário criar outra coleção, mudar
+o banco ou reconstruir Strapi.
 
 ## Revisão do assistente de notícias automáticas
 
