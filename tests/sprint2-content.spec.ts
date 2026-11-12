@@ -60,23 +60,30 @@ test("endereço de contato é verificável e não há telefone fictício", async
   await expect(page.getByRole("link", { name: /Ver endereço citado pelo TRE-RN/ })).toHaveAttribute("target", "_blank");
 });
 
-test("visitas não ativa agendamento sem URL oficial", async ({ page }) => {
+test("visitas usa formulário oficial sem agenda paralela e sem prometer reserva", async ({ page }) => {
   await page.goto("/visitas");
-  await expect(page.getByText(/não foi fornecido/)).toBeVisible();
-  await expect(page.locator("form")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Solicite uma visita ao IERC-RN" })).toBeVisible();
+  const link = page.getByRole("link", { name: /Solicitar agendamento de visita/ });
+  await expect(link).toHaveAttribute("href", "https://forms.gle/NY35YEEkbL6HM2YF9");
+  await expect(link).toHaveAttribute("target", "_blank");
+  await expect(link).toHaveAttribute("rel", /noopener/);
+  await expect(link).toHaveAttribute("rel", /noreferrer/);
+  await expect(page.getByText(/aguarde a confirmação da equipe/)).toBeVisible();
+  await expect(page.getByText(/serviço externo que recebe as informações preenchidas/)).toBeVisible();
+  await expect(page.locator("form, iframe")).toHaveCount(0);
 });
 
 test("seções editoriais mantêm reflow e testes automáticos de acessibilidade", async ({ page }) => {
   for (const width of [320, 375, 768, 1440]) {
     await page.setViewportSize({ width, height: 850 });
-    for (const route of ["/instituto", "/esportes", "/noticias", "/eventos", "/contato"]) {
+    for (const route of ["/instituto", "/esportes", "/noticias", "/eventos", "/visitas", "/contato"]) {
       await page.goto(route);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow, "Rolagem horizontal em " + route + " / " + width + "px").toBeLessThanOrEqual(1);
     }
   }
   await page.setViewportSize({ width: 1280, height: 900 });
-  for (const route of ["/instituto", "/esportes", "/noticias", "/contato"]) {
+  for (const route of ["/instituto", "/esportes", "/noticias", "/visitas", "/contato"]) {
     await page.goto(route);
     const audit = await new AxeBuilder({ page }).withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa"]).analyze();
     expect(audit.violations, "axe: " + route).toEqual([]);
