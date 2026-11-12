@@ -119,6 +119,14 @@ test('editorial prompt never infers absence of evidence or examples from an RSS 
  // not stochastic model compliance. Human editorial approval remains mandatory.
 });
 
+test('RSS writer prompt specifies safe completeness bounds without weakening factual gates',()=>{
+ assert.match(SYSTEM,/title 15–150 caracteres/);
+ assert.match(SYSTEM,/summary 60–250/);
+ assert.match(SYSTEM,/body 100–1000/);
+ assert.match(SYSTEM,/whyItMatters 40–350/);
+ assert.match(SYSTEM,/jamais invente fatos/);
+});
+
 test('Radar taxonomy standardizes sport and assistive categories without making factual claims',()=>{
  assert.equal(canonicalCategory('esporte'), 'Esporte adaptado');
  assert.equal(canonicalCategory('Esportes Adaptados'), 'Esporte adaptado');
