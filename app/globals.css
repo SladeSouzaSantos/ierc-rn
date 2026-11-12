@@ -810,9 +810,22 @@ html[data-reduce-motion="true"] .goalball-echo { will-change: auto; }
   gap: 0;
   overflow: hidden;
 }
+/* Only event cards with approved artwork use two columns. Text-only
+   events retain the full width and never reserve an empty media slot. */
+.editorial-panels .detail-card.editorial-event-card--with-image {
+  display: grid;
+  grid-template-columns: minmax(150px, 34%) minmax(0, 1fr);
+  align-items: stretch;
+}
 .editorial-event-media {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
   margin: 0;
-  border-bottom: 1px solid var(--line);
+  padding: 14px 12px;
+  border-right: 1px solid var(--line);
   background: #f1f5f2;
 }
 .editorial-event-media img {
@@ -855,12 +868,27 @@ html[data-reduce-motion="true"] .goalball-echo { will-change: auto; }
 .editorial-event-content > p { margin: 0; line-height: 1.75; overflow-wrap: anywhere; }
 .editorial-event-content > .editorial-source { margin-top: 7px; padding-top: 0; }
 html[data-high-contrast="true"] .editorial-event-media {
-  border-bottom: 2px solid #000;
+  border-right: 2px solid #000;
   background: #fff;
 }
 @media (max-width: 760px) {
   .cms-events-list .event-group + .event-group { margin-top: 54px; }
   .editorial-event-media img { height: 240px; }
+}
+/* The invitation stays beside its details on tablets, but stacks at
+   narrow phone widths to protect readable text and 320px reflow. */
+@media (max-width: 540px) {
+  .editorial-panels .detail-card.editorial-event-card--with-image {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .editorial-event-media {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  html[data-high-contrast="true"] .editorial-event-media {
+    border-right: 0;
+    border-bottom: 2px solid #000;
+  }
 }
 /* Keep manually approved competitions distinct from the independent CBDV feed.
    A single margin works with one card, multiple cards, or the empty state. */
