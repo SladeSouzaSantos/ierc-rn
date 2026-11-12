@@ -1,6 +1,6 @@
 # IERC-RN — ambientes DEV e PROD (CMS, portal e Docker)
 
-**Situação:** DEV já existe localmente e contém a primeira conta administrativa; PROD está apenas preparada para futuro deploy. Não iniciar PROD antes da homologação e de definir os procedimentos de backup, DNS e HTTPS.
+**Situação em 12/11/2026:** o código `dev` já foi consolidado na `main` (PRs #12 e #20). A DEV já existe localmente; a **PROD deve ser preparada e testada com seus próprios dados**. A inicialização **local** no MiniMac está autorizada pelo operador, mas isso não autoriza expor DNS, CMS ou o portal publicamente sem homologação. Leia [MAIN no MiniMac](MAIN-MINIMAC-BOOTSTRAP.md).
 
 ## Separação de ambientes
 
@@ -58,7 +58,7 @@ O healthcheck do Strapi responde **204 No Content** quando a aplicação está p
 
 **Não é preciso reiniciar o banco ou reconstruir a imagem para apenas diagnosticar lentidão.** Se `/admin` for rápido, mas o Content Manager ficar parado, observe a aba Network para identificar a chamada específica. O CMS já passou no CI, mas a velocidade do browser local ainda precisa ser medida.
 
-## Preparação da PROD (não executar por enquanto)
+## Preparação local da MAIN (domínio ainda fechado)
 
 O arquivo `compose.cms.prod.yml` já deixa um segundo projeto Docker, com banco e mídias distintos, pronto para validação de configuração. A instância PROD deve, preferencialmente, rodar em infraestrutura separada da máquina de desenvolvimento; a porta `1338` é apenas uma referência local para testes de coexistência.
 
@@ -69,7 +69,7 @@ node cms/scripts/init-env.mjs --prod
 docker compose --env-file cms/.env.prod -f compose.cms.prod.yml config --quiet
 ```
 
-**NÃO executar `up` da PROD ainda.** É necessário homologar antes: políticas de acesso administrativo, domínio e TLS, proxy reverso, estratégia de armazenamento de mídia, auditoria, backup/restore do PostgreSQL, testes de atualização e isolamento, e licenças das imagens.
+A implantação **local** da PROD pode usar `bash scripts/prepare-main-minimac.sh --prepare`, `--check` e `--start-local`, após conferir portas e recursos. **Não abrir o domínio ainda**. Antes do acesso público, homologar as políticas de acesso administrativo, domínio e TLS, proxy reverso, mídia, auditoria, backup/restore, testes de atualização e licenças das imagens.
 
 O portal em PROD usará `CMS_ENABLED=true`, `CMS_API_URL` apontando exclusivamente para a **instância PROD** e `CMS_READ_TOKEN` específico dessa instância. O token fica no servidor, nunca em `NEXT_PUBLIC_*` e nunca no Git. Se o site estiver dentro de outro contêiner, `localhost` significa esse contêiner, não o host: configurar uma rede privada ou endereço interno adequado antes do deploy.
 
@@ -81,7 +81,9 @@ O portal em PROD usará `CMS_ENABLED=true`, `CMS_API_URL` apontando exclusivamen
 - [ ] Homologar notícia como rascunho, aprovar/publicar, autenticação e permissões.
 - [ ] Validar acessibilidade e direitos de imagem.
 - [ ] Definir infraestrutura de produção, backup/restore, HTTPS e acesso administrativo.
-- [ ] Só então concluir o PR #12 e criar o deploy PROD.
+- [x] Consolidar código `dev` na `main` (PRs #12 e #20).
+- [ ] Preparar e validar CMS/portal PROD próprios no MiniMac, sem abrir domínio.
+- [ ] Concluir autorização institucional, HTTPS/Access e release pública (issue #16).
 
 Referências técnicas: [Docker para Strapi 5](https://docs.strapi.io/cms/installation/docker) e [Docker Desktop/WSL 2](https://docs.docker.com/desktop/features/wsl/).
 
