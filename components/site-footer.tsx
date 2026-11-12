@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowUpRight, Instagram, MapPin } from "lucide-react";
+import { ArrowUpRight, Instagram, Mail, MapPin, MessageCircle } from "lucide-react";
+import { IERC_OFFICIAL_EMAIL, IERC_OFFICIAL_EMAIL_LINK, IERC_OFFICIAL_WHATSAPP, IERC_OFFICIAL_WHATSAPP_LINK } from "@/lib/institutional-contact";
 
 const footerNavigation = [
   { href: "/instituto", label: "O Instituto" },
@@ -33,7 +34,9 @@ export function SiteFooter() {
           <h3>Onde estamos</h3>
           <p><MapPin size={19} aria-hidden="true" /> Rua Fonseca e Silva, 1113 · Alecrim, Natal/RN</p>
           <a className="footer-social" href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer"><Instagram size={19} aria-hidden="true" /> @iercrn <span className="sr-only">(abre em nova aba)</span></a>
-          <p className="footer-small">Dados de atendimento e agendamento serão publicados após confirmação institucional.</p>
+          <a className="footer-social" href={IERC_OFFICIAL_WHATSAPP_LINK} target="_blank" rel="noopener noreferrer"><MessageCircle size={19} aria-hidden="true" /> WhatsApp {IERC_OFFICIAL_WHATSAPP}<span className="sr-only"> (abre em nova aba)</span></a>
+          <a className="footer-social" href={IERC_OFFICIAL_EMAIL_LINK}><Mail size={19} aria-hidden="true" /> {IERC_OFFICIAL_EMAIL}</a>
+          <p className="footer-small">Para solicitar visitas, utilize o formulário oficial na página Visitas. Confira com a equipe os horários de atendimento.</p>
         </div>
       </div>
       <div className="container footer-base">
