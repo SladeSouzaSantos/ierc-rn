@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight, CalendarDays, Instagram, MapPin, Trophy, Users } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Instagram, Mail, MapPin, MessageCircle, Trophy, Users } from "lucide-react";
 import { PageHero } from "@/components/page-hero";
 import { getDisplayActivities, getCmsNews, getCmsEvents, getCmsAthletes, getCmsSportCompetitions, getCmsVisitBookingUrl } from "@/lib/cms";
 import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsInstitutionalEventNews, CmsAthletesList } from "@/components/cms-public";
@@ -10,6 +10,7 @@ import { AthleteStories } from "@/components/athlete-stories";
 import { SupportPage } from "@/components/support-page";
 import { LocationMap } from "@/components/location-map";
 import { IERC_MAPS_LINK } from "@/lib/location";
+import { IERC_OFFICIAL_EMAIL, IERC_OFFICIAL_EMAIL_LINK, IERC_OFFICIAL_WHATSAPP, IERC_OFFICIAL_WHATSAPP_LINK } from "@/lib/institutional-contact";
 import { SportCompetitions } from "@/components/sport-competitions";
 import { getCbdvGoalballCalendar } from "@/lib/cbdv-calendar";
 
@@ -157,14 +158,22 @@ export default async function ContentPage({ params }: RouteProps) {
         {slug === "apoie" && <SupportPage />}
 
         {slug === "contato" && <>
-          <div className="detail-intro"><p className="eyebrow">Estamos no Alecrim, Natal</p><h2>Vamos manter essa conversa aberta.</h2><p>Visite-nos na Rua Fonseca e Silva, 1113, no Alecrim, em Natal/RN. Consulte o mapa abaixo para planejar o trajeto. Telefones, e-mail e horários de atendimento continuam aguardando confirmação pela equipe.</p></div>
+          <div className="detail-intro"><p className="eyebrow">Estamos no Alecrim, Natal</p><h2>Vamos manter essa conversa aberta.</h2><p>Visite-nos na Rua Fonseca e Silva, 1113, no Alecrim, em Natal/RN. Consulte o mapa abaixo para planejar o trajeto ou entre em contato pelo WhatsApp e e-mail oficiais. Para assuntos de atendimento, confirme o horário com a equipe.</p></div>
           <div className="detail-grid">
             <article className="detail-card"><MapPin size={32} aria-hidden="true" /><h3>Onde fica o Instituto</h3><VerifiedAddress /><p><a className="inline-link" href={IERC_MAPS_LINK} target="_blank" rel="noopener noreferrer">Abrir no Google Maps <ArrowUpRight size={17} aria-hidden="true"/><span className="sr-only"> (abre em nova aba)</span></a></p></article>
             <article className="detail-card"><Instagram size={32} aria-hidden="true" /><h3>Instagram informado</h3><p><a className="inline-link" href="https://www.instagram.com/iercrn/" target="_blank" rel="noopener noreferrer">@iercrn <ArrowUpRight size={17} aria-hidden="true" /><span className="sr-only">(abre em nova aba)</span></a></p></article>
-            <article className="detail-card"><Users size={32} aria-hidden="true" /><h3>Atendimento</h3><p>Contatos telefônicos publicados em fontes externas divergem. Não apresentamos telefone ou e-mail sem validação institucional.</p></article>
+            <article className="detail-card"><MessageCircle size={32} aria-hidden="true" /><h3>WhatsApp oficial</h3><p>{IERC_OFFICIAL_WHATSAPP}</p><p><a className="inline-link" href={IERC_OFFICIAL_WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">Conversar com o IERC-RN <ArrowUpRight size={17} aria-hidden="true"/><span className="sr-only"> (abre em nova aba)</span></a></p></article>
           </div>
+          <section className="detail-card contact-email" aria-labelledby="contact-email-title">
+            <Mail size={32} aria-hidden="true"/>
+            <div>
+              <h3 id="contact-email-title">E-mail institucional</h3>
+              <p><a className="inline-link" href={IERC_OFFICIAL_EMAIL_LINK}>{IERC_OFFICIAL_EMAIL}</a></p>
+              <p>Para informações sobre atividades, visitas, doações e parcerias, utilize os canais oficiais acima.</p>
+            </div>
+          </section>
           <LocationMap />
-          <Note>Dados de atendimento não confirmados não são exibidos como canais oficiais.</Note>
+          <Note>WhatsApp e e-mail foram confirmados pela instituição. Horários de atendimento geral e outros telefones ainda dependem de confirmação.</Note>
         </>}
 
 
