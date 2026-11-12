@@ -40,6 +40,8 @@ test("MAIN CMS and portal stay loopback-only with own read network and no worker
   assert.match(cms, /^name: ierc-rn-cms-prod$/m);
   assert.match(portal, /^name: ierc-rn-portal-prod$/m);
   assert.match(cms, /127\.0\.0\.1:1338:1337/);
+  assert.match(cms, /CMS_INSTANCE_KIND: prod/);
+  assert.match(cms, /CMS_DIAGNOSTIC_UNSAFE_EVAL: "false"/);
   assert.match(portal, /127\.0\.0\.1:3102:3000/);
   assert.match(cms + portal, /name: ierc-rn-prod-cms-read/);
   assert.doesNotMatch(cms + portal, /CURATOR_ENABLED|CURATOR_AUTO_PUBLISH_ENABLED|CURATOR_WRITE_DRAFTS/);
