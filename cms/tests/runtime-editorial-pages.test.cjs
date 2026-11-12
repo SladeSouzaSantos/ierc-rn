@@ -58,3 +58,23 @@ test('article impact heading and CBDV calendar have scoped responsive vertical s
   assert.match(css, /\.cms-article-impact\s*\{\s*margin-top:\s*clamp\(48px,\s*5vw,\s*80px\);\s*\}/);
   assert.match(css, /\.sport-cbdv-calendar\s*\{\s*margin-top:\s*clamp\(48px,\s*6vw,\s*88px\);\s*\}/);
 });
+
+test('event cards populate and serve only editorially approved Strapi images', () => {
+  const cms = read('lib/cms.ts');
+  const media = read('lib/event-media.ts');
+  const endpoint = read('app/api/event-image/[slug]/route.ts');
+  const cards = read('components/cms-public.tsx');
+  const css = read('app/globals.css');
+  assert.match(cms, /find\("events", \{ populate: "image" \}\)/);
+  assert.match(cms, /getCmsEventImageBySlug/);
+  assert.match(cms, /approvedEventImage\(v\)/);
+  assert.match(media, /imageRightsStatus !== "autorizado"/);
+  assert.match(media, /imageAlt/);
+  assert.match(endpoint, /getCmsEventImageBySlug\(slug\)/);
+  assert.match(endpoint, /"Cache-Control": "no-store"/);
+  assert.match(cards, /className="editorial-event-media"/);
+  assert.match(cards, /unoptimized loading="lazy"/);
+  assert.match(cards, /alt=\{item\.image\.alt\}/);
+  assert.match(css, /object-fit: contain/);
+  assert.match(css, /\.cms-events-list \.event-group \+ \.event-group/);
+});
