@@ -123,7 +123,10 @@ export async function retryPendingDraft({
       ...(correctedDraft?{editorialDigest:reviewedDraftDigest(correctedDraft)}:{}),
     },{correctedDraft});
     await store.set('ierc:curator:seen:'+pending.dedupeKey,'1','EX',31536000);
-    if(progressStore)await progressStore.clear(fingerprint);
+    if(progressStore){
+      try{await progressStore.clear(fingerprint);}
+      catch{logger({event:'editorial_progress_cleanup_failed'});}
+    }
     logger({event:'pending_draft_published',documentIdHash,review:'full_article',
       corrected:!!correctedDraft});
     return {status:'draft_published',reusedDraft:true};
