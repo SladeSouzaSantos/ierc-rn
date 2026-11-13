@@ -11,6 +11,7 @@ import {runOnce} from './pipeline.mjs';
 import {retryPendingDraft} from './retry-pending.mjs';
 import {pendingDraftLookup} from './list-pending.mjs';
 import {recoverOnePendingInSchedule,scheduledRecoveryAllowed} from './auto-recovery.mjs';
+import {encryptedEditorialProgressStore} from './editorial-progress.mjs';
 import {scheduleDraftLimitFromEnv} from './schedule-config.mjs';
 import {CURATOR_SCHEDULE_TIMEZONE,CURATOR_SCHEDULE_HOURS,createCuratorSlotClaimer} from './schedule-slot.mjs';
 import {summarizeRunForLog} from './run-summary.mjs';
@@ -83,6 +84,16 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
       token:env.CURATOR_STRAPI_PUBLISH_TOKEN,
       draftToken:env.CURATOR_STRAPI_DRAFT_TOKEN,
     }):null;
+    // The DEV journal is encrypted with a dedicated operator-provisioned key.
+    // No key => no persisted revisions (old behavior), never plaintext Redis.
+    // PROD never loads this DEV feature or its secret.
+    const canStoreProgress=autoPublish&&env.CURATOR_INSTANCE_KIND==='dev';
+    const progressStore=canStoreProgress&&env.CURATOR_EDITORIAL_PROGRESS_KEY
+      ? encryptedEditorialProgressStore({
+        redis,secret:env.CURATOR_EDITORIAL_PROGRESS_KEY,instanceKind:'dev',
+      }):null;
+    if(canStoreProgress&&!progressStore)
+      log({event:'editorial_progress_disabled',reason:'missing_encryption_key'});
     // A longer HISTORY window is for preview only. Live worker keeps 45-day recency.
     const previewDays=Number(env.CURATOR_PREVIEW_DAYS||120);
     if(cmd==='preview'&&(!Number.isInteger(previewDays)||previewDays<1||previewDays>365))
@@ -105,13 +116,14 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
       throw new Error('CURATOR_AI_PREVIEW_DAYS must be 1..120');
     const execute=async()=>runOnce({router,store:aiPreview?null:redis,cms,dryRun,aiPreview,reviewPreview,
       previewLookup,fullArticlePreview,articleReader:fullArticlePreview||autoPublish?fetchArticleEvidence:null,
-      autoPublish,publisher,autoPublishSources:allowedSources,archiveDiscovery,logger:log,
+      autoPublish,publisher,progressStore,autoPublishSources:allowedSources,
+      archiveDiscovery,logger:log,
       maxAgeDays:cmd==='preview'?previewDays:aiPreview?aiPreviewDays:45,
       // Auto mode never processes more than one candidate per run.
       maxArticles:autoPublish?1:cmd==='preview'?previewLimit:aiPreview?aiPreviewLimit:cmd==='once'?onceLimit:scheduleLimit});
     if(retryPending){
       const result=await retryPendingDraft({documentId:process.argv[3],publisher,router,
-        store:redis,allowedSources,logger:log});
+        store:redis,allowedSources,logger:log,progressStore});
       console.log(JSON.stringify({results:[result],preview:false,count:1}));
     }else if(cmd==='preview'||cmd==='generate-preview'||cmd==='review-preview'||cmd==='review-full-preview'||cmd==='once'){
       const report=await execute();
@@ -136,6 +148,7 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
         try{
           const recovered=autoRecover?await recoverOnePendingInSchedule({
             listPending,publisher,router,redis,allowedSources,logger:log,
+            progressStore,
           }):null;
           const report=recovered||await execute();
           log({event:'run_completed',slot:claim.slot,count:report.count,preview:dryRun,
