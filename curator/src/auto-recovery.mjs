@@ -25,6 +25,7 @@ const COUNTER_SCRIPT=[
 
 export async function recoverOnePendingInSchedule({
   listPending,publisher,router,redis,allowedSources,logger=()=>{},
+  progressStore=null,
   recover=retryPendingDraft,
 }={}){
   if(typeof listPending!=='function'||typeof recover!=='function'||
@@ -67,7 +68,7 @@ export async function recoverOnePendingInSchedule({
     let result;
     try{
       result=await recover({documentId,publisher,router,store:redis,
-        allowedSources,logger});
+        allowedSources,logger,progressStore});
       if(!result||typeof result.status!=='string'||
          !['draft_published','draft_review_pending','locked'].includes(result.status))
         throw new Error('Invalid pending recovery result');
