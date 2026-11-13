@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {recoverOnePendingInSchedule,MAX_SCHEDULED_RECOVERY_ATTEMPTS} from '../src/auto-recovery.mjs';
+import {recoverOnePendingInSchedule,MAX_SCHEDULED_RECOVERY_ATTEMPTS,
+  scheduledRecoveryAllowed} from '../src/auto-recovery.mjs';
 
 const id='nxh3gri9njyrag8uvbtgux4i';
 const listPending=async()=>({documents:[{documentId:id,title:'Synthetic news'}]});
@@ -95,4 +96,19 @@ test('reader cannot exceed 20 entries per bounded scan',async()=>{
   })});
   assert.equal(await recoverOnePendingInSchedule(s.config),null);
   assert.equal(s.calls.length,0);
+});
+
+test('automatic recovery is enabled ONLY for explicitly authorized DEV schedule',()=>{
+  const dev={CURATOR_INSTANCE_KIND:'dev'};
+  const prod={CURATOR_INSTANCE_KIND:'prod'};
+  assert.equal(scheduledRecoveryAllowed(dev,{autoPublish:true,cmd:'schedule'}),true);
+  assert.equal(scheduledRecoveryAllowed({...dev,CURATOR_AUTO_RECOVER_PENDING_ENABLED:'false'},
+    {autoPublish:true,cmd:'schedule'}),false);
+  assert.equal(scheduledRecoveryAllowed(prod,{autoPublish:true,cmd:'schedule'}),false);
+  assert.equal(scheduledRecoveryAllowed(dev,{autoPublish:false,cmd:'schedule'}),false);
+  assert.equal(scheduledRecoveryAllowed(dev,{autoPublish:true,cmd:'once'}),false);
+  assert.equal(scheduledRecoveryAllowed(dev,{autoPublish:true,cmd:'preview'}),false);
+  assert.throws(()=>scheduledRecoveryAllowed({
+    ...dev,CURATOR_AUTO_RECOVER_PENDING_ENABLED:'maybe',
+  },{autoPublish:true,cmd:'schedule'}),/true or false/);
 });
