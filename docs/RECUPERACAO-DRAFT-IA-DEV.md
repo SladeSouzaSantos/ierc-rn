@@ -105,9 +105,12 @@ Resultados esperados:
 Depois, confirmar o documento em `Content Manager → Notícias`, o
 status `Published` e a presença no `/radar-da-inclusao`. Se
 não houver notícias aprovadas, manter `Draft`. O agendador das
-08h/13h/19h permanece independente, mas **não tenta recuperar
-automaticamente** os Drafts anteriores: essa política de retomada
-recorrente requer implementação e testes específicos antes de ativar.
+08h/13h/19h também faz recuperação automática, até duas tentativas
+por Draft, somente na DEV e quando autorizado. As correções agora
+podem ser retomadas de histórico criptografado com a chave DEV,
+mantendo limite total de duas correções independentes por documento.
+Consulte [Revisões incrementais DEV](CURADORIA-REVISOES-INCREMENTAIS-DEV.md).
+Não duplicar a notícia nem reiniciar os contadores Redis.
 
 O texto do campo `approvalNote` inicial é o aviso conservador
 padrão do worker. Não equivale a comprovação de que uma revisão
@@ -238,3 +241,19 @@ para suporte emocional e inclusão de fibromialgia. Essa checagem
 manual **não comprova todas as afirmações** do resumo, corpo e
 `whyItMatters` do Draft. Evitar inferir que o Groq errou só porque
 alguns fatos são verificáveis.
+
+## Atualização do fluxo após 13/11/2026 — duas correções
+
+O procedimento descrito anteriormente permanece como histórico das
+primeiras tentativas. O código DEV mais recente executa até **duas
+correções com revisão após cada uma**; o histórico das objeções e do
+texto corrigido pode ser preservado em Redis com criptografia
+AES-256-GCM e TTL de 14 dias, configurando previamente
+`CURATOR_EDITORIAL_PROGRESS_KEY` com o preparador seguro do MiniMac.
+O rascunho original e a reportagem autorizada são revalidados em cada
+retomada; mudanças impedem reutilização da correção anterior.
+Nenhuma chamada adicional contorna um `hold` terminal.
+
+O progresso da tentativa das 19h do dia 13/11 **não foi gravado** pelo
+código anterior: o novo histórico só vale para revisões feitas após
+a atualização da imagem e configuração da chave.
