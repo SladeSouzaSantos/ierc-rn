@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PixDonationKey } from "@/components/pix-donation-key";
 import {
-  ArrowUpRight, CalendarDays, HeartHandshake, Megaphone,
+  ArrowUpRight, CalendarDays, HeartHandshake, Handshake,
   MessageCircle, ShoppingBag, ShieldCheck, Repeat2, HandCoins,
 } from "lucide-react";
 
@@ -15,11 +15,10 @@ export function SupportPage() {
   return <>
     <div className="detail-intro support-intro">
       <p className="eyebrow">Solidariedade e participação</p>
-      <h2>Há diferentes formas de caminhar junto com o IERC-RN.</h2>
-      <p>Você pode contribuir com roupas, sapatos e bolsas em bom estado,
-        comprar no Bazar Solidário ou conversar sobre voluntariado e
-        parcerias. Confira abaixo os horários e as orientações informadas
-        pela instituição para participar.</p>
+      <h2>Seu apoio fortalece as atividades do IERC-RN.</h2>
+      <p>Você pode doar roupas, sapatos e bolsas em bom estado,
+        comprar no Bazar Solidário ou propor parcerias com a instituição.
+        Conheça os horários de atendimento e as formas de contribuir.</p>
     </div>
 
     <nav className="support-jump-links" aria-label="Nesta página">
@@ -65,11 +64,12 @@ export function SupportPage() {
 
     <section className="support-options editorial-section" id="formas-de-apoio"
       aria-labelledby="support-options-title">
-      <p className="eyebrow">Participação da comunidade</p>
-      <h2 className="interior-subtitle" id="support-options-title">Como você pode colaborar</h2>
-      <p className="editorial-intro">O bazar recebe doações presenciais e atende compradores.
-        O IERC-RN também informou que aceita voluntariado e parcerias,
-        cujas condições devem ser combinadas com a equipe.</p>
+      <p className="eyebrow">Formas de contribuir</p>
+      <h2 className="interior-subtitle" id="support-options-title">Como apoiar o IERC-RN</h2>
+      <p className="editorial-intro">As doações de itens e as compras no Bazar Solidário
+        são formas de apoiar a instituição. Empresas e organizações também
+        podem colaborar por meio de parcerias, com materiais ou serviços,
+        conforme as necessidades do IERC-RN.</p>
       <div className="support-choice-grid">
         <article className="detail-card support-choice">
           <span className="support-choice-icon" aria-hidden="true"><HeartHandshake size={30} /></span>
@@ -92,17 +92,15 @@ export function SupportPage() {
           </Link>
         </article>
         <article className="detail-card support-choice">
-          <span className="support-choice-icon" aria-hidden="true"><Megaphone size={30} /></span>
-          <h3>Voluntariado e parcerias</h3>
-          <p>O IERC-RN recebe voluntários e parcerias com empresas,
-            inclusive apoio com materiais ou serviços. Para oferecer
-            tempo, habilidades, produtos ou outro tipo de contribuição,
-            consulte a equipe sobre as necessidades e o recebimento.</p>
-          <a className="inline-link" href="https://www.instagram.com/iercrn/"
-            target="_blank" rel="noopener noreferrer">
-            Conhecer o perfil informado <ArrowUpRight size={17} aria-hidden="true" />
-            <span className="sr-only"> (abre em nova aba)</span>
-          </a>
+          <span className="support-choice-icon" aria-hidden="true"><Handshake size={30} /></span>
+          <h3>Parcerias institucionais</h3>
+          <p>O IERC-RN recebe propostas de parceria com empresas e organizações,
+            inclusive apoio com materiais ou serviços. Entre em contato
+            para apresentar sua proposta e conhecer as necessidades atuais
+            da instituição.</p>
+          <Link className="inline-link" href="/contato">
+            Propor uma parceria <ArrowUpRight size={17} aria-hidden="true" />
+          </Link>
         </article>
       </div>
     </section>
@@ -169,9 +167,10 @@ export function SupportPage() {
       <MessageCircle size={34} aria-hidden="true" />
       <p className="eyebrow light">Próximo passo</p>
       <h2 id="support-contact-title">Quer apoiar o IERC-RN?</h2>
-      <p>As doações de itens são recebidas na sede do IERC-RN, de segunda
-        a quinta, das 8h às 11h. Para voluntariado, parcerias ou dúvidas,
-        consulte os canais institucionais disponíveis na página de contato.</p>
+      <p>O IERC-RN recebe doações de itens na sede, de segunda a quinta-feira,
+        das 8h às 11h. Para apresentar propostas de parceria, oferecer apoio
+        com materiais ou serviços ou esclarecer dúvidas, fale com a instituição
+        pelos canais oficiais de contato.</p>
       <Link className="button button-yellow" href="/contato">
         Ir para Contato <ArrowUpRight size={18} aria-hidden="true" />
       </Link>
