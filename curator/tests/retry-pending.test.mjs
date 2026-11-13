@@ -92,7 +92,7 @@ test('recovery accepts CMS summary with surrounding whitespace but publishes exa
   assert.equal(counts().modelCalls,1);
 });
 test('recovery still rejects summary that validator would truncate, before calls and CMS writes',async()=>{
-  const pending={...article,summary:article.summary+' '.'repeat(4)+'X'.repeat(300)};
+  const pending={...article,summary:article.summary+' '.repeat(4)+'X'.repeat(300)};
   const {args,counts}=config({pending});
   await assert.rejects(retryPendingDraft(args),/editorial integrity/);
   assert.equal(counts().articleReads,0);
