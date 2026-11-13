@@ -107,7 +107,7 @@ async function main(){
       providers,state,settings,logger:data=>console.log(JSON.stringify(data)),
     });
     console.log(JSON.stringify({event:'review_schema_diagnostic_completed',
-      synthetic:true,providersChecked:results.length,writeOperations:0,
+      synthetic:true,providersChecked:results.length,cmsWrites:0,
       schemaValid:results.filter(x=>x.status==='schema_valid').length}));
   }finally{
     await closeQuotaRedis(redis);
