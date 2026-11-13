@@ -116,3 +116,67 @@ humana ou automática foi concluída.
 Segurança: não compartilhar chaves API, `.env`, tokens do CMS,
 texto integral da notícia ou evidências de terceiros nos logs.
 Compartilhar somente campos de status e categorias fixas de falha.
+
+
+## Diagnóstico real do ENEM — 13/11/2026, 16h22 Fortaleza
+
+O operador executou **uma recuperação única** do documento
+`nxh3gri9njyrag8uvbtgux4i`, identificado pelo
+`list-pending.mjs`, com o código DEV anterior. A execução retornou:
+
+- Groq: `invalid_output` / `review_invalid_quotes_type`;
+- Gemini: `invalid_output` / `review_missing_fields`;
+- OpenRouter: `invalid_output` / `review_invalid_support`;
+- `pending_review_held`, `reason=review_unavailable`;
+- resultado `draft_review_pending`, sem publicação ou nova notícia.
+
+**Não houve demonstração de erro de licença, fonte ou CMS nesta tentativa.**
+Os três erros acima dizem respeito ao contrato de saída da revisão
+independente. O diagnóstico sintético anterior passou em todos os
+modelos, mas isso não garantia aderência do contrato ao artigo real.
+
+A correção incremental na DEV agora:
+
+1. Usa JSON Schema nos modelos exatos Groq GPT-OSS 120B
+   (`strict:true`), Gemini 2.5 Flash (`strict:true`) e
+   OpenRouter Nemotron 3.5 Super VL gratuito (`strict:false`, melhor
+   esforço); outros modelos, fases e provedores mantêm o contrato
+   anterior.
+2. Instrui todos a retornar **sempre cinco campos**, sem strings como
+   `"partial"` no campo `factualSupport`; `hold` significa
+   `insufficient`, arrays existentes e vazios quando apropriado.
+3. Reserva `evidenceQuotes` para duas substrings LITERAIS de blocos
+   diferentes, com 12–160 caracteres, somente quando `approve`.
+   Para `hold`, `evidenceQuotes:[]` é válido.
+4. Mantém `validateReview`, `verifyFullArticleReview`, o gate de
+   publicação do Strapi, direitos de reutilização, validação byte a
+   byte do Draft existente e quotas intactos. **O sistema nunca corrige
+   automaticamente campos ausentes ou transforma uma retenção em
+   aprovação.**
+
+Depois que o CI da DEV estiver verde, reconstruir a imagem com
+`docker compose ... build worker` como acima, testar os contratos
+com um diagnóstico sintético **sem escrita** (cotas gratuitas reais):
+
+```bash
+docker compose --env-file curator/.env -f compose.curator.dev.yml \
+  --profile curator run --rm --no-deps -T worker \
+  node src/diagnose-review-schema.mjs
+```
+
+Se houver cotas e o novo contrato funcionar, executar a recuperação
+supervisionada **uma única nova tentativa** sobre o mesmo documento:
+
+```bash
+docker compose --env-file curator/.env -f compose.curator.dev.yml \
+  --profile curator run --rm --no-deps -T worker \
+  node src/cli.mjs retry-pending nxh3gri9njyrag8uvbtgux4i
+```
+
+Esse último comando **PODE PUBLICAR NA DEV** caso a nova revisão,
+os fatos, as citações, a licença e a integridade sejam aprovados.
+Um resultado `draft_review_pending` ou `ai_review_hold` significa
+que o bloqueio continua correto. Nunca forçar a aprovação nem remover
+locks/keys do Redis para repetir chamadas. Se o artigo tiver sido
+editado manualmente, não tentar a recuperação: exige novo fluxo
+editorial.
