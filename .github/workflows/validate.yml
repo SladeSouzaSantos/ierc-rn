@@ -129,6 +129,7 @@ jobs:
           bash -n scripts/preflight-curator-autopublish-prod.sh
           bash -n scripts/prepare-main-minimac.sh
           bash -n scripts/preflight-curator-autopublish-dev.sh
+          bash -n scripts/check-curator-slots-dev.sh
           bash -n scripts/rehearse-cms-sports-dev.sh
           bash -n scripts/lib/cms-table-preservation.sh
           bash -n scripts/tests/test-cms-table-preservation.sh
