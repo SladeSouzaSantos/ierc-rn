@@ -62,9 +62,12 @@ O código da MAIN foi integrado. Para **preparar e iniciar localmente** o CMS/po
 
 ## Fluxo de desenvolvimento
 
-- `main`: base institucional aprovada.
-- `dev`: implementação e homologação.
-- Pull requests para revisão antes da publicação.
+- **`dev` — desenvolvimento:** toda implementação, correção e experimento de código começa aqui. O MiniMac DEV é homologado antes de qualquer promoção.
+- **`main` — produção:** somente alterações aprovadas e com testes verdes entram via pull request `dev → main`, após revisar riscos, conteúdo institucional, backups e deploy.
+- **Sincronização:** se houver manutenção excepcional na `main`, trazemos seus commits de volta por PR `main → dev` sem descartar trabalho ainda não homologado na `dev`. Branches podem ter SHAs diferentes enquanto houver mudanças DEV pendentes; isso é intencional.
+- **Arquivos locais:** os `nginx.conf` da MAIN e da DEV são gerados em cada checkout e ignorados pelo Git; credenciais `.env*`, backups, logs e artefatos temporários também não devem ser commitados. Os templates compartilháveis ficam em `infra/nginx/shared-*.conf`.
+
+Não fazer deploy automático de alterações não homologadas da `dev` na PROD.
 
 ## Marcos de desenvolvimento
 

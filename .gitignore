@@ -32,3 +32,29 @@ curator/.tmp/
 # Each MiniMac checkout generates its own vhost for the EXISTING nginx-proxy.
 # MAIN/DEV share this repository but MUST NOT share server_name/upstream.
 /nginx.conf
+
+# Transient build, test, development and diagnostic artifacts
+dist/
+.cache/
+.tmp/
+.turbo/
+.nyc_output/
+*.log
+logs/
+tmp/
+*.pid
+*.pid.lock
+
+# Local backups, exports and temporary databases (never commit production data)
+/backups/
+/reports/
+*.dump
+*.backup
+*.sqlite
+*.sqlite3
+
+# Machine-specific editor files
+.idea/
+.vscode/.history/
+*.swp
+*.swo
