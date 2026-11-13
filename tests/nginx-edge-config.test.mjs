@@ -59,7 +59,7 @@ test('Git excludes machine-local Nginx config and generated/secret state',()=>{
     '/nginx.conf','.env*','!.env.example','cms-backups/','/backups/',
     '*.log','logs/','tmp/','dist/','curator/.cache/','cms/public/uploads/'
   ]){
-    assert.ok(ignore.split('\\n').includes(pattern),
+    assert.ok(ignore.split('\n').includes(pattern),
       'Expected gitignore entry: '+pattern);
   }
   assert.ok(existsSync(new URL('../infra/nginx/shared-main.conf',import.meta.url)));
