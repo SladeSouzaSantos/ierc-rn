@@ -8,12 +8,13 @@ import {cmsNewsReadOnly,previewDeduper} from './duplicate-check.mjs';
 import {fetchArticleEvidence} from './article-evidence.mjs';
 import {autoPublishSettingsFromEnv,ebcArchivePublishingFromEnv} from './auto-config.mjs';
 import {runOnce} from './pipeline.mjs';
+import {retryPendingDraft} from './retry-pending.mjs';
 import {scheduleDraftLimitFromEnv} from './schedule-config.mjs';
 import {summarizeRunForLog} from './run-summary.mjs';
 
 const cmd=process.argv[2];
-if(!['preview','generate-preview','review-preview','review-full-preview','once','schedule'].includes(cmd)){
-  console.error('Use: node src/cli.mjs preview|generate-preview|review-preview|review-full-preview|once|schedule');
+if(!['preview','generate-preview','review-preview','review-full-preview','once','schedule','retry-pending'].includes(cmd)){
+  console.error('Use: node src/cli.mjs preview|generate-preview|review-preview|review-full-preview|once|schedule|retry-pending <documentId>');
   process.exitCode=2;
 }else{
   const env=process.env;
@@ -38,9 +39,17 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
   const reviewPreview=cmd==='review-preview'||cmd==='review-full-preview';
   const fullArticlePreview=cmd==='review-full-preview';
   const dryRun=cmd==='preview'||aiPreview||env.CURATOR_WRITE_DRAFTS!=='true';
-  // Reject unsafe publication configuration without starting Redis or any API call.
-  const {autoPublish,allowedSources}=autoPublishSettingsFromEnv(env,cmd,{dryRun});
-  const archiveDiscovery=ebcArchivePublishingFromEnv(env,cmd,
+  // Explicit retry uses the exact live ONCE publication policy, but never
+  // creates a new article. Validate the ID and production scope before I/O.
+  const retryPending=cmd==='retry-pending';
+  if(retryPending && (env.CURATOR_INSTANCE_KIND!=='prod'||
+      !/^[a-zA-Z0-9]{12,90}$/.test(process.argv[3]||'')||process.argv.length!==4))
+    throw new Error('Pending recovery requires PROD and one explicit documentId');
+  const publicationCmd=retryPending?'once':cmd;
+  const {autoPublish,allowedSources}=autoPublishSettingsFromEnv(env,publicationCmd,{dryRun});
+  if(retryPending&&!autoPublish)
+    throw new Error('Pending recovery requires approved PROD autonomous publishing');
+  const archiveDiscovery=ebcArchivePublishingFromEnv(env,publicationCmd,
     {autoPublish,allowedSources,dryRun});
   // Wait for a fully ready Redis BEFORE using any quota-bearing operation.
   // No model calls are made if the connection cannot be established.
@@ -103,7 +112,11 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
       return {id:v.year+'-'+v.month+'-'+v.day+':'+v.hour,
         hour:v.hour,minute:v.minute};
     };
-    if(cmd==='preview'||cmd==='generate-preview'||cmd==='review-preview'||cmd==='review-full-preview'||cmd==='once'){
+    if(retryPending){
+      const result=await retryPendingDraft({documentId:process.argv[3],publisher,router,
+        store:redis,allowedSources,logger:log});
+      console.log(JSON.stringify({results:[result],preview:false,count:1}));
+    }else if(cmd==='preview'||cmd==='generate-preview'||cmd==='review-preview'||cmd==='review-full-preview'||cmd==='once'){
       const report=await execute();
       console.log(JSON.stringify(report));
     }else{
