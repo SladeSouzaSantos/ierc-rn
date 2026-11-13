@@ -159,10 +159,31 @@ Primeiro iniciar **somente o Redis PROD** e confirmar saúde:
 
 ```bash
 docker compose --env-file curator/.env.prod -f compose.curator.prod.yml \
-  --profile curator up -d redis
+  --profile curator up -d --wait redis
+docker compose --env-file curator/.env.prod -f compose.curator.prod.yml \
+  --profile curator exec -T redis redis-cli ping
 docker compose --env-file curator/.env.prod -f compose.curator.prod.yml \
   --profile curator ps
 ```
+
+Esperado: `PONG` e `healthy`. **Se o Redis PROD havia falhado
+com `setpriv: setresuid failed: Operation not permitted` e
+`Restarting (127)`**, atualize a MAIN para o commit que contém a
+correção de capacidades do Redis e recrie **somente** seu contêiner:
+
+```bash
+git pull --ff-only origin main
+docker compose --env-file curator/.env.prod -f compose.curator.prod.yml \
+  --profile curator up -d --no-deps --force-recreate --wait redis
+docker compose --env-file curator/.env.prod -f compose.curator.prod.yml \
+  --profile curator exec -T redis redis-cli ping
+```
+
+O Redis oficial precisa das capacidades `CHOWN`, `SETGID` e
+`SETUID` apenas durante o início para ajustar o volume e trocar de
+usuário. O worker de IA continua com `cap_drop: [ALL]`, sem
+`cap_add`. Não remova volumes, não desative o isolamento e não
+reinicie a DEV.
 
 Agora executar **uma** tentativa real no PROD, sabendo que ela pode publicar
 automaticamente uma notícia que passe nas verificações:
