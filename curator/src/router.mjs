@@ -18,6 +18,15 @@ function editorialFailureReason(error) {
   if(message==='Incomplete model draft')return 'incomplete_draft';
   if(message==='Unsafe draft markup')return 'unsafe_markup';
   if(message==='Invalid editorial payload')return 'invalid_structure';
+  // Never expose provider output or text from the copyrighted article.
+  // Static diagnostic tokens pinpoint why a free reviewer was rejected.
+  if(message==='Invalid AI review'){
+    const allowed=new Set(['empty_or_oversize','json_syntax','not_object',
+      'missing_fields','invalid_decision','invalid_support',
+      'invalid_quotes_type','invalid_claims_type','invalid_issues_type']);
+    return allowed.has(error?.reviewReason)
+      ? 'review_'+error.reviewReason:'schema_rejected';
+  }
   return 'schema_rejected';
 }
 const fallbackFor = (err) => {
