@@ -247,15 +247,18 @@ test('held correction of existing pending Draft never updates or publishes the C
     whyItMatters:'Os exemplos relatados podem servir para debater formas de tornar atividades educacionais mais acessíveis no Brasil.',
     category:article.category,
   };
+  const revised2={...revised,
+    whyItMatters:'A fonte descreve experiências educacionais com recursos acessíveis para estudantes em escolas brasileiras.'};
   let calls=0;
   args.router={async complete(){
     calls++;
-    return {provider:'groq',content:JSON.stringify([hold,revised,hold][calls-1])};
+    return {provider:'groq',content:JSON.stringify(
+      [hold,revised,hold,revised2,hold][calls-1])};
   }};
   const result=await retryPendingDraft(args);
   assert.equal(result.status,'draft_review_pending');
   assert.equal(result.reason,'ai_review_hold');
-  assert.equal(calls,3);
+  assert.equal(calls,5); // second correction also received its own independent HOLD
   assert.equal(counts().published,0);
   assert.equal(counts().created,0);
 });
