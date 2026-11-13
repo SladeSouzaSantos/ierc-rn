@@ -155,3 +155,17 @@ test('HOLD diagnostic classifications reflect model counts, never AI text',()=>{
   assert.throws(()=>safeFullArticleHoldSummary(item,'unknown-provider'),
     /Valid independent reviewer HOLD/);
 });
+
+test('contradictory approve stays blocked and logs only a fixed safe code',async()=>{
+  const logs=[];
+  const invalid={...review,unsupportedClaims:['private model claim text']};
+  const result=await reviewFullArticleDraft(article,draft,evidence,{router:{
+    async complete(){return {content:JSON.stringify(invalid),provider:'openrouter'};}
+  },logger:x=>logs.push(x)});
+  assert.deepEqual(result,{approved:false,reason:'ai_review_hold'});
+  assert.deepEqual(logs,[{
+    event:'full_article_review_inconsistent',
+    provider:'openrouter',reason:'approval_contract_conflict',
+  }]);
+  assert.ok(!JSON.stringify(logs).includes('private model claim text'));
+});
