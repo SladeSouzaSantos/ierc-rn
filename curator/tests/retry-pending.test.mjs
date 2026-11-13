@@ -202,3 +202,60 @@ test('invalid or unapproved document ID fails without network or model I/O',asyn
   }
   assert.equal(counts().modelCalls,0);
 });
+
+test('automatic repair of existing pending Draft preserves document ID, then publishes reviewed corrected text',async()=>{
+  const {args,counts}=config();
+  const hold={decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],unsupportedClaims:['Unsupported original interpretation'],
+    issues:['Restrict implication to article evidence']};
+  const revised={title:article.title,
+    summary:article.summary,
+    body:article.body,
+    whyItMatters:'Os exemplos relatados podem servir para debater formas de tornar atividades educacionais mais acessíveis no Brasil.',
+    category:article.category,
+  };
+  let calls=0,publishOptions=null;
+  args.router={async complete(req){
+    calls++;
+    assert.deepEqual(['review','draft','review'][calls-1],req.phase);
+    return {provider:'groq',content:JSON.stringify([hold,revised,review][calls-1])};
+  }};
+  const publish=args.publisher.publishApprovedDraft;
+  args.publisher.publishApprovedDraft=async(id,expected,evidence,options)=>{
+    publishOptions=options;
+    assert.equal(id,doc);
+    assert.equal(expected.title,article.title);
+    assert.equal(evidence.editorialDigest?.length,64);
+    return publish(id,expected,evidence);
+  };
+  const result=await retryPendingDraft(args);
+  assert.equal(result.status,'draft_published');
+  assert.equal(result.reusedDraft,true);
+  assert.equal(calls,3);
+  assert.equal(publishOptions.correctedDraft.whyItMatters,revised.whyItMatters);
+  assert.equal(counts().published,1);
+  assert.equal(counts().created,0);
+});
+
+test('held correction of existing pending Draft never updates or publishes the CMS article',async()=>{
+  const {args,counts}=config();
+  const hold={decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],unsupportedClaims:[],issues:['Content does not satisfy evidence']};
+  const revised={title:article.title,
+    summary:article.summary,
+    body:article.body,
+    whyItMatters:'Os exemplos relatados podem servir para debater formas de tornar atividades educacionais mais acessíveis no Brasil.',
+    category:article.category,
+  };
+  let calls=0;
+  args.router={async complete(){
+    calls++;
+    return {provider:'groq',content:JSON.stringify([hold,revised,hold][calls-1])};
+  }};
+  const result=await retryPendingDraft(args);
+  assert.equal(result.status,'draft_review_pending');
+  assert.equal(result.reason,'ai_review_hold');
+  assert.equal(calls,3);
+  assert.equal(counts().published,0);
+  assert.equal(counts().created,0);
+});
