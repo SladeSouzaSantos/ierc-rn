@@ -196,7 +196,7 @@ test('AI review HOLD or unavailable leaves newly generated item as unpublished D
  const publisher={async publishApprovedDraft(){publisherCalls++;}};
  const out=await processArticle(reviewSource,{router,store,cms,dryRun:false,autoPublish:true,publisher,fullArticleEvidence:approvedEvidence});
  assert.equal(out.status,'draft_created_review_pending');
- assert.equal(created,1);assert.equal(publisherCalls,0);assert.equal(modelCalls,2);
+ assert.equal(created,1);assert.equal(publisherCalls,0);assert.equal(modelCalls,3); // one bounded repair request
 });
 test('Strapi publish failure remains Draft and never leaks CMS errors',async()=>{
  let calls=0;const events=[];
