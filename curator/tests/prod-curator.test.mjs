@@ -78,6 +78,15 @@ test('PROD Compose segregates Redis, CMS network, and does not expose public por
   assert.match(prodCompose,/CURATOR_CMS_URL: http:\/\/cms:1337/);
   assert.match(prodCompose,/CURATOR_REDIS_URL: redis:\/\/redis:6379/);
   assert.match(prodCompose,/curator_redis_prod:/);
+  // Redis official entrypoint needs CHOWN and SETUID/SETGID to drop root
+  // privileges via setpriv; cap_drop ALL alone causes exit 127/restart loop.
+  const redisService=prodCompose.split(/^  worker:/m)[0];
+  const workerService=prodCompose.split(/^  worker:/m)[1];
+  assert.match(redisService,/cap_drop: \[ALL\]/);
+  assert.match(redisService,/cap_add: \[CHOWN, SETGID, SETUID\]/);
+  assert.match(redisService,/security_opt: \[no-new-privileges:true\]/);
+  assert.match(workerService,/cap_drop: \[ALL\]/);
+  assert.doesNotMatch(workerService,/cap_add:/);
   assert.doesNotMatch(prodCompose,/ports:|ierc-rn-cms_cms_private|\.\/curator\/\.env\s*$/m);
   assert.notEqual(prodCompose.match(/name: ierc-rn-curator-prod/)[0],devCompose.match(/name: ierc-rn-curator-dev/)[0]);
   const prodPreflight=read('scripts/preflight-curator-autopublish-prod.sh');
