@@ -66,7 +66,7 @@ permanente. Não requer alterar o `.env`.
 
 Resultado esperado: um evento `review_schema_diagnostic` por modelo,
 e um `review_schema_diagnostic_completed` final com
-`synthetic:true`, `writeOperations:0` e `providersChecked`.
+`synthetic:true`, `cmsWrites:0` e `providersChecked`.
 Se não houver cota/Redis, o resultado pode ser indisponível;
 não representa uma falha de segurança.
 
