@@ -893,6 +893,11 @@ html[data-high-contrast="true"] .editorial-event-media {
 /* Keep manually approved competitions distinct from the independent CBDV feed.
    A single margin works with one card, multiple cards, or the empty state. */
 .sport-cbdv-calendar { margin-top: clamp(48px, 6vw, 88px); }
+/* Distinguish the external CBDV action from the competition cards, including
+   at mobile widths where each card is stacked vertically. */
+.sport-cbdv-calendar-action { margin: clamp(28px, 3.5vw, 40px) 0 0; }
+.sport-cbdv-calendar-action .inline-link { min-height: 44px; }
+
 .sport-roster h4 { font-size: 1rem; margin: 12px 0 0; letter-spacing: 0; }
 .sport-roster ul { margin: 0; padding-left: 22px; line-height: 1.8; }
 .editorial-place { display: flex; align-items: center; gap: 8px; }
