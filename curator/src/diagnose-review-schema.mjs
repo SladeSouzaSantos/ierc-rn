@@ -96,9 +96,17 @@ async function main(){
   const env=process.env;
   if(env.CURATOR_INSTANCE_KIND!=='dev')
     throw new Error('Synthetic LLM diagnostic is restricted to DEV');
+  // Optional single-provider scope avoids spending Gemini/OpenRouter
+  // quota when diagnosing only Groq. Reject unknown/multiple arguments.
+  const selected=process.argv[2];
+  if(process.argv.length>3 || (selected &&
+      !['groq','gemini','openrouter','ollama'].includes(selected)))
+    throw new Error('Select at most one configured free provider');
   // Only model/Redis credential and quota clients are constructed. No CMS
   // token, publisher, writer, source discovery, or draft interface is touched.
-  const providers=providersFromEnv(env);
+  const providers=providersFromEnv(env).filter(p=>!selected||p.id===selected);
+  if(providers.length===0)
+    throw new Error('Selected free provider is not configured');
   const settings=settingsFromEnv(env);
   const redis=await connectQuotaRedis(env.CURATOR_REDIS_URL||'redis://redis:6379');
   try{
