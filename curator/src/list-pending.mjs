@@ -1,3 +1,5 @@
+import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 // DEV-only GET to find exact documentIds of AI drafts held for review.
 // A Strapi list row's numeric ID is NOT its documentId. Never list tokens,
 // article bodies, evidence excerpts, or other private CMS content.
@@ -59,7 +61,7 @@ async function main(){
   });
   console.log(JSON.stringify({event:'pending_drafts_dev',...await lookup()}));
 }
-if(process.argv[1]&&new URL('file://'+process.argv[1]).pathname===new URL(import.meta.url).pathname){
+if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   main().catch(()=>{
     console.error('PENDING_DRAFT_LOOKUP_UNAVAILABLE: verify DEV CMS Reader permissions');
     process.exitCode=1;
