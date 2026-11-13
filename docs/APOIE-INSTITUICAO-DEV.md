@@ -23,7 +23,7 @@ divulgação pública. Nenhum telefone ou contato pessoal foi adicionado.
 | Entrega de doações de itens | **Segunda a quinta-feira, das 8h às 11h**, presencialmente na sede |
 | Itens aceitos | **Roupas, sapatos e bolsas em bom estado** |
 | Serviço de coleta | **Não há coleta domiciliar** |
-| Voluntariado e parcerias | Instituição informou que recebe ambos; modalidades e critérios a combinar com a equipe |
+| Parcerias institucionais | Instituição informou que recebe propostas de parceria de empresas e organizações, incluindo materiais e serviços; detalhes a combinar com a equipe |
 
 A referência à equipe de recebimento não exige publicação de nomes ou
 dados de contato de pessoas físicas. Por segurança, confirmar mudanças
@@ -50,7 +50,7 @@ pagamentos, webhooks, gateway ou função de checkout na aplicação.
 - informa hora/dia do bazar e endereço já documentado;
 - explica itens em bom estado, horários de entrega e impossibilidade de coleta;
 - informa acesso público ao bazar e Pix/dinheiro como pagamento presencial;
-- substitui chamada genérica por informação sobre voluntariado e parcerias;
+- apresenta somente parcerias com empresas e organizações, sem bloco de voluntariado, e direciona propostas à página `/contato`;
 - diferencia claramente doações financeiras futuras de pagamentos de compras;
 - mantém contato via `/contato` e perfil Instagram informado, sem dados fictícios.
 
@@ -76,7 +76,7 @@ por teclado, ampliação 200/400%, NVDA, VoiceOver ou TalkBack.
 - Quem aprova notícias, eventos, fotos e permissões de edição do Strapi;
 - Próximos eventos, campanhas e atividades institucionais, com datas aprovadas;
 - Licenças/consentimentos de imagens, especialmente menores e atendidos;
-- Condições e canal institucional para voluntariado/parcerias;
+- Condições e canal institucional para propostas de parceria;
 - Validação formal e documental da chave Pix de doações financeiras,
   titularidade, suporte e política de prestação de contas, caso se decida
   habilitar essa segunda etapa.
@@ -102,3 +102,11 @@ monitor ou Redis; não usar `down -v` e não alterar produção.
 
 As issues #9 e #4 permanecem abertas: a página informativa e o Pix
 financeiro são entregas distintas.
+
+## Ajuste editorial de 13/11/2026
+
+Por solicitação do responsável pelo portal, a página `/apoie` passou a
+apresentar **parcerias institucionais** sem divulgar voluntariado. O cartão de
+parcerias descreve propostas de apoio com materiais ou serviços e conduz aos
+canais oficiais em `/contato`. O Bazar Solidário, as orientações para doações
+presenciais e as precauções para Pix permanecem inalterados.
