@@ -3,7 +3,8 @@ import {SOURCES} from './feeds.mjs';
 import {fetchArticleEvidence} from './article-evidence.mjs';
 import {createPacedEbcFetch} from './ebc-archive-worker.mjs';
 import {validateDraft,slugFor} from './editorial.mjs';
-import {reviewFullArticleDraft} from './full-article-review.mjs';
+import {reviewAndRepairFullArticleDraft} from './full-article-review.mjs';
+import {reviewedDraftDigest} from './cms-publish.mjs';
 
 /**
  * Explicit, single-ID recovery for an auto-generated Strapi draft left pending
@@ -91,7 +92,7 @@ export async function retryPendingDraft({
        evidence.sourceUrl!==reviewSource.url||evidence.sourceId!==source.id||
        evidence.licenseReference!==source.fullTextAccess.reference)
       throw new Error('Pending Draft full article rights unavailable');
-    const verdict=await reviewFullArticleDraft(reviewSource,draft,evidence,{router,logger});
+    const verdict=await reviewAndRepairFullArticleDraft(reviewSource,draft,evidence,{router,logger});
     if(!verdict.approved){
       logger({event:'pending_review_held',documentIdHash,reason:verdict.reason});
       return {status:'draft_review_pending',reason:verdict.reason};
@@ -100,13 +101,16 @@ export async function retryPendingDraft({
       sourceUrl:pending.sourceUrl,dedupeKey:pending.dedupeKey,
       slug:pending.slug,title:pending.title,summary:pending.summary,body:pending.body,
     };
+    const correctedDraft=verdict.revised?verdict.draft:null;
     await publisher.publishApprovedDraft(documentId,expected,{
       evidenceQuotes:verdict.evidenceQuotes,reviewerProvider:verdict.reviewerProvider,
       evidenceMode:verdict.evidenceMode,evidenceDigest:verdict.evidenceDigest,
       licenseReference:verdict.licenseReference,
-    });
+      ...(correctedDraft?{editorialDigest:reviewedDraftDigest(correctedDraft)}:{}),
+    },{correctedDraft});
     await store.set('ierc:curator:seen:'+pending.dedupeKey,'1','EX',31536000);
-    logger({event:'pending_draft_published',documentIdHash,review:'full_article'});
+    logger({event:'pending_draft_published',documentIdHash,review:'full_article',
+      corrected:!!correctedDraft});
     return {status:'draft_published',reusedDraft:true};
   }finally{
     await store.eval('if redis.call("GET",KEYS[1])==ARGV[1] then return redis.call("DEL",KEYS[1]) else return 0 end',
