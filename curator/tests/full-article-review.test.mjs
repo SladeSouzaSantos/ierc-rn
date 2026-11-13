@@ -87,3 +87,27 @@ test('invalid or unavailable full article evidence never invokes a model',async(
  assert.equal(called,1);
  assert.match(VERIFIED_WRITER_SYSTEM,/ORIGINAIS/);
 });
+
+test('second-review prompt preserves fixed five-field approve/hold JSON without inventing citations',()=>{
+  assert.match(VERIFIED_REVIEW_SYSTEM,/EXATAMENTE cinco campos/);
+  assert.match(VERIFIED_REVIEW_SYSTEM,/TODAS as afirmações/);
+  assert.match(VERIFIED_REVIEW_SYSTEM,/evidenceQuotes=\[\]/);
+  assert.match(VERIFIED_REVIEW_SYSTEM,/factualSupport="insufficient"/);
+  assert.match(VERIFIED_REVIEW_SYSTEM,/dois blocos/);
+  assert.match(VERIFIED_REVIEW_SYSTEM,/não omita arrays vazios/);
+  assert.match(VERIFIED_REVIEW_SYSTEM,/não uma revisão das afirmações reais/);
+});
+test('JSON structure never overrides review decision or literal quote evidence',()=>{
+  const hold={...review,decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],issues:['Exercício de retenção']};
+  assert.deepEqual(verifyFullArticleReview(article,draft,evidence,hold),{
+    approved:false,reason:'ai_review_hold',
+  });
+  const invalidCitation={...review,evidenceQuotes:[
+    'Evidence not present in any source block',
+    'Short slide presentations use pictures and brief statements',
+  ]};
+  assert.deepEqual(verifyFullArticleReview(article,draft,evidence,invalidCitation),{
+    approved:false,reason:'unverifiable_full_article_quotes',
+  });
+});
