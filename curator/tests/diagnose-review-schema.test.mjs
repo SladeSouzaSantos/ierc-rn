@@ -92,5 +92,5 @@ test('diagnostic remains DEV-only, does not import CMS or editor write clients',
   assert.match(code,/CURATOR_INSTANCE_KIND!=='dev'/);
   assert.doesNotMatch(code,/from ['"]\.\/cms-publish|from ['"]\.\/editorial\.mjs|\bfetchArticleEvidence\b|\bCURATOR_STRAPI_PUBLISH_TOKEN\b|\bCURATOR_STRAPI_DRAFT_TOKEN\b/);
   assert.match(code,/maxAttempts:1/);
-  assert.match(code,/writeOperations:0/);
+  assert.match(code,/cmsWrites:0/);
 });
