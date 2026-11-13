@@ -10,7 +10,7 @@ import {publishingPolicyForCommand} from './auto-config.mjs';
 import {runOnce} from './pipeline.mjs';
 import {retryPendingDraft} from './retry-pending.mjs';
 import {pendingDraftLookup} from './list-pending.mjs';
-import {recoverOnePendingInSchedule} from './auto-recovery.mjs';
+import {recoverOnePendingInSchedule,scheduledRecoveryAllowed} from './auto-recovery.mjs';
 import {scheduleDraftLimitFromEnv} from './schedule-config.mjs';
 import {CURATOR_SCHEDULE_TIMEZONE,CURATOR_SCHEDULE_HOURS,createCuratorSlotClaimer} from './schedule-slot.mjs';
 import {summarizeRunForLog} from './run-summary.mjs';
@@ -120,14 +120,12 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
       log({event:'schedule_started',timezone:CURATOR_SCHEDULE_TIMEZONE,
         hours:CURATOR_SCHEDULE_HOURS,
         writeDrafts:!dryRun,autoPublish,archiveDiscovery,
-        autoRecover:env.CURATOR_INSTANCE_KIND==='dev'&&autoPublish&&
-          env.CURATOR_AUTO_RECOVER_PENDING_ENABLED!=='false'});
+        autoRecover:scheduledRecoveryAllowed(env,{autoPublish,cmd})});
       const claimSlot=createCuratorSlotClaimer({redis,logger:log});
       // Autonomous recovery is initially DEV-only, and only while the same
       // licensed auto-publisher is explicitly enabled. PROD needs separate
       // homologation; neither instance gets an unrestricted retry loop.
-      const autoRecover=env.CURATOR_INSTANCE_KIND==='dev'&&autoPublish&&
-        env.CURATOR_AUTO_RECOVER_PENDING_ENABLED!=='false';
+      const autoRecover=scheduledRecoveryAllowed(env,{autoPublish,cmd});
       const listPending=autoRecover?pendingDraftLookup({
         baseUrl:env.CURATOR_CMS_URL||'http://cms:1337',
         token:env.CURATOR_STRAPI_READ_TOKEN,
