@@ -1,0 +1,35 @@
+# Dedicated IERC-RN reverse proxy for the EXISTING host-network cloudflared.
+# Does not touch nginx-proxy or reserve 80/443. Publishes loopback ONLY.
+name: ierc-rn-edge
+services:
+  nginx:
+    image: nginx:stable-alpine
+    user: "101:101"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "127.0.0.1:18081:8080"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m,mode=1777
+    networks:
+      - main_edge
+      - dev_edge
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null -T 5 --header='Host: iercrn.org.br' http://127.0.0.1:8080/ >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+networks:
+  main_edge:
+    external: true
+    name: ierc-rn-main-edge
+  dev_edge:
+    external: true
+    name: ierc-rn-dev-edge

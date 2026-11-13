@@ -19,7 +19,10 @@ services:
       CMS_READ_TOKEN: ${CMS_READ_TOKEN:-}
     ports:
       - "127.0.0.1:3102:3000"
-    networks: [cms_read]
+    networks:
+      cms_read: {}
+      edge:
+        aliases: [ierc-rn-main-portal]
     init: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
@@ -33,3 +36,7 @@ networks:
   cms_read:
     external: true
     name: ierc-rn-prod-cms-read
+
+  edge:
+    external: true
+    name: ierc-rn-main-edge
