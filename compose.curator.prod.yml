@@ -16,7 +16,11 @@ services:
       timeout: 5s
       retries: 10
     networks: [worker_prod_private]
+    # Official redis:7-alpine starts as root, chowns /data and invokes setpriv
+    # to drop to the redis user. Without SETUID/SETGID it loops with exit 127.
+    # Grant only the entrypoint capabilities; never expose Redis host ports.
     cap_drop: [ALL]
+    cap_add: [CHOWN, SETGID, SETUID]
     security_opt: [no-new-privileges:true]
   worker:
     build: {context: ./curator, dockerfile: Dockerfile}
