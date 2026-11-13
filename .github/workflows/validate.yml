@@ -70,6 +70,8 @@ jobs:
       - name: Validate DEV-only backup and auto-publication preflight shell syntax
         run: |
           bash -n scripts/backup-cms-dev.sh
+          bash -n scripts/backup-cms-prod.sh
+          bash -n scripts/preflight-curator-autopublish-prod.sh
           bash -n scripts/prepare-main-minimac.sh
           bash -n scripts/preflight-curator-autopublish-dev.sh
           bash -n scripts/rehearse-cms-sports-dev.sh
@@ -91,6 +93,15 @@ jobs:
           printf 'DATABASE_NAME=ierc_cms_prod\nDATABASE_USERNAME=ierc_cms_prod\nDATABASE_PASSWORD=ci-test-not-a-real-secret\n' > cms/.env.prod
           chmod 600 cms/.env.prod
           docker compose --env-file cms/.env.prod -f compose.cms.prod.yml config --quiet
+      - name: Validate isolated PROD publishing Compose without secrets
+        run: |
+          trap 'rm -f curator/.env.prod' EXIT
+          : > curator/.env.prod
+          docker compose --profile curator -f compose.curator.prod.yml config --quiet
+          docker compose --profile curator -f compose.curator.prod.yml config |
+            grep -q 'CURATOR_INSTANCE_KIND: prod'
+          docker compose --profile curator -f compose.curator.prod.yml config |
+            grep -q 'ierc-rn-cms-prod_cms_prod_private'
       - name: Check curator syntax
         run: npm run --prefix curator check
       - name: Run deterministic fallback, quota and draft safety tests
