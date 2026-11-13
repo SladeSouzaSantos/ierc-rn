@@ -1,5 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {autoPublishSettingsFromEnv,publishingPolicyForCommand} from '../src/auto-config.mjs';
 
 // Pure policy tests are independent of the host OS, Node process startup,
@@ -135,4 +137,25 @@ test('live once/schedule and pending retry retain licensed write authorization',
   },'once',{dryRun:false}),/allowlist/);
   assert.throws(()=>publishingPolicyForCommand(env,'retry-pending',{dryRun:false}),
     /environment-specific acknowledgment/);
+});
+
+
+test('actual review-full-preview CLI bypasses live auto-publish gate before Redis I/O',()=>{
+  // This is the exact operational regression: DEV has write-mode scheduler
+  // enabled, yet the user invokes an isolated read-only preview. Deliberately
+  // point to a closed Redis port to fail before ANY CMS/LLM request.
+  const env={...process.env,...approved,
+    CURATOR_ENABLED:'true',
+    CURATOR_WRITE_DRAFTS:'true',
+    CURATOR_EBC_ARCHIVE_PUBLISH_ENABLED:'true',
+    CURATOR_REDIS_URL:'redis://127.0.0.1:1',
+  };
+  const p=spawnSync(process.execPath,['src/cli.mjs','review-full-preview'],{
+    cwd:fileURLToPath(new URL('..',import.meta.url)),
+    env,encoding:'utf8',timeout:5000,
+  });
+  assert.equal(p.error,undefined);
+  assert.notEqual(p.status,0);
+  assert.match(p.stderr,/Redis is unavailable or not ready/);
+  assert.doesNotMatch(p.stderr,/Auto publication requires explicit|Archive discovery requires explicit/);
 });
