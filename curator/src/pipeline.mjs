@@ -17,7 +17,7 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
   now = Date.now(), maxArticles = 3, maxAgeDays = 45, dryRun = true,
   aiPreview = false, reviewPreview = false, fullArticlePreview = false,
   articleReader = null, previewLookup = null,
-  autoPublish = false, publisher = null,
+  autoPublish = false, publisher = null,progressStore = null,
   autoPublishSources = [], archiveDiscovery = false,
   archiveCollector = collectEbcArchiveCandidates,
   archivePaceSleep = ms => new Promise(resolve=>setTimeout(resolve,ms)),
@@ -202,7 +202,8 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
       }else{
         result=await processArticle(article,{router,store,cms,dryRun,logger,
           fullArticleEvidence:evidence,
-          autoPublish:autoPublish&&autoPublishSources.includes(bucket.source.id),publisher});
+          autoPublish:autoPublish&&autoPublishSources.includes(bucket.source.id),
+          publisher,progressStore});
       }
       results.push({
         source: bucket.source.id,
