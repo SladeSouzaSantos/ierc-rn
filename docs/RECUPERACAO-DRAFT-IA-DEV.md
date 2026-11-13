@@ -180,3 +180,61 @@ que o bloqueio continua correto. Nunca forçar a aprovação nem remover
 locks/keys do Redis para repetir chamadas. Se o artigo tiver sido
 editado manualmente, não tentar a recuperação: exige novo fluxo
 editorial.
+
+
+## Estado atual — 13/11/2026, 16h41 America/Fortaleza
+
+O operador fez uma segunda tentativa do mesmo `documentId` após
+`08be943e`. O diagnóstico sintético retornou Groq `hold` (formato
+válido), Gemini `approve` e OpenRouter `approve`, todos com
+`schemaValid:3`. Na notícia real do ENEM:
+
+```text
+llm_attempt groq success
+pending_review_held reason=ai_review_hold
+results: draft_review_pending
+```
+
+**Isto é um HOLD editorial legítimo na interface**, não um erro de
+sintaxe, indisponibilidade ou autorização CMS. O revisor ainda pode
+estar equivocado quanto aos fatos; o sistema não consegue provar a
+correção da decisão sem analisar os motivos. A lógica **não consulta
+Gemini/OpenRouter depois que um modelo emite um HOLD válido**.
+Consultar outro modelo somente para buscar uma aprovação seria
+arbitragem favorável à publicação e enfraqueceria a revisão
+independente.
+
+A atualização de observabilidade na DEV gera, nas PRÓXIMAS revisões
+reais, um evento seguro `full_article_review_held` com:
+
+- `provider`: modelo que decidiu HOLD;
+- `holdCategory`: `model_flagged_claims`,
+  `model_flagged_editorial_issues` ou `model_unspecified_hold`;
+- `unsupportedClaimsCount`, `issuesCount`,
+  `evidenceQuotesCount`: contagens de campos do JSON retornado;
+- `decision:hold` e `factualSupport` (enum já validado).
+
+Esse resumo **não imprime** texto do modelo, fatos supostamente
+incorretos, citações da matéria, URL, dados do Strapi nem chaves.
+O evento `full_article_review_inconsistent` indica que um modelo
+afirmou `approve` mas inseriu contradições/ressalvas: o sistema
+também continua a bloquear. Os nomes `model_...` refletem julgamento
+da IA, **não constatação factual independente**.
+
+IMPORTANTE: o log seguro não revela qual afirmação específica a IA
+contestou. Para fazer auditoria factual detalhada é necessário
+comparar o rascunho e a reportagem em um fluxo editorial privado.
+**Não repetir** `retry-pending` de imediato só para gerar novo log:
+isso gasta cotas e pode modificar a decisão por variabilidade do
+modelo. A notícia deve ficar em Draft até que as questões possam ser
+examinadas. O novo logger só funciona em uma próxima revisão, após
+`git pull` e `docker compose ... build worker`. O worker agendado
+existente não é alterado retroativamente; ativar o código no scheduler
+exige sua recriação em uma janela segura.
+
+A reportagem original, publicada pela Agência Brasil em 08/11/2026,
+contém os números de 138.329 atendimentos especializados, medidas
+para suporte emocional e inclusão de fibromialgia. Essa checagem
+manual **não comprova todas as afirmações** do resumo, corpo e
+`whyItMatters` do Draft. Evitar inferir que o Groq errou só porque
+alguns fatos são verificáveis.
