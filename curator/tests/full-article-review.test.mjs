@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {generateFullArticleDraft,reviewFullArticleDraft,verifyFullArticleReview,
-  VERIFIED_WRITER_SYSTEM,VERIFIED_REVIEW_SYSTEM} from '../src/full-article-review.mjs';
+  VERIFIED_WRITER_SYSTEM,VERIFIED_REVIEW_SYSTEM,safeFullArticleHoldSummary} from '../src/full-article-review.mjs';
 
 const article={source:'Perkins',title:'Accessible classroom materials for blind students',
   publishedAt:'2026-11-08T12:00:00Z',language:'en',url:'https://www.perkins.org/test-accessibility'};
@@ -110,4 +110,48 @@ test('JSON structure never overrides review decision or literal quote evidence',
   assert.deepEqual(verifyFullArticleReview(article,draft,evidence,invalidCitation),{
     approved:false,reason:'unverifiable_full_article_quotes',
   });
+});
+
+test('valid model HOLD logs one fixed, privacy-safe diagnostic and never publishes',async()=>{
+  const modelReview={decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],
+    unsupportedClaims:['copyrighted article snippet: keep private'],
+    issues:['model judgment contains sensitive draft material: keep private']};
+  const logs=[];
+  const result=await reviewFullArticleDraft(article,draft,evidence,{router:{
+    async complete(){return {content:JSON.stringify(modelReview),provider:'groq'};}
+  },logger:x=>logs.push(x)});
+  assert.deepEqual(result,{approved:false,reason:'ai_review_hold'});
+  assert.deepEqual(logs,[{
+    event:'full_article_review_held',
+    provider:'groq',
+    decision:'hold',factualSupport:'insufficient',
+    holdCategory:'model_flagged_claims',
+    unsupportedClaimsCount:1,issuesCount:1,evidenceQuotesCount:0,
+  }]);
+  const serialized=JSON.stringify(logs);
+  assert.doesNotMatch(serialized,/copyrighted|sensitive draft|An educational team|http:|https:/);
+});
+test('HOLD without model explanation is still a blocking editorial decision',async()=>{
+  const logs=[];
+  const result=await reviewFullArticleDraft(article,draft,evidence,{router:{
+    async complete(){return {content:JSON.stringify({
+      decision:'hold',factualSupport:'insufficient',
+      evidenceQuotes:[],unsupportedClaims:[],issues:[],
+    }),provider:'gemini'};}
+  },logger:x=>logs.push(x)});
+  assert.deepEqual(result,{approved:false,reason:'ai_review_hold'});
+  assert.equal(logs[0].holdCategory,'model_unspecified_hold');
+  assert.equal(logs[0].unsupportedClaimsCount,0);
+  assert.equal(logs[0].issuesCount,0);
+});
+test('HOLD diagnostic classifications reflect model counts, never AI text',()=>{
+  const item={decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],unsupportedClaims:[],issues:['Possible unsupported causal claim']};
+  assert.equal(safeFullArticleHoldSummary(item,'groq').holdCategory,
+    'model_flagged_editorial_issues');
+  assert.throws(()=>safeFullArticleHoldSummary({...item,decision:'approve'},'groq'),
+    /Valid independent reviewer HOLD/);
+  assert.throws(()=>safeFullArticleHoldSummary(item,'unknown-provider'),
+    /Valid independent reviewer HOLD/);
 });
