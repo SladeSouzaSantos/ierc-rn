@@ -220,6 +220,8 @@ export async function reviewAndRepairFullArticleDraft(source,draft,evidence,{
         router,logger,onAssessment:answer=>{reviewed=answer;},
       });
       if(verdict.approved){
+        if(correctionsDone>0)logger({event:'editorial_repair_approved',
+          reviewerProvider:verdict.reviewerProvider,correctionsDone});
         logger({event:'editorial_review_approved',correctionsDone,
           corrected:!same(original,current)});
         return {...verdict,draft:current,revised:!same(original,current)};
