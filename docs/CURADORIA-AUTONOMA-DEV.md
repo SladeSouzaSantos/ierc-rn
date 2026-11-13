@@ -42,14 +42,19 @@ agendamento DEV (08h, 13h e 19h — Fortaleza)
         -> validação determinística do novo Draft
         -> NOVA revisão com o mesmo artigo integral
         -> APPROVE + verificações -> publica versão corrigida
-        -> HOLD ou falha -> conserva Draft
+        -> HOLD: segunda correção pontual, se ainda houver orçamento
+           -> nova revisão independente; se aprovado, publica
+        -> HOLD ou falha final -> conserva Draft e histórico privado
      -> indisponível/saída inválida -> conserva Draft
 ```
 
 ### Políticas e limites de segurança
 
-- **Uma** tentativa de reescrita por avaliação de candidato, seguida
-  de nova revisão; não repetir até obter uma aprovação por acaso.
+- **Até duas** correções pontuais por linhagem editorial do mesmo Draft,
+  cada uma seguida de nova revisão; não repetir até obter aprovação por acaso.
+  O progresso sobrevive ao reinício via histórico criptografado Redis DEV,
+  vinculado a evidência e Draft original. Veja
+  [Revisões incrementais DEV](CURADORIA-REVISOES-INCREMENTAIS-DEV.md).
 - O revisor pode rejeitar uma síntese por conteúdo: `hold` é decisão
   válida, não falha do provedor. Nunca usar fallback apenas para procurar
   um parecer favorável. Fallback Groq → Gemini → OpenRouter aplica-se
@@ -94,6 +99,7 @@ Sem editar `curator/.env`:
 ```bash
 cd /opt/projects/ierc-rn-dev
 git pull --ff-only origin dev
+bash scripts/prepare-curator-progress-dev.sh
 bash scripts/preflight-curator-autopublish-dev.sh
 docker compose --env-file curator/.env -f compose.curator.dev.yml \
   --profile curator up -d --build --no-deps --force-recreate worker
@@ -129,3 +135,13 @@ A implementação só deve ser promovida de `dev` para `main`
 após homologação em DEV, aprovação editorial amostral, checagem dos
 direitos/attribution na página renderizada e backups/restore.
 A MAIN existente permanece intacta até o PR autorizado.
+
+## Incremento: histórico seguro de correções
+
+Antes do deploy deste incremento, gerar localmente a chave DEV com
+`bash scripts/prepare-curator-progress-dev.sh`, sem exibir o segredo.
+O preflight exige essa chave quando a recuperação automática está ativa.
+O histórico é criptografado em Redis por 14 dias e só é reaproveitado
+se o Draft e a fonte integral licenciada forem revalidados.
+Duas correções negativas tornam o progresso terminal; a IA não
+continua repetindo chamadas para obter uma aprovação artificial.
