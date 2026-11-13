@@ -85,7 +85,8 @@ test('tampered ciphertext is rejected without returning plaintext',async()=>{
   await store.save(fingerprint(),state);
   const [key,stored]=[...redis.entries][0];
   const box=JSON.parse(stored);
-  box.ciphertext='a'+box.ciphertext.slice(1);
+  box.ciphertext=(box.ciphertext[0]==='a'?'b':'a')+
+    box.ciphertext.slice(1); // guarantee a real one-nibble change
   redis.entries.set(key,JSON.stringify(box));
   await assert.rejects(store.load(fingerprint()),/integrity failed/);
 });
