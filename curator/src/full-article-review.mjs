@@ -92,6 +92,30 @@ export function verifyFullArticleReview(source,draft,evidence,review){
     evidenceMode:'full_article',evidenceDigest:evidence.digest,
     licenseReference:evidence.licenseReference};
 }
+export function safeFullArticleHoldSummary(review,provider){
+  if(!review || review.decision!=='hold' ||
+     !['groq','gemini','openrouter','ollama'].includes(provider))
+    throw new Error('Valid independent reviewer HOLD required');
+  // validateReview is called before this function. Requiring arrays here
+  // also makes the public helper fail closed if invoked out of sequence.
+  if(!['fully_supported','insufficient'].includes(review.factualSupport) ||
+     !Array.isArray(review.issues)||!Array.isArray(review.unsupportedClaims)||
+     !Array.isArray(review.evidenceQuotes))
+    throw new Error('Invalid independent reviewer HOLD');
+  const claims=review.unsupportedClaims.length;
+  const issues=review.issues.length;
+  const quotes=review.evidenceQuotes.length;
+  return {
+    event:'full_article_review_held',provider,
+    decision:'hold',factualSupport:review.factualSupport,
+    // This is a report of the MODEL'S decision, not independently verified.
+    holdCategory:claims>0?'model_flagged_claims':
+      issues>0?'model_flagged_editorial_issues':'model_unspecified_hold',
+    unsupportedClaimsCount:claims,issuesCount:issues,
+    evidenceQuotesCount:quotes,
+  };
+}
+
 export async function reviewFullArticleDraft(source,draft,evidence,{router,logger=()=>{}}){
   const prompt=JSON.stringify({...inputEvidence(source,evidence),draft});
   try{
@@ -99,6 +123,12 @@ export async function reviewFullArticleDraft(source,draft,evidence,{router,logge
       validateOutput:validateReview,phase:'review'});
     const review=validateReview(completion.content);
     const verdict=verifyFullArticleReview(source,draft,evidence,review);
+    // A valid model HOLD is an editorial decision, not an LLM transport
+    // failure. Log only counts and a fixed classification: no model text,
+    // article excerpt, claim, quote, source URL, or provider response body.
+    if(!verdict.approved && verdict.reason==='ai_review_hold'){
+      logger(safeFullArticleHoldSummary(review,completion.provider));
+    }
     return verdict.approved?{...verdict,reviewerProvider:completion.provider}:verdict;
   }catch(error){
     logger({event:'auto_review_unavailable',reason:
