@@ -142,5 +142,5 @@ test('independent AI reviewer HOLD leaves an unpublished Draft',async()=>{
   assert.ok(network.draft);
   assert.equal(network.publication,null);
   assert.equal(network.calls.filter(x=>x.method==='PUT').length,0);
-  assert.equal(router.calls,2);
+  assert.equal(router.calls,3); // bounded repair attempt
 });
