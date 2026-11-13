@@ -13,10 +13,14 @@ export function summarizeRunForLog(report) {
   }
   return {
     published: byStatus.draft_published || 0,
+    recoveredPublished: (Array.isArray(report?.results)?report.results:[])
+      .filter(x=>x?.status==='draft_published'&&x.reusedDraft===true).length,
     draftsCreated: (byStatus.draft_created || 0) +
       (byStatus.draft_created_review_pending || 0) +
       (byStatus.draft_created_publish_failed || 0) +
-      (byStatus.draft_published || 0),
+      (byStatus.draft_published || 0) -
+      (Array.isArray(report?.results)?report.results:[])
+        .filter(x=>x?.status==='draft_published'&&x.reusedDraft===true).length,
     statusCounts: byStatus,
   };
 }
