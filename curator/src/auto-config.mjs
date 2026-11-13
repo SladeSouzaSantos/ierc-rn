@@ -12,11 +12,15 @@ export function autoPublishSettingsFromEnv(env,cmd,{dryRun}){
   const autoPublish=env.CURATOR_AUTO_PUBLISH_ENABLED==='true';
   if(!autoPublish)return {autoPublish:false,allowedSources:[]};
 
-  if(env.CURATOR_INSTANCE_KIND!=='dev'||dryRun||
+  const instance=env.CURATOR_INSTANCE_KIND;
+  if(!['dev','prod'].includes(instance)||dryRun||
       !['once','schedule'].includes(cmd)||
       env.CURATOR_FULL_ARTICLE_REVIEW_ENABLED!=='true'||
-      env.CURATOR_AUTO_PUBLISH_ACK!=='FULL_ARTICLE_REVIEW_ACCEPTED')
-    throw new Error('Auto publication requires explicit DEV licensed full-article review acknowledgment and live write mode');
+      env.CURATOR_AUTO_PUBLISH_ACK!=='FULL_ARTICLE_REVIEW_ACCEPTED'||
+      (instance==='prod'&&(
+        env.CURATOR_PROD_WRITE_ACK!=='PROD_WRITES_APPROVED'||
+        env.CURATOR_PROD_AUTO_PUBLISH_ACK!=='PROD_AUTOPUBLISH_LICENSED_SOURCES_ACCEPTED')))
+    throw new Error('Auto publication requires explicit licensed full-article review, environment-specific acknowledgment and live write mode');
 
   const allowedSources=(env.CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES||'')
     .split(',').map(x=>x.trim()).filter(Boolean);
@@ -37,12 +41,14 @@ export function autoPublishSettingsFromEnv(env,cmd,{dryRun}){
 export function ebcArchivePublishingFromEnv(env,cmd,{autoPublish,allowedSources,dryRun}){
   const flag=env.CURATOR_EBC_ARCHIVE_PUBLISH_ENABLED;
   if(flag===undefined||flag===''||flag==='false')return false;
-  if(flag!=='true'||env.CURATOR_INSTANCE_KIND!=='dev'||
+  if(flag!=='true'||!['dev','prod'].includes(env.CURATOR_INSTANCE_KIND)||
+    (env.CURATOR_INSTANCE_KIND==='prod'&&
+      env.CURATOR_PROD_EBC_ARCHIVE_ACK!=='PROD_EBC_ARCHIVE_APPROVED')||
     !['schedule','once'].includes(cmd)||!autoPublish||dryRun||
     !Array.isArray(allowedSources)||
     !allowedSources.includes('agencia-brasil-educacao')||
     env.CURATOR_FULL_ARTICLE_REVIEW_ENABLED!=='true'||
     env.CURATOR_AUTO_PUBLISH_ACK!=='FULL_ARTICLE_REVIEW_ACCEPTED')
-    throw new Error('Archive discovery requires explicit licensed DEV EBC Education auto-publication');
+    throw new Error('Archive discovery requires explicit environment authorization and licensed EBC Education auto-publication');
   return true;
 }

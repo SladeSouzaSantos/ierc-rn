@@ -48,9 +48,9 @@ export async function runOnce({ sources = SOURCES, fetchImpl = fetch, router, st
     throw new Error('Invalid article age window');
   if (!Number.isInteger(maxArticles) || maxArticles < 1 || maxArticles > 30)
     throw new Error('Invalid article batch size');
-  // Only the explicitly opted-in auto-publisher paces ALL EBC-host requests:
-  // RSS, archive listing and full article GETs, preserving 10s crawl delay.
-  const requestFetch=archiveDiscovery
+  // Every opted-in auto-publisher paces ALL EBC-host requests, even when
+  // archive discovery is off: RSS and full-article GETs respect the 10s delay.
+  const requestFetch=autoPublish
     ? createPacedEbcFetch(fetchImpl,{sleep:archivePaceSleep}):fetchImpl;
   const archiveEvidenceByUrl=new Map();
   const buckets = [];

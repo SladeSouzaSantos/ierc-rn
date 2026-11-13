@@ -2,7 +2,7 @@
 
 **Objetivo:** preparar e iniciar **localmente**, quando decidido pelo operador,
 uma instância PROD independente do ambiente DEV, sem publicar o domínio, sem
-copiar dados de DEV e **sem ativar a IA publicadora em produção**.
+copiar dados de DEV e **sem ativar o agendador de IA automaticamente**.
 
 O código `dev`/`main` foi sincronizado pelo PR #20. Isso não significa que
 `strapi.iercrn.org.br` ou `iercrn.org.br` já estão implantados, protegidos
@@ -139,10 +139,13 @@ sem criação/edição/publicação. Somente após verificar esse token:
   `http://127.0.0.1:3102` no MiniMac, sem mexer nos projetos PHASSCODE.
 - Somente depois de todos os gates liberar `https://iercrn.org.br`.
 
-**Não inclua o worker `compose.curator.dev.yml` na MAIN**. Mesmo com o
-mesmo código, a IA publicadora restringe `CURATOR_INSTANCE_KIND=dev`.
-O monitor somente leitura/worker de notícias existentes da DEV permanecem
-independentes e não devem ser reiniciados por esta operação.
+**Não inclua o worker `compose.curator.dev.yml` na MAIN**.
+A produção tem seu próprio `compose.curator.prod.yml`, Redis e credenciais
+separados; para preparar e habilitar a autopublicação com LLMs gratuitas,
+siga exclusivamente o [runbook de curadoria PROD](CURADORIA-AUTOMATICA-PROD-MINIMAC.md),
+com backup/restauração e pré-check específicos. A inicialização local do
+portal/CMS **não inicia o worker**. A DEV mantém seu monitor e sua curadoria
+independentes e não deve ser reiniciada por esta operação.
 
 ## Comprovação esperada
 
@@ -154,4 +157,4 @@ independentes e não devem ser reiniciados por esta operação.
 
 Issues: [#16](https://github.com/SladeSouzaSantos/ierc-rn/issues/16)
 (infraestrutura/lançamento), [#14](https://github.com/SladeSouzaSantos/ierc-rn/issues/14)
-(curadoria automática DEV, não PROD).
+(provas de curadoria automática em ambos os ambientes, ainda pendentes).

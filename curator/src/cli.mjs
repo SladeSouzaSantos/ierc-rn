@@ -18,11 +18,18 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
 }else{
   const env=process.env;
   if(!['preview','generate-preview','review-preview','review-full-preview'].includes(cmd)&&env.CURATOR_ENABLED!=='true') {
-    console.log('Curator disabled. Set CURATOR_ENABLED=true only after DEV homologation.');
+    console.log('Curator disabled. Enable explicitly only after environment-specific preflight.');
     process.exit(0);
   }
-  if(!['preview'].includes(cmd)&&env.CURATOR_INSTANCE_KIND!=='dev')
-    throw new Error('Automatic PROD ingestion is not approved');
+  if(!['dev','prod'].includes(env.CURATOR_INSTANCE_KIND))
+    throw new Error('Curator must run with an explicit dev or prod instance kind');
+  // PROD preview is read-only. Every write-capable mode requires the separate
+  // production acknowledgment, checked before Redis, CMS or LLM I/O.
+  const readOnlyCmd=['preview','generate-preview','review-preview','review-full-preview'].includes(cmd);
+  if(env.CURATOR_INSTANCE_KIND==='prod'&&!readOnlyCmd&&
+      env.CURATOR_WRITE_DRAFTS==='true'&&
+      env.CURATOR_PROD_WRITE_ACK!=='PROD_WRITES_APPROVED')
+    throw new Error('PROD draft writes require explicit local acknowledgment');
   const settings=settingsFromEnv(env);
   const log=(event)=>console.log(JSON.stringify({ts:new Date().toISOString(),...event}));
   // Explicit one-shot AI preview is independent of the write activation flags.

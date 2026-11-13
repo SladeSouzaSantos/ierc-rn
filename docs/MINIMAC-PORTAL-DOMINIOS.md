@@ -61,6 +61,12 @@ O script `scripts/prepare-main-minimac.sh` tem `--prepare` (gera apenas arquivos
 privados), `--check` (somente leitura) e `--start-local` (CMS + portal PROD
 somente em 127.0.0.1). Não faz transferências de dados DEV nem inicia worker IA.
 
+Após implantação local do CMS/portal PROD, há um segundo processo independente:
+[Curadoria automática PROD com LLMs gratuitas](CURADORIA-AUTOMATICA-PROD-MINIMAC.md),
+com Compose `compose.curator.prod.yml`, Redis e credenciais próprios, backup
+com restauração verificada e consentimento explícito de publicação. A criação
+dos containers CMS/portal e o merge não ativam publicação por IA automaticamente.
+
 A publicação do domínio oficial permanece dependente de validação institucional,
 segurança e HTTPS. Nunca copiar os volumes, uploads, bancos e tokens DEV.
 
