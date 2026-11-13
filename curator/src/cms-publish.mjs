@@ -1,7 +1,24 @@
 import {createHash} from 'node:crypto';
+import {validateDraft,slugFor,canonicalCategory} from './editorial.mjs';
 
 // Separate least-privilege REST client. It only receives a token with findOne
 // and update for News-article. It cannot create drafts or modify other types.
+// Bind a revised CMS payload to the EXACT text that passed full-article
+// review. Otherwise a caller could accidentally publish unreviewed prose.
+export function reviewedDraftDigest(draft){
+  const keys=['title','summary','body','whyItMatters','category'];
+  if(!draft||typeof draft!=='object'||Array.isArray(draft)||
+     Object.keys(draft).length!==keys.length||
+     keys.some(k=>typeof draft[k]!=='string'||!Object.hasOwn(draft,k)))
+    throw new Error('Complete reviewed draft required');
+  let valid;
+  try{valid=validateDraft(JSON.stringify(draft));}
+  catch{throw new Error('Invalid corrected editorial draft');}
+  if(!valid||keys.some(k=>valid[k]!==draft[k]))
+    throw new Error('Corrected draft must be canonical and complete');
+  return createHash('sha256').update(JSON.stringify(keys.map(k=>draft[k]))).digest('hex');
+}
+
 export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
   const host=new URL(baseUrl);
   if(host.protocol!=='http:'||!['cms','localhost','127.0.0.1'].includes(host.hostname)||
@@ -37,7 +54,7 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
         throw new Error('Draft is not an unchanged AI-review-pending candidate');
       return pending;
     },
-    async publishApprovedDraft(documentId,expected,reviewEvidence){
+    async publishApprovedDraft(documentId,expected,reviewEvidence,{correctedDraft=null}={}){
       if(!/^[a-zA-Z0-9]{12,90}$/.test(documentId))
         throw new Error('Invalid CMS document ID');
       if(!expected||!/^https:\/\//.test(expected.sourceUrl||'')||
@@ -62,6 +79,17 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
         reviewEvidence?.licenseReference==='https://commission.europa.eu/legal-notice_en'
       );
       if(!allowedPolicy)throw new Error('Publisher requires documented source reuse permission');
+      let correctedPayload=null;
+      if(correctedDraft!==null){
+        if(reviewEvidence.editorialDigest!==reviewedDraftDigest(correctedDraft))
+          throw new Error('Corrected CMS draft is not the reviewed text');
+        correctedPayload={
+          title:correctedDraft.title,summary:correctedDraft.summary,
+          body:correctedDraft.body,whyItMatters:correctedDraft.whyItMatters,
+          category:canonicalCategory(correctedDraft.category),
+          slug:slugFor({dedupeKey:expected.dedupeKey},correctedDraft.title),
+        };
+      }
       const audit=quotes.map(x=>x.replace(/\s+/g,' ').trim());
       const url=host.origin+'/api/news-articles/'+encodeURIComponent(documentId);
       // Authenticate against the exact draft just created by this worker.
@@ -91,6 +119,9 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
         response=await fetchImpl(url+'?status=published',{
           method:'PUT',headers:{...headers,'Content-Type':'application/json'},
           body:JSON.stringify({data:{
+            // Set reviewed correction AND published status in ONE scoped PUT.
+            // Never persist unreviewed interim versions of the article.
+            ...(correctedPayload||{}),
             editorialStatus:'aprovado',
             approvalReference:reference,
             approvalNote:'Revisão IA ('+reviewEvidence.reviewerProvider+
@@ -107,8 +138,10 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
       try{published=(await response.json())?.data;}
       catch{throw new Error('Publisher published response invalid');}
       if(published?.documentId!==documentId||published?.editorialStatus!=='aprovado'||
-         typeof published?.publishedAt!=='string'||!Number.isFinite(Date.parse(published.publishedAt)))
-        throw new Error('Publisher did not confirm published status');
+         typeof published?.publishedAt!=='string'||!Number.isFinite(Date.parse(published.publishedAt))||
+         (correctedPayload && Object.entries(correctedPayload)
+           .some(([field,value])=>published[field]!==value)))
+        throw new Error('Publisher did not confirm published status or corrected text');
       return {published:true};
     },
   };
