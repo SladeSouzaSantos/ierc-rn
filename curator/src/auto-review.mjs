@@ -82,7 +82,7 @@ export async function reviewAiDraft(source,draft,{router,logger=()=>{}}){
         draft:{title:draft.title,summary:draft.summary,body:draft.body,
           whyItMatters:draft.whyItMatters,category:draft.category},
       }),
-      validateOutput:validateReview,
+      validateOutput:validateReview,phase:'review',
     });
     const review=validateReview(answer.content);
     const result=reviewDecision(source,draft,review);
