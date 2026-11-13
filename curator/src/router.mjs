@@ -1,4 +1,27 @@
 import { providersFromEnv, settingsFromEnv } from './providers.mjs';
+// Groq's GPT-OSS 120B supports strict JSON Schema constrained decoding.
+// Scope to the independent REVIEW phase; drafting and other providers retain
+// their existing request contract. A valid shape is NOT editorial approval.
+const GROQ_REVIEW_RESPONSE_FORMAT={
+  type:'json_schema',
+  json_schema:{
+    name:'ierc_independent_review',
+    strict:true,
+    schema:{
+      type:'object',
+      properties:{
+        decision:{type:'string',enum:['approve','hold']},
+        factualSupport:{type:'string',enum:['fully_supported','insufficient']},
+        evidenceQuotes:{type:'array',items:{type:'string'}},
+        unsupportedClaims:{type:'array',items:{type:'string'}},
+        issues:{type:'array',items:{type:'string'}},
+      },
+      required:['decision','factualSupport','evidenceQuotes','unsupportedClaims','issues'],
+      additionalProperties:false,
+    },
+  },
+};
+
 export class LlmExhaustedError extends Error {
   constructor(reason, diagnostics) { super(reason);this.name='LlmExhaustedError';this.diagnostics=diagnostics; }
 }
@@ -105,6 +128,11 @@ export class FreeLlmRouter {
                 ? {reasoning:{enabled:provider.reasoningEnabled}} : {}),
               ...(provider.id==='gemini' && provider.reasoningEffort==='none'
                 ? {reasoning_effort:'none'} : {}),
+              // Exact supported model and REVIEW phase only. Keep all local
+              // validators, evidence gates and quota/fallback logic unchanged.
+              ...(phase==='review' && provider.id==='groq' &&
+                  provider.kind==='openai' && provider.model==='openai/gpt-oss-120b'
+                ? {response_format:GROQ_REVIEW_RESPONSE_FORMAT} : {}),
               messages:[{role:'system',content:system},{role:'user',content:prompt}]};
         const response=await this.fetchImpl(provider.url,{
           method:'POST',headers:{
