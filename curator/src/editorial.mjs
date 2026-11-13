@@ -1,8 +1,9 @@
 import { createHash, randomBytes } from 'node:crypto';
+import {reviewedDraftDigest} from './cms-publish.mjs';
 import { LlmExhaustedError } from './router.mjs';
 import {reviewAiDraft} from './auto-review.mjs';
 import {cmsNewsReadOnly} from './duplicate-check.mjs';
-import {generateFullArticleDraft,reviewFullArticleDraft} from './full-article-review.mjs';
+import {generateFullArticleDraft,reviewAndRepairFullArticleDraft} from './full-article-review.mjs';
 
 export const SYSTEM=[
   'Você escreve sínteses informativas ORIGINAIS em português do Brasil para um portal sobre inclusão de pessoas cegas e com baixa visão.',
@@ -170,21 +171,27 @@ export async function processArticle(source,{router,store,cms,dryRun=true,logger
     if(autoPublish){
       // A distinct editorial prompt reviews the candidate. Failure or
       // insufficient evidence NEVER escalates a draft to published.
-      const verdict=await reviewFullArticleDraft(source,draft,fullArticleEvidence,{router,logger});
+      const verdict=await reviewAndRepairFullArticleDraft(source,draft,fullArticleEvidence,{router,logger});
       if(!verdict.approved){
         status='draft_created_review_pending';
         logger({event:'auto_review_held',reason:verdict.reason,documentIdHash});
       }else{
         try{
-          await publisher.publishApprovedDraft(documentId,payload,{
+          const correctedDraft=verdict.revised?verdict.draft:null;
+          const audit={
             evidenceQuotes:verdict.evidenceQuotes,
             reviewerProvider:verdict.reviewerProvider,
             evidenceMode:verdict.evidenceMode,
             evidenceDigest:verdict.evidenceDigest,
             licenseReference:verdict.licenseReference,
+            ...(correctedDraft?{editorialDigest:reviewedDraftDigest(correctedDraft)}:{}),
+          };
+          await publisher.publishApprovedDraft(documentId,payload,audit,{
+            correctedDraft,
           });
           status='draft_published';
-          logger({event:'auto_published',documentIdHash,review:'full_article'});
+          logger({event:'auto_published',documentIdHash,review:'full_article',
+            corrected:!!correctedDraft});
         }catch{
           status='draft_created_publish_failed';
           logger({event:'auto_publish_failed',reason:'cms_rejected_or_unavailable',documentIdHash});
