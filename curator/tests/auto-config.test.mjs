@@ -28,19 +28,35 @@ test('auto publication refuses missing approval or draft-only execution before a
     {CURATOR_AUTO_PUBLISH_ACK:''},
     {CURATOR_AUTO_PUBLISH_ACK:'not-approved'},
   ]){
-    assert.throws(()=>configure(missing),/requires explicit DEV licensed full-article review acknowledgment/);
+    assert.throws(()=>configure(missing),/requires explicit licensed full-article review, environment-specific acknowledgment/);
   }
   assert.throws(()=>configure({},'once',true),
-    /requires explicit DEV licensed full-article review acknowledgment/);
+    /requires explicit licensed full-article review, environment-specific acknowledgment/);
   assert.throws(()=>configure({},'review-preview',true),
-    /requires explicit DEV licensed full-article review acknowledgment/);
+    /requires explicit licensed full-article review, environment-specific acknowledgment/);
 });
 
-test('PROD and unsupported commands cannot activate automatic publication',()=>{
+test('PROD requires its own write and auto-publish acknowledgments before any IO',()=>{
   assert.throws(()=>configure({CURATOR_INSTANCE_KIND:'prod'}),
-    /requires explicit DEV licensed full-article review acknowledgment/);
+    /environment-specific acknowledgment/);
+  assert.throws(()=>configure({CURATOR_INSTANCE_KIND:'prod',
+    CURATOR_PROD_WRITE_ACK:'PROD_WRITES_APPROVED'}),
+    /environment-specific acknowledgment/);
+  const prod={CURATOR_INSTANCE_KIND:'prod',
+    CURATOR_PROD_WRITE_ACK:'PROD_WRITES_APPROVED',
+    CURATOR_PROD_AUTO_PUBLISH_ACK:'PROD_AUTOPUBLISH_LICENSED_SOURCES_ACCEPTED'};
+  assert.deepEqual(configure(prod,'schedule'),{
+    autoPublish:true,allowedSources:['agencia-brasil-esportes'],
+  });
+  for (const mode of ['preview','review-preview']){
+    assert.throws(()=>configure(prod,mode,true),/environment-specific acknowledgment/);
+  }
+  assert.throws(()=>configure({...prod,CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES:'rnib'}),
+    /Explicit verified source allowlist/);
+});
+test('unsupported commands cannot activate automatic publication',()=>{
   assert.throws(()=>configure({},'preview'),
-    /requires explicit DEV licensed full-article review acknowledgment/);
+    /environment-specific acknowledgment/);
 });
 
 test('source allowlist must be explicit, trusted and duplicate-free',()=>{
