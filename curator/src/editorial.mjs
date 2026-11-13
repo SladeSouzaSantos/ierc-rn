@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import {reviewedDraftDigest} from './cms-publish.mjs';
+import {editorialProgressFingerprint} from './editorial-progress.mjs';
 import { LlmExhaustedError } from './router.mjs';
 import {reviewAiDraft} from './auto-review.mjs';
 import {cmsNewsReadOnly} from './duplicate-check.mjs';
@@ -142,7 +143,8 @@ export async function generateAiDraft(source,{router,logger=()=>{}}){
 }
 
 export async function processArticle(source,{router,store,cms,dryRun=true,logger=()=>{},
-  autoPublish=false,publisher=null,fullArticleEvidence=null}){
+  autoPublish=false,publisher=null,fullArticleEvidence=null,
+  progressStore=null}){
   if(dryRun)return {status:'preview',article:source.title};
   if(autoPublish && (!publisher||typeof publisher.publishApprovedDraft!=='function'))
     throw new Error('Independent scoped publisher required for auto publication');
@@ -171,7 +173,15 @@ export async function processArticle(source,{router,store,cms,dryRun=true,logger
     if(autoPublish){
       // A distinct editorial prompt reviews the candidate. Failure or
       // insufficient evidence NEVER escalates a draft to published.
-      const verdict=await reviewAndRepairFullArticleDraft(source,draft,fullArticleEvidence,{router,logger});
+      const fingerprint=progressStore?editorialProgressFingerprint({
+        documentId,dedupeKey:source.dedupeKey,original:draft,
+        evidence:fullArticleEvidence,
+      }):null;
+      const verdict=await reviewAndRepairFullArticleDraft(source,draft,fullArticleEvidence,{
+        router,logger,maxCorrections:2,
+        onProgress:progressStore?(progress)=>
+          progressStore.save(fingerprint,progress):null,
+      });
       if(!verdict.approved){
         status='draft_created_review_pending';
         logger({event:'auto_review_held',reason:verdict.reason,documentIdHash});
