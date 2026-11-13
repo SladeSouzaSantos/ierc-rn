@@ -144,3 +144,53 @@ test('independent AI reviewer HOLD leaves an unpublished Draft',async()=>{
   assert.equal(network.calls.filter(x=>x.method==='PUT').length,0);
   assert.equal(router.calls,3); // bounded repair attempt
 });
+
+test('EBC HOLD triggers grounded rewrite, new independent approval, and single corrected publication',async()=>{
+  const revised={...generated,
+    title:'Escola relata atividades inclusivas de leitura tátil em Braille'};
+  const hold={decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],unsupportedClaims:['Broad original headline'],
+    issues:['Specify the source of the claim']};
+  const phases=[],events=[];
+  const router={async complete(req){
+    phases.push(req.phase);
+    const answer=[generated,hold,revised,approved][phases.length-1];
+    if(!answer)throw Error('Unexpected model request');
+    return {provider:'groq',content:JSON.stringify(answer)};
+  }};
+  const network=fakeCmsFetch();
+  const out=await runOnce({sources:[source],fetchImpl:network.fetch,
+    now:Date.parse('2026-11-11T17:00:00Z'),maxArticles:1,
+    dryRun:false,autoPublish:true,autoPublishSources:[source.id],
+    articleReader:fetchArticleEvidence,router,store:store(),
+    ...setupClients(network),logger:e=>events.push(e)});
+  assert.equal(out.results[0].status,'draft_published');
+  assert.deepEqual(phases,['draft','review','draft','review']);
+  assert.equal(network.draft.title,generated.title);
+  assert.equal(network.publication.title,revised.title);
+  assert.equal(network.calls.filter(x=>x.method==='POST').length,1);
+  assert.equal(network.calls.filter(x=>x.method==='PUT').length,1);
+  assert.ok(events.some(x=>x.event==='editorial_repair_approved'));
+  assert.equal(events.find(x=>x.event==='auto_published').corrected,true);
+});
+
+test('corrected Draft remains unpublished if independent re-review still decides HOLD',async()=>{
+  const revised={...generated,title:'Escola relata atividades inclusivas de leitura tátil em Braille'};
+  const hold={decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],unsupportedClaims:[],issues:['Uncertain relationship']};
+  let n=0;
+  const router={async complete(){
+    const answer=[generated,hold,revised,hold][n++];
+    if(!answer)throw Error('Too many model requests');
+    return {provider:'groq',content:JSON.stringify(answer)};
+  }};
+  const network=fakeCmsFetch();
+  const out=await runOnce({sources:[source],fetchImpl:network.fetch,
+    now:Date.parse('2026-11-11T17:00:00Z'),maxArticles:1,
+    dryRun:false,autoPublish:true,autoPublishSources:[source.id],
+    articleReader:fetchArticleEvidence,router,store:store(),
+    ...setupClients(network)});
+  assert.equal(n,4);
+  assert.equal(out.results[0].status,'draft_created_review_pending');
+  assert.equal(network.publication,null);
+});
