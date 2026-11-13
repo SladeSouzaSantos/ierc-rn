@@ -33,6 +33,29 @@ jobs:
             -v "$PWD/infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" \
             -v "$PWD/infra/nginx/conf.d:/etc/nginx/conf.d:ro" \
             nginx:stable-alpine -t
+      - name: Route two Docker backends through the REAL edge Nginx
+        run: |
+          set -euo pipefail
+          cleanup() {
+            docker compose -f compose.nginx.yml down --remove-orphans || true
+            docker rm -f ierc-main-ci ierc-dev-ci >/dev/null 2>&1 || true
+            docker network rm ierc-rn-main-edge ierc-rn-dev-edge >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          docker network create ierc-rn-main-edge
+          docker network create ierc-rn-dev-edge
+          docker run -d --name ierc-main-ci \
+            --network ierc-rn-main-edge --network-alias ierc-rn-main-portal \
+            busybox:stable sh -c 'mkdir -p /www; echo MAIN_EDGE_OK >/www/index.html; exec httpd -f -p 3000 -h /www'
+          docker run -d --name ierc-dev-ci \
+            --network ierc-rn-dev-edge --network-alias ierc-rn-dev-portal \
+            busybox:stable sh -c 'mkdir -p /www; echo DEV_EDGE_OK >/www/index.html; exec httpd -f -p 3000 -h /www'
+          docker compose -f compose.nginx.yml up -d --wait --wait-timeout 90 nginx
+          main="$(curl --fail --silent --show-error --header 'Host: iercrn.org.br' http://127.0.0.1:18081/)"
+          dev="$(curl --fail --silent --show-error --header 'Host: dev.iercrn.org.br' http://127.0.0.1:18081/)"
+          test "$main" = "MAIN_EDGE_OK"
+          test "$dev" = "DEV_EDGE_OK"
+          echo "NGINX_EDGE_E2E_OK: isolated MAIN and DEV route correctly by Host"
 
   build-and-a11y:
     runs-on: ubuntu-latest
