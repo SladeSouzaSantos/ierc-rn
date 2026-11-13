@@ -60,14 +60,14 @@ Depois que o CI aprovar a mudança, para ativar os novos eventos:
 ```bash
 cd /opt/projects/ierc-rn-dev
 git pull --ff-only origin dev
-docker compose --env-file curator/.env -f compose.curator.dev.yml \\
+docker compose --env-file curator/.env -f compose.curator.dev.yml \
   --profile curator up -d --build --no-deps --force-recreate worker
-docker compose --env-file curator/.env -f compose.curator.dev.yml \\
+docker compose --env-file curator/.env -f compose.curator.dev.yml \
   --profile curator logs --since=8h --tail=100 worker
 ```
 
 O rebuild é necessário: o worker contém uma imagem Node com código
-compilado/copied no build, e `git pull` sozinho não a substitui.
+incorporado à imagem no build, e `git pull` sozinho não a substitui.
 
 **Não aplicar na MAIN** antes de homologar na DEV. As execuções reais
 continuam sujeitas ao filtro de fontes licenciadas, verificação de
