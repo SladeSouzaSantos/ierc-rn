@@ -79,7 +79,7 @@ export function SportCompetitions({cbdv,competitions}:{
         : <p className="editorial-intro">Nenhuma competição de goalball foi identificada
             na janela consultada. Isso não comprova ausência de competições;
             confira a agenda oficial.</p>}
-      <p><a className="inline-link" href={CBDV_CALENDAR_URL} target="_blank" rel="noopener noreferrer">
+      <p className="sport-cbdv-calendar-action"><a className="inline-link" href={CBDV_CALENDAR_URL} target="_blank" rel="noopener noreferrer">
         Abrir calendário da CBDV <ArrowUpRight size={16} aria-hidden="true"/>
         <span className="sr-only"> (abre em nova aba)</span>
       </a></p>

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-test("Apoie apresenta os três caminhos não financeiros e informação clara sobre o bazar", async ({ page }) => {
+test("Apoie apresenta bazar, doações e parcerias sem divulgar voluntariado", async ({ page }) => {
   await page.goto("/apoie");
 
   await expect(page.getByRole("heading", { level: 1, name: "Apoie o IERC-RN" })).toBeVisible();
@@ -10,12 +10,14 @@ test("Apoie apresenta os três caminhos não financeiros e informação clara so
   await expect(page.getByText(/Em feriados ou mudanças excepcionais/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Doar itens para o bazar" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Conhecer o Bazar Solidário" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Voluntariado e parcerias" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Parcerias institucionais" })).toBeVisible();
 
   const choices = page.locator(".support-choice");
   await expect(choices).toHaveCount(3);
   await expect(page.locator(".support-steps li")).toHaveCount(3);
   await expect(page.getByText(/Entrega: presencial, no IERC-RN/)).toBeVisible();
+  await expect(page.getByRole("link", { name: /Propor uma parceria/ })).toHaveAttribute("href", "/contato");
+  await expect(page.locator("main")).not.toContainText(/voluntari/i);
 });
 
 test("Apoie apresenta chave Pix CNPJ informada sem iniciar cobranças online", async ({ page }) => {
@@ -30,11 +32,8 @@ test("Apoie apresenta chave Pix CNPJ informada sem iniciar cobranças online", a
   await expect(page.locator('main a[href^="tel:"], main a[href^="mailto:"]')).toHaveCount(0);
 
   const actions = page.locator('.support-bazar a[href="/contato"], .support-choice a[href="/contato"], .support-contact a[href="/contato"]');
-  await expect(actions).toHaveCount(4);
-  const social = page.locator('.support-choice a[href="https://www.instagram.com/iercrn/"]');
-  await expect(social).toHaveAttribute("target", "_blank");
-  await expect(social).toHaveAttribute("rel", /noopener noreferrer/);
-  await expect(social.getByText(/abre em nova aba/)).toHaveCount(1);
+  await expect(actions).toHaveCount(5);
+  await expect(page.locator('.support-choice a[href="https://www.instagram.com/iercrn/"]')).toHaveCount(0);
 });
 
 test("Botão Pix copia apenas os dígitos do CNPJ e anuncia o resultado", async ({ page }) => {
@@ -61,7 +60,7 @@ test("Bazar exibe horários, local, itens aceitos e compra presencial conforme i
   await expect(bazar.getByText(/Não há coleta domiciliar/)).toBeVisible();
   await expect(bazar.getByText(/Compras: abertas a qualquer pessoa/)).toBeVisible();
   await expect(bazar.getByText(/dinheiro ou Pix/)).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Voluntariado e parcerias" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Parcerias institucionais" })).toBeVisible();
 
   // Staff names stay private; Pix CNPJ is intentionally public.
   const publicText = await page.locator("main").innerText();

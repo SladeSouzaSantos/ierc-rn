@@ -86,8 +86,14 @@ test("página esportes distingue CBDV, competições manuais e lista histórica"
   expect(separation).toBeGreaterThanOrEqual(48);
   await expect(cbdvSection).not.toContainText("Participação do IERC-RN:");
   await expect(cbdvSection).toContainText("Calendário oficial da CBDV · Goalball");
-  await expect(page.getByRole("link",{name:/Abrir calendário da CBDV/}))
+  const calendarAction=page.locator(".sport-cbdv-calendar-action");
+  await expect(calendarAction.getByRole("link",{name:/Abrir calendário da CBDV/}))
     .toHaveAttribute("href","https://www.cbdv.org.br/calendario");
+  // The standalone CBDV calendar link must not visually touch the cards.
+  const calendarGap=await calendarAction.evaluate(el=>
+    Number.parseFloat(getComputedStyle(el).marginTop));
+  expect(calendarGap).toBeGreaterThanOrEqual(28);
+  await expect(calendarAction.getByRole("link")).toHaveCSS("min-height","44px");
   await expect(page.getByRole("heading",{name:"Equipes registradas pela CBDV"})).toBeVisible();
   await expect(page.locator(".sport-roster li")).toHaveCount(6);
 });
