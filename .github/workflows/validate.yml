@@ -7,6 +7,33 @@ on:
     branches: [main]
 
 jobs:
+  nginx-edge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify dedicated Nginx vhosts and Docker isolation contracts
+        run: |
+          node --test tests/nginx-edge-config.test.mjs
+          bash -n scripts/check-ierc-nginx-tunnel.sh
+          docker compose -f compose.nginx.yml config --quiet
+          docker compose -f compose.portal.dev.yml config --quiet
+          docker compose -f compose.portal.prod.yml config --quiet
+      - name: Parse REAL nginx.conf using non-root read-only Docker container
+        run: |
+          docker run --rm --entrypoint nginx \
+            --user 101:101 --read-only --cap-drop=ALL \
+            --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,noexec,nosuid,size=32m,mode=1777 \
+            -v "$PWD/infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" \
+            -v "$PWD/infra/nginx/conf.d:/etc/nginx/conf.d:ro" \
+            nginx:stable-alpine -t
+
   build-and-a11y:
     runs-on: ubuntu-latest
     timeout-minutes: 25
