@@ -9,11 +9,15 @@ echo "=== Cloudflared network mode ==="
 docker inspect cloudflared --format '{{.HostConfig.NetworkMode}}'
 
 echo "=== Nginx vhosts visible in the running proxy configuration ==="
-docker exec nginx-proxy nginx -T 2>/dev/null |
-  grep -E 'server_name (iercrn\.org\.br|dev\.iercrn\.org\.br);' || {
-    echo "VHOST_NOT_LOADED: verify /opt/projects/*/nginx.conf is mounted and included" >&2
+# Capture only locally; print neither unrelated config nor secrets.
+loaded="$(docker exec nginx-proxy nginx -T 2>/dev/null)"
+for host in iercrn.org.br dev.iercrn.org.br; do
+  if ! grep -Fq "server_name $host;" <<<"$loaded"; then
+    echo "VHOST_NOT_LOADED: $host; check shared include and mounts" >&2
     exit 1
-  }
+  fi
+  echo "VHOST_LOADED: $host"
+done
 
 echo "=== Routing through the ORIGINAL proxy, port 80 ==="
 for host in iercrn.org.br dev.iercrn.org.br; do
