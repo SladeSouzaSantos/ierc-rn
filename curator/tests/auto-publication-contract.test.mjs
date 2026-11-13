@@ -176,11 +176,13 @@ test('EBC HOLD triggers grounded rewrite, new independent approval, and single c
 
 test('corrected Draft remains unpublished if independent re-review still decides HOLD',async()=>{
   const revised={...generated,title:'Escola relata atividades inclusivas de leitura tátil em Braille'};
+  const revised2={...revised,
+    whyItMatters:'A matéria apresenta materiais adaptados usados nas atividades educacionais que descreve.'};
   const hold={decision:'hold',factualSupport:'insufficient',
     evidenceQuotes:[],unsupportedClaims:[],issues:['Uncertain relationship']};
   let n=0;
   const router={async complete(){
-    const answer=[generated,hold,revised,hold][n++];
+    const answer=[generated,hold,revised,hold,revised2,hold][n++];
     if(!answer)throw Error('Too many model requests');
     return {provider:'groq',content:JSON.stringify(answer)};
   }};
@@ -190,7 +192,7 @@ test('corrected Draft remains unpublished if independent re-review still decides
     dryRun:false,autoPublish:true,autoPublishSources:[source.id],
     articleReader:fetchArticleEvidence,router,store:store(),
     ...setupClients(network)});
-  assert.equal(n,4);
+  assert.equal(n,6); // writer + initial review + 2 repairs + 2 re-reviews
   assert.equal(out.results[0].status,'draft_created_review_pending');
   assert.equal(network.publication,null);
 });
