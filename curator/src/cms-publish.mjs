@@ -33,7 +33,7 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
       if(!pending||pending.documentId!==documentId||pending.publishedAt!==null||
          pending.editorialStatus!=='em_revisao'||pending.originType!=='externa'||
          pending.aiAssisted!==true||pending.image||
-         !/^Rascunho criado com IA (?:openrouter|gemini|groq|ollama)\\. Revisar fonte e fatos; n[aã]o publicar sem aprova[cç][aã]o humana\\.$/.test(pending.approvalNote||''))
+         !/^Rascunho criado com IA (?:openrouter|gemini|groq|ollama)\. Revisar fonte e fatos; não publicar sem aprovação humana\.$/.test(pending.approvalNote||''))
         throw new Error('Draft is not an unchanged AI-review-pending candidate');
       return pending;
     },
