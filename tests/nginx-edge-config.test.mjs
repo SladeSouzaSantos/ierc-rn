@@ -39,7 +39,9 @@ test('dedicated edge Nginx is private, non-root and never attaches CMS network',
   assert.match(edge,/no-new-privileges:true/);
   assert.match(edge,/ierc-rn-main-edge/);
   assert.match(edge,/ierc-rn-dev-edge/);
-  assert.doesNotMatch(edge,/cms_read|1337|1338|\b443\b/);
+  assert.doesNotMatch(edge,/cms_read|1337|1338/);
+  // Match published ports only, not the harmless 80/443 explanatory comment.
+  assert.doesNotMatch(edge,/^\s*- ["']?(?:0\.0\.0\.0:)?(?:80|443):/m);
 });
 test('portal private CMS networks remain intact, and only edge networks are added',()=>{
   for(const [config,alias,edgeNetwork] of [
