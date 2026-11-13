@@ -6,7 +6,7 @@ import {cmsClient} from './editorial.mjs';
 import {cmsPublisher} from './cms-publish.mjs';
 import {cmsNewsReadOnly,previewDeduper} from './duplicate-check.mjs';
 import {fetchArticleEvidence} from './article-evidence.mjs';
-import {autoPublishSettingsFromEnv,ebcArchivePublishingFromEnv} from './auto-config.mjs';
+import {publishingPolicyForCommand} from './auto-config.mjs';
 import {runOnce} from './pipeline.mjs';
 import {retryPendingDraft} from './retry-pending.mjs';
 import {scheduleDraftLimitFromEnv} from './schedule-config.mjs';
@@ -46,11 +46,12 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
       !/^[a-zA-Z0-9]{12,90}$/.test(process.argv[3]||'')||process.argv.length!==4))
     throw new Error('Pending recovery requires PROD and one explicit documentId');
   const publicationCmd=retryPending?'once':cmd;
-  const {autoPublish,allowedSources}=autoPublishSettingsFromEnv(env,publicationCmd,{dryRun});
+  // Read-only previews must not be blocked by the independently authorized
+  // live auto-publisher. Write commands still go through the strict gate.
+  const {autoPublish,allowedSources,archiveDiscovery}=
+    publishingPolicyForCommand(env,publicationCmd,{dryRun});
   if(retryPending&&!autoPublish)
     throw new Error('Pending recovery requires approved PROD autonomous publishing');
-  const archiveDiscovery=ebcArchivePublishingFromEnv(env,publicationCmd,
-    {autoPublish,allowedSources,dryRun});
   // Wait for a fully ready Redis BEFORE using any quota-bearing operation.
   // No model calls are made if the connection cannot be established.
   const redis=cmd==='preview'?null:await connectQuotaRedis(
