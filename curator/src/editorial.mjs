@@ -200,6 +200,10 @@ export async function processArticle(source,{router,store,cms,dryRun=true,logger
             correctedDraft,
           });
           status='draft_published';
+          if(progressStore){
+            try{await progressStore.clear(fingerprint);}
+            catch{logger({event:'editorial_progress_cleanup_failed'});}
+          }
           logger({event:'auto_published',documentIdHash,review:'full_article',
             corrected:!!correctedDraft});
         }catch{
