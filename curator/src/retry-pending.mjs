@@ -8,9 +8,11 @@ import {reviewedDraftDigest} from './cms-publish.mjs';
 
 /**
  * Explicit, single-ID recovery for an auto-generated Strapi draft left pending
- * after free-provider review exhaustion. Does NOT regenerate, create or edit a
- * news article; publication uses the existing scoped publisher's exact-match
- * draft preflight. Neither a URL nor a CMS title can select another domain.
+ * after free-provider review exhaustion. Does NOT create a second Draft
+ * or alter a pending CMS document without approval. If a one-step AI rewrite
+ * passes another independent review, the scoped publisher atomically submits
+ * that reviewed correction with the publish PUT, after an exact-match GET.
+ * Neither a URL nor a CMS title can select another domain.
  */
 export async function retryPendingDraft({
   documentId,publisher,router,store,allowedSources,
