@@ -10,9 +10,9 @@ A separação entre CMS DEV existente e PROD futura (Docker, PostgreSQL, volumes
 
 ## Ativação da curadoria automática (DEV)
 
-O operador aprovou a preparação de geração agendada e publicação automática controlada. A ativação **não acontece por git pull**: é necessário criar um token Custom separado para o publicador, conferir licença da matéria, fazer backup com restauração ensaiada, executar o pré-check e homologar `once` antes de iniciar o worker persistente. O cron DEV roda às **08h, 13h e 19h (America/Fortaleza)**, com uma única candidata por horário e fallback **Groq → Gemini → OpenRouter**. Somente fontes EBC originais autorizadas podem publicar automaticamente; se não houver evidência suficiente, a matéria não será publicada. A `main` e a PROD continuam bloqueadas até os gates de lançamento.
+O operador aprovou a preparação de geração agendada e publicação automática controlada. A ativação **não acontece por git pull**: é necessário criar um token Custom separado para o publicador, conferir licença da matéria, fazer backup com restauração ensaiada, executar o pré-check e homologar `once` antes de iniciar o worker persistente. O cron DEV roda às **08h, 13h e 19h (America/Fortaleza)**, com uma única candidata por horário e fallback **Groq → Gemini → OpenRouter**. Somente fontes EBC originais autorizadas podem publicar automaticamente; se não houver evidência suficiente, a matéria não será publicada. O curador da MAIN/PROD tem opt-in separado, sem ligação automática com a DEV: sua ativação exige backup/restauração PROD, tokens Custom próprios e pré-check de modelos gratuitos.
 
-Guia: [Ativação supervisionada no MiniMac e preparação MAIN](docs/ATIVACAO-CURADORIA-AUTOMATICA-MINIMAC.md). O monitor RSS somente leitura continua independente.
+Guia DEV: [ativação supervisionada](docs/ATIVACAO-CURADORIA-AUTOMATICA-MINIMAC.md). Guia PROD: [publicação automática com LLMs gratuitas no MiniMac](docs/CURADORIA-AUTOMATICA-PROD-MINIMAC.md). Os dois schedulers, Redis e tokens Strapi são isolados; o monitor RSS somente leitura da DEV permanece independente.
 
 ### Descoberta RSS ampliada e foco editorial — 11/11/2026
 
