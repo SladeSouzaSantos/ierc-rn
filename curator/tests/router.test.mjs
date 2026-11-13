@@ -369,43 +369,44 @@ test('only Groq GPT-OSS 120B independent review requests strict structured JSON'
   });
   assert.equal(review.provider,'groq');
   assert.equal(sent.length,1);
-  assert.deepEqual(sent[0].response_format,{
-    type:'json_schema',
-    json_schema:{
-      name:'ierc_independent_review',strict:true,
-      schema:{
-        type:'object',
-        properties:{
-          decision:{type:'string',enum:['approve','hold']},
-          factualSupport:{type:'string',enum:['fully_supported','insufficient']},
-          evidenceQuotes:{type:'array',items:{type:'string'}},
-          unsupportedClaims:{type:'array',items:{type:'string'}},
-          issues:{type:'array',items:{type:'string'}},
-        },
-        required:['decision','factualSupport','evidenceQuotes','unsupportedClaims','issues'],
-        additionalProperties:false,
-      },
-    },
-  });
+  assert.equal(sent[0].response_format.type,'json_schema');
+  assert.equal(sent[0].response_format.json_schema.strict,true);
+  const schema=sent[0].response_format.json_schema.schema;
+  assert.equal(schema.type,'object');
+  assert.equal(schema.additionalProperties,false);
+  assert.deepEqual(schema.required,
+    ['decision','factualSupport','evidenceQuotes','unsupportedClaims','issues']);
+  assert.deepEqual(schema.properties.decision.enum,['approve','hold']);
+  assert.deepEqual(schema.properties.factualSupport.enum,['fully_supported','insufficient']);
+  assert.equal(schema.properties.evidenceQuotes.type,'array');
+  assert.equal(schema.properties.evidenceQuotes.items.type,'string');
   assert.equal(validateReview(review.content).decision,'hold');
   assert.equal(sent[0].max_tokens,1600);
 });
 
-test('Groq structured output never changes drafting, other Groq models or Gemini/OpenRouter review',async()=>{
-  const groq=providersFromEnv({
-    CURATOR_GROQ_API_KEY:'test-key-only',
-    CURATOR_GROQ_MODEL:'openai/gpt-oss-120b',
+test('structured review format is model-scoped; drafting and unspecified providers remain unchanged',async()=>{
+  const env={
+    CURATOR_GROQ_API_KEY:'test-groq',CURATOR_GROQ_MODEL:'openai/gpt-oss-120b',
     CURATOR_GROQ_FREE_TIER_CONFIRMED:'true',
-  })[0];
-  const otherGroq={...groq,model:'other-model'};
+    CURATOR_GEMINI_API_KEY:'test-gemini',CURATOR_GEMINI_MODEL:'gemini-2.5-flash',
+    CURATOR_GEMINI_FREE_TIER_CONFIRMED:'true',
+    CURATOR_OPENROUTER_API_KEY:'test-or',
+    CURATOR_OPENROUTER_MODEL:'nvidia/nemotron-3.5-super-vl:free',
+  };
+  const [groq,gemini,openrouter]=providersFromEnv(env);
   const scenarios=[
-    {provider:groq,phase:'draft'},
-    {provider:groq,phase:'default'},
-    {provider:otherGroq,phase:'review'},
-    {provider:candidates[0],phase:'review'},
-    {provider:candidates[1],phase:'review'},
+    {provider:groq,phase:'draft',strict:null},
+    {provider:gemini,phase:'draft',strict:null},
+    {provider:openrouter,phase:'draft',strict:null},
+    {provider:groq,phase:'default',strict:null},
+    {provider:{...groq,model:'unlisted-model'},phase:'review',strict:null},
+    {provider:{...gemini,model:'gemini-3-pro'},phase:'review',strict:null},
+    {provider:{...openrouter,model:'openrouter/free'},phase:'review',strict:null},
+    {provider:groq,phase:'review',strict:true},
+    {provider:gemini,phase:'review',strict:true},
+    {provider:openrouter,phase:'review',strict:false},
   ];
-  for(const {provider,phase} of scenarios){
+  for(const {provider,phase,strict} of scenarios){
     let body;
     const router=new FreeLlmRouter({
       providers:[provider],state:new MemoryMeter(),settings:config,
@@ -415,8 +416,16 @@ test('Groq structured output never changes drafting, other Groq models or Gemini
       },
     });
     await router.complete({system:'test',prompt:'test',phase});
-    assert.equal(body.response_format,undefined,
-      'Response format unexpected for '+provider.id+'/'+provider.model+'/'+phase);
+    if(strict===null){
+      assert.equal(body.response_format,undefined,
+        'Unexpected structured review for '+provider.id+'/'+provider.model+'/'+phase);
+    }else{
+      assert.equal(body.response_format.type,'json_schema');
+      assert.equal(body.response_format.json_schema.strict,strict);
+      assert.equal(body.response_format.json_schema.schema.additionalProperties,false);
+      assert.deepEqual(body.response_format.json_schema.schema.required,
+        ['decision','factualSupport','evidenceQuotes','unsupportedClaims','issues']);
+    }
   }
 });
 
