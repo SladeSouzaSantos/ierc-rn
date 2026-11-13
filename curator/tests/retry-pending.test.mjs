@@ -76,7 +76,7 @@ test('retry-pending publishes same existing Draft only after new full article se
   assert.ok(out.events.some(e=>e.event==='pending_draft_published'));
 });
 test('recovery accepts CMS summary with surrounding whitespace but publishes exact stored summary',async()=>{
-  const pending={...article,summary:'  '+article.summary+'\\n'};
+  const pending={...article,summary:'  '+article.summary+'\n'};
   const {args,counts}=config({pending});
   let persistedSummary;
   const originalPublish=args.publisher.publishApprovedDraft.bind(args.publisher);
