@@ -51,10 +51,16 @@ export async function retryPendingDraft({
     coverageTrack:pending.scope==='local'?'ierc':'brasil',
     dedupeKey:pending.dedupeKey,
   };
-  const draft=validateDraft(JSON.stringify({
-    title:pending.title,summary:pending.summary,body:pending.body,
-    whyItMatters:pending.whyItMatters,category:pending.category,
-  }));
+  let draft;
+  try {
+    draft=validateDraft(JSON.stringify({
+      title:pending.title,summary:pending.summary,body:pending.body,
+      whyItMatters:pending.whyItMatters,category:pending.category,
+    }));
+  }catch{
+    // Never disclose an invalid draft or internal CMS data in operational logs.
+    throw new Error('Pending Draft changed or failed editorial integrity checks');
+  }
   if(!draft||draft.title!==pending.title||draft.summary!==pending.summary||
      draft.body!==pending.body||draft.whyItMatters!==pending.whyItMatters||
      draft.category!==pending.category||pending.slug!==slugFor(reviewSource,draft.title))
