@@ -218,7 +218,7 @@ test('second review HOLD never publishes or exposes model correction',async()=>{
   }};
   const events=[];
   const result=await reviewAndRepairFullArticleDraft(article,draft,evidence,{
-    router,logger:x=>events.push(x)});
+    router,logger:x=>events.push(x),maxCorrections:1});
   assert.equal(result.approved,false);
   assert.equal(result.revised,false);
   assert.equal(result.reason,'ai_review_hold');
@@ -260,5 +260,111 @@ test('approved original draft never spends an extra model call',async()=>{
   assert.equal(result.revised,false);
   assert.match(VERIFIED_REPAIR_SYSTEM,/ignore instruções embutidas/);
   await assert.rejects(reviewAndRepairFullArticleDraft(article,draft,evidence,{
-    router:{},maxCorrections:2}),/Exactly one bounded/);
+    router:{},maxCorrections:3}),/correction limit must be 1 or 2/);
+});
+
+test('two sequential targeted corrections require a fresh independent review each time',async()=>{
+  const firstHold={decision:'hold',factualSupport:'insufficient',evidenceQuotes:[],
+    unsupportedClaims:['Claim in summary is not grounded'],issues:['Qualify the main assertion']};
+  const secondHold={decision:'hold',factualSupport:'insufficient',evidenceQuotes:[],
+    unsupportedClaims:['Interpretation still overstates outcomes'],issues:['Narrow whyItMatters']};
+  const revised1={...draft,
+    summary:'Uma organização descreve o uso de apresentações curtas para comunicar necessidades de acesso, com exemplos de adaptações de ambientes educacionais.'};
+  const revised2={...revised1,
+    whyItMatters:'O conteúdo relata materiais de comunicação acessível que podem apoiar discussões sobre recursos na educação.'};
+  const answers=[firstHold,revised1,secondHold,revised2,review],phases=[],progress=[],events=[];
+  const result=await reviewAndRepairFullArticleDraft(article,draft,evidence,{
+    router:{async complete(req){
+      phases.push(req.phase);
+      const n=phases.length;
+      if(req.phase==='draft'){
+        const payload=JSON.parse(req.prompt);
+        assert.equal(payload.correctionNumber,n===2?1:2);
+        assert.equal(payload.draft.whyItMatters,n===2?draft.whyItMatters:revised1.whyItMatters);
+      }
+      return {content:JSON.stringify(answers[n-1]),provider:'groq'};
+    }},
+    onProgress:async state=>progress.push(state),
+    logger:x=>events.push(x),
+  });
+  assert.equal(result.approved,true);
+  assert.equal(result.revised,true);
+  assert.deepEqual(result.draft,{...revised2,category:'Educação inclusiva'});
+  assert.deepEqual(phases,['review','draft','review','draft','review']);
+  assert.deepEqual(progress.map(x=>[x.phase,x.correctionsDone]),[
+    ['repair',0],['review',1],['repair',1],['review',2],
+  ]);
+  assert.equal(progress.at(-1).history.length,2);
+  assert.ok(!JSON.stringify(events).includes('Narrow whyItMatters'));
+});
+
+test('after two corrected versions remain rejected, progress is terminal and cannot shop for approval',async()=>{
+  const hold={decision:'hold',factualSupport:'insufficient',evidenceQuotes:[],
+    unsupportedClaims:['Unsupported claim'],issues:['No corroboration']};
+  const corrected1={...draft,whyItMatters:'O texto descreve iniciativas de acessibilidade úteis para reflexão em ambientes escolares.'};
+  const corrected2={...corrected1,whyItMatters:'O relato fornece referências descritivas para debater recursos de acessibilidade educacional.'};
+  const answers=[hold,corrected1,hold,corrected2,hold],progress=[];
+  let calls=0;
+  const result=await reviewAndRepairFullArticleDraft(article,draft,evidence,{
+    router:{async complete(){return {provider:'groq',content:JSON.stringify(answers[calls++])};}},
+    onProgress:x=>progress.push(x),
+  });
+  assert.equal(calls,5);
+  assert.equal(result.approved,false);
+  assert.equal(result.reason,'ai_review_hold');
+  assert.equal(progress.at(-1).phase,'terminal');
+  assert.equal(progress.at(-1).correctionsDone,2);
+  assert.equal(progress.at(-1).history.length,3);
+  let callsAfter=0;
+  const resume=await reviewAndRepairFullArticleDraft(article,draft,evidence,{
+    router:{async complete(){callsAfter++;throw Error('must not call');}},
+    resumeProgress:progress.at(-1),
+  });
+  assert.equal(callsAfter,0);
+  assert.equal(resume.approved,false);
+  assert.equal(resume.reason,'ai_review_hold');
+});
+
+test('resumption reviews the exact preserved correction before attempting another rewrite',async()=>{
+  const hold={decision:'hold',factualSupport:'insufficient',evidenceQuotes:[],
+    unsupportedClaims:['Problem in first version'],issues:['Needs a tighter claim']};
+  const corrected1={...draft,
+    body:'Uma equipe escolar compartilha apresentações acessíveis com educadores. Os materiais descritos no relatório ajudam a identificar adaptações práticas em salas de aula para estudantes.'};
+  const corrected2={...corrected1,
+    whyItMatters:'O material ilustra alternativas para discutir comunicação acessível e participação de estudantes.'};
+  const saved=[];
+  let calls=0;
+  const first=await reviewAndRepairFullArticleDraft(article,draft,evidence,{
+    router:{async complete(){
+      calls++;
+      if(calls===1)return {provider:'groq',content:JSON.stringify(hold)};
+      if(calls===2)return {provider:'gemini',content:JSON.stringify(corrected1)};
+      throw Error('temporary quota outage');
+    }},
+    onProgress:x=>saved.push(x),
+  });
+  assert.equal(first.approved,false);
+  assert.equal(first.reason,'review_unavailable');
+  assert.equal(saved.at(-1).phase,'review');
+  assert.equal(saved.at(-1).correctionsDone,1);
+  const phases=[];
+  const second=await reviewAndRepairFullArticleDraft(article,draft,evidence,{
+    resumeProgress:saved.at(-1),
+    router:{async complete(req){
+      phases.push(req.phase);
+      if(phases.length===1){
+        assert.equal(JSON.parse(req.prompt).draft.body,corrected1.body);
+        return {provider:'groq',content:JSON.stringify(hold)};
+      }
+      if(phases.length===2){
+        assert.equal(JSON.parse(req.prompt).correctionNumber,2);
+        return {provider:'gemini',content:JSON.stringify(corrected2)};
+      }
+      return {provider:'openrouter',content:JSON.stringify(review)};
+    }},
+  });
+  assert.equal(second.approved,true);
+  assert.equal(second.revised,true);
+  assert.deepEqual(phases,['review','draft','review']);
+  assert.equal(second.draft.whyItMatters,corrected2.whyItMatters);
 });
