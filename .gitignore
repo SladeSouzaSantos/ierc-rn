@@ -28,3 +28,7 @@ cms-backups/
 curator/node_modules/
 curator/.cache/
 curator/.tmp/
+
+# Each MiniMac checkout generates its own vhost for the EXISTING nginx-proxy.
+# MAIN/DEV share this repository but MUST NOT share server_name/upstream.
+/nginx.conf

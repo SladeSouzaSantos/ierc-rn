@@ -21,7 +21,7 @@ services:
       - "127.0.0.1:3102:3000"
     networks:
       cms_read: {}
-      edge:
+      proxy:
         aliases: [ierc-rn-main-portal]
     init: true
     cap_drop: [ALL]
@@ -37,6 +37,8 @@ networks:
     external: true
     name: ierc-rn-prod-cms-read
 
-  edge:
+  # Reuse nginx-proxy's EXISTING external Docker network; no second Nginx.
+  # Override IERC_PROXY_NETWORK only after verifying nginx-proxy's network.
+  proxy:
     external: true
-    name: ierc-rn-main-edge
+    name: ${IERC_PROXY_NETWORK:-nginx_default}
