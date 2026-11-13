@@ -124,7 +124,7 @@ test('independent reviewer HOLD leaves an unpublished draft',async()=>{
   assert.equal(a.result.results[0].status,'draft_created_review_pending');
   assert.equal(a.services.draftCount,1);
   assert.equal(a.services.publishCount,0);
-  assert.equal(a.llm.count,2);
+  assert.equal(a.llm.count,3); // bounded rewrite attempt follows initial review HOLD
 });
 test('feature absent preserves existing RSS worker with no archive requests',async()=>{
   const a=await run({archiveDiscovery:false});
