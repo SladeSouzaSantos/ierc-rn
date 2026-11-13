@@ -60,6 +60,40 @@ docker compose --env-file curator/.env -f compose.curator.dev.yml \
   node src/diagnose-review-schema.mjs
 ```
 
+Para investigar exclusivamente **Groq**, sem gastar chamadas Gemini e
+OpenRouter, use em vez da última linha:
+
+```bash
+docker compose --env-file curator/.env -f compose.curator.dev.yml \\
+  --profile curator run --rm --no-deps -T worker \\
+  node src/diagnose-review-schema.mjs groq
+```
+
+A saída continua com `synthetic:true` e `cmsWrites:0`.
+`providersChecked:1` é esperado neste modo.
+
+### Correção para erro Groq `review_json_syntax`
+
+A primeira execução sintética registrou `review_json_syntax` no
+`openai/gpt-oss-120b`, enquanto Gemini 2.5 Flash e OpenRouter
+Nemotron passaram no contrato de cinco campos e duas citações
+independentes.
+
+O `router.mjs` da **DEV** passou a enviar, somente nas chamadas Groq
+`phase:'review'` para o modelo exato `openai/gpt-oss-120b`,
+`response_format: {type:'json_schema',json_schema:{strict:true,...}}`
+com os cinco campos obrigatórios, tipos, enumerações e
+`additionalProperties:false`.
+
+Isso usa o modo estrito documentado pela Groq sem alterar prompting,
+modelo, fallback, quotas, redação, decisões `hold`, nem os validadores
+locais (citações literais de dois blocos diferentes, licença e artigo
+integral). O JSON pode ser válido e ainda ser **reprovado**, como deve.
+
+Referências oficiais:
+- https://console.groq.com/docs/structured-outputs
+- https://console.groq.com/docs/model/openai/gpt-oss-120b
+
 Não faça `up --force-recreate` do scheduler: o diagnóstico usa um
 contêiner efêmero e a imagem recém-compilada, sem reiniciar o worker
 permanente. Não requer alterar o `.env`.
