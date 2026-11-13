@@ -41,18 +41,20 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
   const fullArticlePreview=cmd==='review-full-preview';
   const dryRun=cmd==='preview'||aiPreview||env.CURATOR_WRITE_DRAFTS!=='true';
   // Explicit retry uses the exact live ONCE publication policy, but never
-  // creates a new article. Validate the ID and production scope before I/O.
+  // creates a new article. Both environments need independent authorization,
+  // a single immutable documentId, and the unchanged licensed-source gates.
+  // DEV recovery is supervised; PROD still requires its separate PROD ACKs.
   const retryPending=cmd==='retry-pending';
-  if(retryPending && (env.CURATOR_INSTANCE_KIND!=='prod'||
-      !/^[a-zA-Z0-9]{12,90}$/.test(process.argv[3]||'')||process.argv.length!==4))
-    throw new Error('Pending recovery requires PROD and one explicit documentId');
+  if(retryPending && (!/^[a-zA-Z0-9]{12,90}$/.test(process.argv[3]||'')||
+      process.argv.length!==4))
+    throw new Error('Pending recovery requires exactly one documentId');
   const publicationCmd=retryPending?'once':cmd;
   // Read-only previews must not be blocked by the independently authorized
   // live auto-publisher. Write commands still go through the strict gate.
   const {autoPublish,allowedSources,archiveDiscovery}=
     publishingPolicyForCommand(env,publicationCmd,{dryRun});
   if(retryPending&&!autoPublish)
-    throw new Error('Pending recovery requires approved PROD autonomous publishing');
+    throw new Error('Pending recovery requires approved autonomous publishing');
   // Wait for a fully ready Redis BEFORE using any quota-bearing operation.
   // No model calls are made if the connection cannot be established.
   const redis=cmd==='preview'?null:await connectQuotaRedis(
