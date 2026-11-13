@@ -4,6 +4,15 @@ import {retryPendingDraft} from './retry-pending.mjs';
 // Bounded, opt-in autonomous recovery is not a way to override an AI HOLD.
 // It reuses the original source rights checks and the single-correction +
 // independent rereview gates. Attempts survive worker restarts in DEV Redis.
+export function scheduledRecoveryAllowed(env,{autoPublish,cmd}={}){
+  if(cmd!=='schedule'||!autoPublish||env.CURATOR_INSTANCE_KIND!=='dev')
+    return false;
+  const enabled=env.CURATOR_AUTO_RECOVER_PENDING_ENABLED??'true';
+  if(!['true','false'].includes(enabled))
+    throw new Error('DEV pending recovery opt-in must be true or false');
+  return enabled==='true';
+}
+
 export const MAX_SCHEDULED_RECOVERY_ATTEMPTS=2;
 const COUNTER_TTL_SECONDS=45*24*60*60;
 const COUNTER_SCRIPT=[
