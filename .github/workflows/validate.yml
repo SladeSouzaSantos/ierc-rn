@@ -102,6 +102,19 @@ jobs:
             grep -q 'CURATOR_INSTANCE_KIND: prod'
           docker compose --profile curator -f compose.curator.prod.yml config |
             grep -q 'ierc-rn-cms-prod_cms_prod_private'
+      - name: Start hardened PROD Redis and require healthy PONG (regression)
+        run: |
+          set -euo pipefail
+          : > curator/.env.prod
+          cleanup() {
+            docker compose --profile curator -f compose.curator.prod.yml stop redis || true
+            docker compose --profile curator -f compose.curator.prod.yml rm -sf redis || true
+            rm -f curator/.env.prod
+          }
+          trap cleanup EXIT
+          docker compose --profile curator -f compose.curator.prod.yml up -d --wait --wait-timeout 90 redis
+          test "$(docker compose --profile curator -f compose.curator.prod.yml exec -T redis redis-cli ping)" = "PONG"
+          echo "PROD_REDIS_HEALTHY: redis started with minimal capabilities; no LLM/CMS calls"
       - name: Check curator syntax
         run: npm run --prefix curator check
       - name: Run deterministic fallback, quota and draft safety tests
