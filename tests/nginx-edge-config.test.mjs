@@ -53,3 +53,15 @@ test('local deployment never rewrites previous Nginx configuration',()=>{
   assert.match(script,/source_file=infra\/nginx\/shared-dev\.conf/);
   assert.doesNotMatch(script,/nginx -s reload|docker compose.*up|docker restart/);
 });
+
+test('Git excludes machine-local Nginx config and generated/secret state',()=>{
+  for(const pattern of [
+    '/nginx.conf','.env*','!.env.example','cms-backups/','/backups/',
+    '*.log','logs/','tmp/','dist/','curator/.cache/','cms/public/uploads/'
+  ]){
+    assert.ok(ignore.split('\\n').includes(pattern),
+      'Expected gitignore entry: '+pattern);
+  }
+  assert.ok(existsSync(new URL('../infra/nginx/shared-main.conf',import.meta.url)));
+  assert.ok(existsSync(new URL('../infra/nginx/shared-dev.conf',import.meta.url)));
+});
