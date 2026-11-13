@@ -61,7 +61,16 @@ export async function retryPendingDraft({
     // Never disclose an invalid draft or internal CMS data in operational logs.
     throw new Error('Pending Draft changed or failed editorial integrity checks');
   }
-  if(!draft||draft.title!==pending.title||draft.summary!==pending.summary||
+  // validateDraft trims surrounding whitespace in text fields. Strapi may
+  // return an existing text field with surrounding whitespace unchanged.
+  // Treat only boundary whitespace as equivalent; NEVER accept truncation,
+  // case-folding, punctuation changes or interior whitespace rewrites.
+  // The publisher still checks the original CMS summary byte-for-byte
+  // against a fresh GET immediately before its authorized PUT.
+  const summaryUnchanged=typeof pending.summary==='string'&&
+    pending.summary.trim().length<=270&&
+    draft.summary===pending.summary.trim();
+  if(!draft||draft.title!==pending.title||!summaryUnchanged||
      draft.body!==pending.body||draft.whyItMatters!==pending.whyItMatters||
      draft.category!==pending.category||pending.slug!==slugFor(reviewSource,draft.title))
     throw new Error('Pending Draft changed or failed editorial integrity checks');
