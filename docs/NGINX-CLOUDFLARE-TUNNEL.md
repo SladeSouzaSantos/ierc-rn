@@ -1,203 +1,195 @@
-# IERC-RN — Nginx MAIN/DEV e Cloudflare Tunnel no MiniMac
+# IERC-RN — um único Nginx compartilhado e Cloudflare Tunnel
 
-**Criado em 13/11/2026.** Os portais estão operacionais no MiniMac:
-MAIN em `127.0.0.1:3102`, DEV em `127.0.0.1:3101`. O túnel
-`cloudflared` existente foi documentado em `network_mode: host` (inventário
-de 10/11). O servidor também hospeda um **outro** `nginx-proxy` com rotas
-PHASSCODE que **não deve ser alterado**.
+**Atualizado em 13/11/2026.** Reutilizamos o `nginx-proxy` existente do
+PHASSCODE, que recebe o Cloudflare Tunnel `minimac-server` pela porta
+`localhost:80`. **Não criar um segundo Nginx.** O contêiner
+`ierc-rn-edge-nginx-1` criado anteriormente deve ser desligado e removido
+(sem apagar redes/volumes de outros projetos).
 
-## Topologia segura
+## Topologia
 
 ```text
-Internet HTTPS (Cloudflare edge)
-   |
-   +-- iercrn.org.br -----------+
-   |                            |
-   +-- dev.iercrn.org.br -------+-- cloudflared EXISTENTE (network_mode: host)
-                                    |
-                                    | http://127.0.0.1:18081
-                                    v
-                             ierc-rn-edge-nginx-1
-                             Nginx dedicado:8080
-                               |              |
-                     Host: MAIN        Host: DEV
-                          |                 |
-               ierc-rn-main-edge    ierc-rn-dev-edge
-                          |                 |
-               ierc-rn-main-portal  ierc-rn-dev-portal
-                          |                 |
-               CMS PROD read-net   CMS DEV read-net
+Cloudflare HTTPS
+  -> cloudflared EXISTENTE (network_mode=host)
+     -> http://127.0.0.1:80
+        -> nginx-proxy EXISTENTE (Docker; rede nginx_default)
+           +-- Host iercrn.org.br     -> ierc-rn-main-portal:3000
+           +-- Host dev.iercrn.org.br -> ierc-rn-dev-portal:3000
 ```
 
-**Isolamento:** redes Docker distintas para o tráfego de proxy dos dois
-portais. O Nginx novo não participa de nenhuma rede privada do CMS.
-Os portais preservam as redes `cms_read` existentes, seus tokens e bancos
-distintos. `127.0.0.1:18081` é a **única** porta publicada pelo novo Nginx.
-As portas 80/443 permanecem com o `nginx-proxy` original.
-O Cloudflare Tunnel encaminha usando o hostname, preservado ou forçado
-em `HTTP Host Header`. Não há rota pública para Strapi, Redis ou PostgreSQL.
+Os dois portais ficam na **mesma rede externa do Nginx**, com aliases
+exclusivos. Cada um continua ligado à **própria** rede `cms_read`; nenhum
+CMS/PostgreSQL/Redis entra na rede compartilhada. A porta 80 continua com
+o `nginx-proxy` já existente. Cloudflare não precisa de segundo túnel,
+nem de porta 18081.
 
-Os arquivos versionados são:
-- `infra/nginx/conf.d/ierc-rn-main.conf` (MAIN, `iercrn.org.br`)
-- `infra/nginx/conf.d/ierc-rn-dev.conf` (DEV, `dev.iercrn.org.br`)
-- `infra/nginx/conf.d/00-default-deny.conf` (Host não reconhecido fecha conexão)
-- `infra/nginx/nginx.conf` (servidor Nginx não privilegiado)
-- `compose.nginx.yml` (proxy dedicado, sem segredos)
-- `scripts/check-ierc-nginx-tunnel.sh` (verificação apenas de leitura)
+Arquivos versionados:
+- `infra/nginx/shared-main.conf`: somente o vhost `iercrn.org.br`
+- `infra/nginx/shared-dev.conf`: somente o vhost `dev.iercrn.org.br`
+- `scripts/prepare-shared-nginx.sh main|dev`: prepara um `nginx.conf`
+  **local e ignorado pelo Git** em cada checkout (sem sobrescrever existente)
+- `scripts/check-ierc-shared-nginx.sh`: apenas leitura, confirma o proxy
+  original e os dois hostnames
+- `compose.portal.prod.yml` e `compose.portal.dev.yml`: compartilham
+  `IERC_PROXY_NETWORK` (padrão `nginx_default`), com aliases distintos
 
-> **Importante:** adicionar arquivos `nginx.conf` ao Git **não** altera as
-> rotas do Cloudflare Tunnel. Uma rota *Published application* deve ser
-> cadastrada no túnel remoto ou integrada ao `config.yml` local. Não
-> publique o hostname DEV antes de habilitar Cloudflare Access.
+O modelo segue a convenção do PHASSCODE: um vhost por projeto e rede
+externa com alias único. `nginx.conf` é gerado em cada checkout porque
+a mesma versão do Git existe em MAIN e DEV, mas cada ambiente deve
+usar **apenas o seu** `server_name`.
 
-## 1. Checagens de segurança antes de iniciar
+## 0. Desligar apenas o Nginx adicional, ANTES do git pull
 
-Execute no host MiniMac, sem imprimir o comando/token do túnel:
+Na MAIN, enquanto `compose.nginx.yml` ainda existe no checkout antigo:
 
 ```bash
+cd /opt/projects/ierc-rn
+docker compose -f compose.nginx.yml stop nginx
+docker compose -f compose.nginx.yml rm -f nginx
+docker ps --format '{{.Names}}' | grep -E '(^nginx-proxy$|ierc-rn-edge-nginx)' || true
+```
+
+Esperado: **somente `nginx-proxy`**. Não usar `down -v`, não reiniciar
+`nginx-proxy` nem `cloudflared`. As redes antigas
+`ierc-rn-main-edge` e `ierc-rn-dev-edge` podem permanecer sem uso;
+**não é necessário removê-las**.
+
+## 1. Verificar a rede e o carregamento do Nginx existente
+
+```bash
+docker inspect nginx-proxy \
+  --format '{{range $name, $net := .NetworkSettings.Networks}}{{println $name}}{{end}}'
 docker inspect cloudflared --format '{{.HostConfig.NetworkMode}}'
-docker inspect nginx-proxy --format '{{.Name}} {{.State.Status}}'
-ss -lnt | grep -E ':18081\\b' || true
+docker exec nginx-proxy nginx -T 2>/dev/null |
+  grep -E 'include .*\/opt\/projects|include .*nginx\.conf|server_name' | tail -35
+docker inspect nginx-proxy \
+  --format '{{range .Mounts}}{{println .Destination}}{{end}}'
 ```
 
-Esperado: `host`, `/nginx-proxy running`, porta 18081 disponível.
-Se `cloudflared` **não** estiver em rede host, NÃO cadastre
-`127.0.0.1:18081` no Tunnel: dentro da bridge, localhost é o
-contêiner cloudflared. Primeiro reavalie a topologia.
+Confirme:
+1. A rede externa do `nginx-proxy`, documentada como `nginx_default`.
+2. `cloudflared` em rede `host`.
+3. Se `/opt/docker-stack/proxy/nginx/conf.d/projects.conf` realmente
+   inclui `/opt/projects/*/nginx.conf` **dentro do contêiner** e se
+   os diretórios `/opt/projects/ierc-rn` e `.../ierc-rn-dev` estão
+   montados e visíveis nesse contêiner.
 
-## 2. Criar redes dedicadas sem interferir em outras aplicações
+**Não presumir o include apenas porque um repositório PHASSCODE contém
+um `nginx.conf` de exemplo.** Se o include ou bind mount não existir,
+pare aqui: será preciso editar o Compose/configuração **existente** do
+proxy, sem criar outra instância e sem sobrescrever o `projects.conf`.
+Não recarregue o Nginx com um include inexistente.
 
-```bash
-docker network inspect ierc-rn-main-edge >/dev/null 2>&1 || \
-  docker network create --driver bridge ierc-rn-main-edge
-docker network inspect ierc-rn-dev-edge >/dev/null 2>&1 || \
-  docker network create --driver bridge ierc-rn-dev-edge
-```
+## 2. Preparar vhosts e conectar os portais ao proxy
 
-Os dois Compose de portal declaram cada rede externa, criada **antes** de
-subir os portais. Não conecte o proxy a `ierc-rn-prod-cms-read` nem
-`ierc-rn-dev-cms-read`; isso romperia o isolamento CMS.
-
-## 3. Atualizar DEV e MAIN e adicionar somente a rede de proxy
-
-A atualização de rede pode recriar brevemente cada contêiner **portal**;
-não há rebuild necessário e nenhum CMS/Redis é reiniciado.
+Depois de confirmar a rede correta (se não for `nginx_default`, atribua
+`IERC_PROXY_NETWORK` ao nome confirmado em **todos** os comandos):
 
 ```bash
-cd /opt/projects/ierc-rn-dev
-git pull --ff-only origin dev
-docker compose --env-file deploy/.env.portal.dev -f compose.portal.dev.yml \
-  up -d --no-deps portal
-docker compose --env-file deploy/.env.portal.dev -f compose.portal.dev.yml ps
-
 cd /opt/projects/ierc-rn
 git pull --ff-only origin main
-docker compose --env-file deploy/.env.portal.prod -f compose.portal.prod.yml \
-  up -d --no-deps portal
-docker compose --env-file deploy/.env.portal.prod -f compose.portal.prod.yml ps
-```
+bash scripts/prepare-shared-nginx.sh main
 
-Se o Compose informar que faltam redes externas, retorne à etapa 2.
-Caso o contêiner de portal não tenha a versão atualizada do código,
-`up -d --build --no-deps portal` é opcional; **não** é necessário para
-esta atualização de rede se as imagens existentes já forem saudáveis.
+cd /opt/projects/ierc-rn-dev
+git pull --ff-only origin dev
+bash scripts/prepare-shared-nginx.sh dev
 
-## 4. Iniciar o Nginx dedicado
+# A conexão ao Nginx é via rede Docker, não localhost do contêiner.
+docker compose --env-file deploy/.env.portal.dev \
+  -f compose.portal.dev.yml up -d --no-deps portal
 
-```bash
 cd /opt/projects/ierc-rn
-docker compose -f compose.nginx.yml config --quiet
-docker compose -f compose.nginx.yml up -d --wait nginx
-docker compose -f compose.nginx.yml ps
-
-# Verifique os dois caminhos HTTP locais pelo mesmo proxy:
-curl -sS -o /dev/null -w 'MAIN: %{http_code}\\n' \
-  -H 'Host: iercrn.org.br' http://127.0.0.1:18081/
-curl -sS -o /dev/null -w 'DEV: %{http_code}\\n' \
-  -H 'Host: dev.iercrn.org.br' http://127.0.0.1:18081/
-bash scripts/check-ierc-nginx-tunnel.sh
+docker compose --env-file deploy/.env.portal.prod \
+  -f compose.portal.prod.yml up -d --no-deps portal
 ```
 
-Esperado: `200` para os dois portais e
-`IERC_NGINX_TUNNEL_LOCAL_OK`. O Nginx funciona em seu próprio
-contêiner com usuário não privilegiado, rootfs somente leitura,
-capabilities removidas e arquivos de configuração em modo read-only.
-Se houver 502/503, verifique alias e redes:
+Estes `up` podem recriar brevemente **somente os portais**.
+Não afetam as imagens do CMS, bancos, Redis ou worker.
+
+Antes de alterar o proxy, verifique as conexões à rede e os aliases:
 
 ```bash
-docker network inspect ierc-rn-main-edge --format '{{range .Containers}}{{println .Name}}{{end}}'
-docker network inspect ierc-rn-dev-edge --format '{{range .Containers}}{{println .Name}}{{end}}'
-docker compose -f compose.nginx.yml logs --tail=80 nginx
+docker network inspect nginx_default \
+  --format '{{range .Containers}}{{println .Name}}{{end}}'
+docker exec nginx-proxy nginx -t
 ```
 
-Não altere nginx-proxy, Redis nem o CMS para corrigir uma falha de rede
-no Nginx do IERC.
+Se `nginx -t` falhar, **não execute reload**. Identifique se a causa
+está em algum vhost ou include e corrija preservando o arquivo original.
 
-## 5. Cadastrar duas rotas no Cloudflare Tunnel EXISTENTE
+## 3. Recarregar o Nginx ORIGINAL e testar
 
-No painel **Cloudflare > Networking > Tunnels > [seu túnel] > Routes >
-Add route > Published application**, adicionar:
-
-| Hostname público | Service URL (origem HTTP) | HTTP Host Header |
-|---|---|---|
-| `iercrn.org.br` | `http://127.0.0.1:18081` | `iercrn.org.br` |
-| `dev.iercrn.org.br` | `http://127.0.0.1:18081` | `dev.iercrn.org.br` |
-
-O campo **HTTP Host Header** fica em *Additional application settings >
-HTTP*. A separação do Nginx é baseada nesse cabeçalho. Não tente acessar
-HTTPS no porto 18081: o TLS público termina na Cloudflare e a conexão
-`cloudflared -> Nginx` é HTTP local em loopback.
-
-**ANTES** de publicar `dev.iercrn.org.br`, crie uma aplicação
-Cloudflare Access *Self-hosted* para **todo** esse hostname com política
-Allow restrita às pessoas autorizadas. Confirme o desafio/login antes
-de divulgar o URL. Para Strapi, caso decida publicar o admin futuramente,
-crie **separadamente** Access para cada hostname e reavalie CORS/cookies,
-URLs públicas e cabeçalhos de proxy; **este deploy não publica Strapi**.
-
-Se o túnel for gerenciado por `config.yml` local em vez de painel,
-mescle estas duas regras **antes** da regra catch-all existente, sem
-sobrescrever nenhuma rota dos projetos PHASSCODE:
-
-```yaml
-# TRECHO PARA MESCLAR — NÃO É UM config.yml COMPLETO
-- hostname: iercrn.org.br
-  service: http://127.0.0.1:18081
-  originRequest:
-    httpHostHeader: iercrn.org.br
-- hostname: dev.iercrn.org.br
-  service: http://127.0.0.1:18081
-  originRequest:
-    httpHostHeader: dev.iercrn.org.br
-```
-
-Nunca imprima o token Cloudflare, `docker inspect ...Env`, credenciais
-`config.yml`, cookies ou tokens do CMS no terminal compartilhado.
-O dashboard ou configuração do túnel não são alterados por `git pull`.
-
-## 6. Smoke externo após criar as rotas
+**Somente** após o `nginx -t` passar e o include carregar os dois
+arquivos:
 
 ```bash
-curl -I --max-time 15 https://iercrn.org.br
-curl -I --max-time 15 https://dev.iercrn.org.br
+docker exec nginx-proxy nginx -s reload
+
+cd /opt/projects/ierc-rn
+bash scripts/check-ierc-shared-nginx.sh
+
+curl -sS -o /dev/null -w 'PHASSCODE: %{http_code}\\n' \
+  -H 'Host: gbc.phasscode.com' http://127.0.0.1:80/
 ```
 
-MAIN deve responder com HTTP 200 ou redirecionamento legítimo.
-DEV **com Access configurado** deve redirecionar/solicitar autenticação
-para usuário não autenticado. Nem um HTTP 200 do Nginx nem o ícone de
-túnel Healthy provam que Access está protegido. Valide manualmente
-pelo navegador anônimo e confira os eventos de autenticação.
+Esperado: `IERC_SHARED_PROXY_OK`, `HTTP 200` para as duas páginas
+IERC-RN e nenhuma regressão nas rotas PHASSCODE. Um status `301/302`
+pode ser legítimo dependendo do aplicativo. Se não encontrar um vhost,
+verifique se o proxy carrega os `nginx.conf` das duas pastas.
 
-## 7. Reversão e manutenção
+## 4. Cloudflare: manter PORTAIS na porta 80, não 18081
 
-Para suspender exposição, remova/disable as duas rotas de *Published
-application* no Cloudflare Dashboard e depois, se necessário,
-`docker compose -f compose.nginx.yml stop nginx`.
-Esse procedimento não toca os outros túneis ou hosts do PHASSCODE.
-Não use `down -v`, `docker network prune` nem remova as redes
-`cms_read`. A porta 18081 não deve ser exposta em `0.0.0.0`.
+O operador já criou os Published Applications no túnel
+`minimac-server`. Manter:
 
-Documentação oficial:
-- https://developers.cloudflare.com/tunnel/get-started/
-- https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/configure-tunnels/origin-parameters/
-- https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/
+| Rota pública | Origin service |
+| --- | --- |
+| `gbc.phasscode.com`, `devgbc.phasscode.com` | `http://localhost:80` (inalterado) |
+| `api.phasscode.com`, `devapi.phasscode.com` | `http://localhost:80` (inalterado) |
+| `iercrn.org.br` | `http://localhost:80` |
+| `dev.iercrn.org.br` | `http://localhost:80` |
+
+Preserve o header HTTP `Host` original. Se houver **HTTP Host Header**
+customizado nas rotas, ele deve corresponder exatamente ao hostname
+da linha. Regras e DNS no painel permanecem intactos na migração
+para o Nginx único.
+
+**Cloudflare Access:** bloquear `dev.iercrn.org.br` para acesso
+externo não autorizado antes de divulgar o domínio.
+
+### Painéis Strapi: rotas DISTINTAS, não vhosts da rede proxy
+
+O túnel já contém `strapi.iercrn.org.br` e
+`strapi-dev.iercrn.org.br` (nome confirmado pela captura da conta).
+Eles ainda apontavam para `http://localhost:80`, mas este guia **não**
+cria vhosts públicos para o Strapi no Nginx compartilhado.
+
+**ANTES de alterar os destinos ou expor o painel**, configurar
+Cloudflare Access **Self-hosted** de hostname inteiro com Allow restrito
+aos editores para **cada um**, e verificar acesso negado anônimo. Só
+então alterar as origens do túnel para:
+- `strapi.iercrn.org.br` -> `http://localhost:1338` (CMS PROD)
+- `strapi-dev.iercrn.org.br` -> `http://localhost:1337` (CMS DEV)
+
+Os CMS permanecem publicados no MiniMac **apenas em 127.0.0.1**; o
+`cloudflared` em network host é o único intermediário externo. Confirme
+`PUBLIC_URL`, cookies, cabeçalhos `X-Forwarded-Proto` e
+`TRUST_PROXY` segundo o guia CMS antes de usar os painéis na web.
+Não liberar rota de Strapi sem Access.
+
+## 5. Reversão sem afetar outros projetos
+
+Para reverter o Nginx compartilhado, faça uma cópia local dos vhosts
+IERC-RN, **somente** remova `nginx.conf` de cada checkout após
+confirmar que são os arquivos gerados pelo script (compare com os
+templates), rode `docker exec nginx-proxy nginx -t` e depois
+`docker exec nginx-proxy nginx -s reload`. Os vhosts PHASSCODE
+permanecem intocados.
+
+É possível deixar a rede compartilhada conectada aos portais sem
+prejuízo; não execute `docker network prune`, `docker system prune`,
+`down -v` ou `docker volume prune`.
+
+**Importante:** `git pull` não altera o Nginx global nem o dashboard
+Cloudflare. Tudo que envolve o proxy em execução precisa de testes
+no próprio MiniMac.
