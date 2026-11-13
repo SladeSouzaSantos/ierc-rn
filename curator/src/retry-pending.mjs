@@ -5,6 +5,7 @@ import {createPacedEbcFetch} from './ebc-archive-worker.mjs';
 import {validateDraft,slugFor} from './editorial.mjs';
 import {reviewAndRepairFullArticleDraft} from './full-article-review.mjs';
 import {reviewedDraftDigest} from './cms-publish.mjs';
+import {editorialProgressFingerprint} from './editorial-progress.mjs';
 
 /**
  * Explicit, single-ID recovery for an auto-generated Strapi draft left pending
@@ -17,6 +18,7 @@ import {reviewedDraftDigest} from './cms-publish.mjs';
 export async function retryPendingDraft({
   documentId,publisher,router,store,allowedSources,
   now=Date.now(),articleReader=fetchArticleEvidence,logger=()=>{},
+  progressStore=null,
 }={}){
   if(!/^[a-zA-Z0-9]{12,90}$/.test(documentId||'') ||
      !publisher||typeof publisher.readPendingDraft!=='function'||
@@ -94,7 +96,17 @@ export async function retryPendingDraft({
        evidence.sourceUrl!==reviewSource.url||evidence.sourceId!==source.id||
        evidence.licenseReference!==source.fullTextAccess.reference)
       throw new Error('Pending Draft full article rights unavailable');
-    const verdict=await reviewAndRepairFullArticleDraft(reviewSource,draft,evidence,{router,logger});
+    const fingerprint=progressStore?editorialProgressFingerprint({
+      documentId,dedupeKey:pending.dedupeKey,original:draft,evidence,
+    }):null;
+    // Resumption is accepted only AFTER source rights, article digest and
+    // unchanged Strapi Draft were re-verified on THIS invocation.
+    const resumeProgress=progressStore?await progressStore.load(fingerprint):null;
+    const verdict=await reviewAndRepairFullArticleDraft(reviewSource,draft,evidence,{
+      router,logger,maxCorrections:2,resumeProgress,
+      onProgress:progressStore?(progress)=>
+        progressStore.save(fingerprint,progress):null,
+    });
     if(!verdict.approved){
       logger({event:'pending_review_held',documentIdHash,reason:verdict.reason});
       return {status:'draft_review_pending',reason:verdict.reason};
@@ -111,6 +123,7 @@ export async function retryPendingDraft({
       ...(correctedDraft?{editorialDigest:reviewedDraftDigest(correctedDraft)}:{}),
     },{correctedDraft});
     await store.set('ierc:curator:seen:'+pending.dedupeKey,'1','EX',31536000);
+    if(progressStore)await progressStore.clear(fingerprint);
     logger({event:'pending_draft_published',documentIdHash,review:'full_article',
       corrected:!!correctedDraft});
     return {status:'draft_published',reusedDraft:true};
