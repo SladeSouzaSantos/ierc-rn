@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {retryPendingDraft} from '../src/retry-pending.mjs';
-import {slugFor} from '../src/editorial.mjs';
+import {slugFor,payloadFor} from '../src/editorial.mjs';
 import {cmsPublisher} from '../src/cms-publish.mjs';
 
 const doc='a1b2c3d4e5f6g7h8i9j0klmn';
@@ -111,6 +111,40 @@ test('source license or article evidence failure prevents any model call or publ
   await assert.rejects(retryPendingDraft(args),/full article rights unavailable/);
   assert.equal(counts().published,0);
   assert.equal(counts().modelCalls,0);
+});
+test('publisher readPendingDraft accepts the EXACT live payloadFor AI Draft, unchanged',async()=>{
+  const source={
+    source:'Agência Brasil (EBC)',language:'pt-BR',title:article.originalTitle,
+    url,dedupeKey,publishedAt:article.originalPublishedAt,
+    country:'Brasil',coverageScope:'brasil',
+  };
+  const draft={
+    title:article.title,summary:article.summary,body:article.body,
+    whyItMatters:article.whyItMatters,category:article.category,
+  };
+  // Do not duplicate an invented approvalNote in the success fixture.
+  // This contract uses the exact string the PROD writer stores in Strapi.
+  const stored={...payloadFor(source,draft,'openrouter'),
+    documentId:doc,publishedAt:null};
+  assert.equal(stored.approvalNote,
+    'Rascunho criado com IA openrouter. Revisar fonte e fatos; não publicar sem aprovação humana.');
+  const calls=[];
+  const publisher=cmsPublisher({
+    baseUrl:'http://cms:1337',token:'test-publisher-token-1234',
+    draftToken:'test-draft-token-1234',
+    fetchImpl:async(address,options)=>{
+      calls.push({address,method:options.method});
+      assert.equal(options.method,'GET');
+      if(address.endsWith('status=published'))
+        return new Response('{}',{status:404});
+      if(address.endsWith('status=draft'))
+        return new Response(JSON.stringify({data:stored}),{status:200});
+      throw Error('Unexpected CMS endpoint');
+    },
+  });
+  assert.deepEqual(await publisher.readPendingDraft(doc),stored);
+  assert.equal(calls.length,2);
+  assert.ok(calls.every(x=>x.address.includes('/api/news-articles/'+doc+'?status=')));
 });
 test('publisher readPendingDraft rejects published or non-worker-created drafts',async()=>{
   const token='safe-publish-token-1234',draftToken='safe-draft-token-1234';
