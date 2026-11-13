@@ -64,8 +64,8 @@ Para investigar exclusivamente **Groq**, sem gastar chamadas Gemini e
 OpenRouter, use em vez da última linha:
 
 ```bash
-docker compose --env-file curator/.env -f compose.curator.dev.yml \\
-  --profile curator run --rm --no-deps -T worker \\
+docker compose --env-file curator/.env -f compose.curator.dev.yml \
+  --profile curator run --rm --no-deps -T worker \
   node src/diagnose-review-schema.mjs groq
 ```
 
