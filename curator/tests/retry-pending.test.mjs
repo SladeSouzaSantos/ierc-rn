@@ -75,6 +75,30 @@ test('retry-pending publishes same existing Draft only after new full article se
   assert.equal(out.articleReads,1);
   assert.ok(out.events.some(e=>e.event==='pending_draft_published'));
 });
+test('recovery accepts CMS summary with surrounding whitespace but publishes exact stored summary',async()=>{
+  const pending={...article,summary:'  '+article.summary+'\\n'};
+  const {args,counts}=config({pending});
+  let persistedSummary;
+  const originalPublish=args.publisher.publishApprovedDraft.bind(args.publisher);
+  args.publisher.publishApprovedDraft=async(id,expected,verdict)=>{
+    persistedSummary=expected.summary;
+    return originalPublish(id,expected,verdict);
+  };
+  const result=await retryPendingDraft(args);
+  assert.equal(result.status,'draft_published');
+  assert.equal(result.reusedDraft,true);
+  assert.equal(persistedSummary,pending.summary);
+  assert.equal(counts().published,1);
+  assert.equal(counts().modelCalls,1);
+});
+test('recovery still rejects summary that validator would truncate, before calls and CMS writes',async()=>{
+  const pending={...article,summary:article.summary+' '.'repeat(4)+'X'.repeat(300)};
+  const {args,counts}=config({pending});
+  await assert.rejects(retryPendingDraft(args),/editorial integrity/);
+  assert.equal(counts().articleReads,0);
+  assert.equal(counts().modelCalls,0);
+  assert.equal(counts().published,0);
+});
 test('unavailable LLM review holds the existing draft; never PUT or create another',async()=>{
   const {args,counts}=config();
   args.router={async complete(){throw Error('free quotas exhausted');}};
