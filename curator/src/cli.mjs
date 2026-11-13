@@ -10,6 +10,7 @@ import {publishingPolicyForCommand} from './auto-config.mjs';
 import {runOnce} from './pipeline.mjs';
 import {retryPendingDraft} from './retry-pending.mjs';
 import {scheduleDraftLimitFromEnv} from './schedule-config.mjs';
+import {CURATOR_SCHEDULE_TIMEZONE,CURATOR_SCHEDULE_HOURS,createCuratorSlotClaimer} from './schedule-slot.mjs';
 import {summarizeRunForLog} from './run-summary.mjs';
 
 const cmd=process.argv[2];
@@ -104,15 +105,6 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
       maxAgeDays:cmd==='preview'?previewDays:aiPreview?aiPreviewDays:45,
       // Auto mode never processes more than one candidate per run.
       maxArticles:autoPublish?1:cmd==='preview'?previewLimit:aiPreview?aiPreviewLimit:cmd==='once'?onceLimit:scheduleLimit});
-    const slot=()=>{
-      const parts=new Intl.DateTimeFormat('en-GB',{
-        timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit',
-        hour:'2-digit',minute:'2-digit',hourCycle:'h23',
-      }).formatToParts(new Date());
-      const v=Object.fromEntries(parts.map(p=>[p.type,p.value]));
-      return {id:v.year+'-'+v.month+'-'+v.day+':'+v.hour,
-        hour:v.hour,minute:v.minute};
-    };
     if(retryPending){
       const result=await retryPendingDraft({documentId:process.argv[3],publisher,router,
         store:redis,allowedSources,logger:log});
@@ -121,20 +113,18 @@ if(!['preview','generate-preview','review-preview','review-full-preview','once',
       const report=await execute();
       console.log(JSON.stringify(report));
     }else{
-      const hours=['08','13','19'];
-      log({event:'schedule_started',timezone:'America/Fortaleza',hours,
+      log({event:'schedule_started',timezone:CURATOR_SCHEDULE_TIMEZONE,
+        hours:CURATOR_SCHEDULE_HOURS,
         writeDrafts:!dryRun,autoPublish,archiveDiscovery});
+      const claimSlot=createCuratorSlotClaimer({redis,logger:log});
       const tick=async()=>{
-        const current=slot();
-        if(!hours.includes(current.hour)||Number(current.minute)>2)return;
-        const key='ierc:curator:job:'+current.id;
-        const acquired=await redis.set(key,'1','EX',172800,'NX');
-        if(acquired!=='OK')return;
+        const claim=await claimSlot();
+        if(claim.state!=='claimed')return;
         try{
           const report=await execute();
-          log({event:'run_completed',count:report.count,preview:dryRun,
+          log({event:'run_completed',slot:claim.slot,count:report.count,preview:dryRun,
             ...summarizeRunForLog(report)});
-        }catch{log({event:'run_failed'});}
+        }catch{log({event:'run_failed',slot:claim.slot});}
       };
       await tick();
       setInterval(()=>tick().catch(()=>log({event:'schedule_error'})),30000);
