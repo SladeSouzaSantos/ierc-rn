@@ -127,7 +127,14 @@ export async function reviewFullArticleDraft(source,draft,evidence,{router,logge
     // failure. Log only counts and a fixed classification: no model text,
     // article excerpt, claim, quote, source URL, or provider response body.
     if(!verdict.approved && verdict.reason==='ai_review_hold'){
-      logger(safeFullArticleHoldSummary(review,completion.provider));
+      if(review.decision==='hold'){
+        logger(safeFullArticleHoldSummary(review,completion.provider));
+      }else{
+        // A contradictory APPROVE (e.g. unsupportedClaims is nonempty)
+        // remains blocked and is never converted to a reviewer HOLD.
+        logger({event:'full_article_review_inconsistent',
+          provider:completion.provider,reason:'approval_contract_conflict'});
+      }
     }
     return verdict.approved?{...verdict,reviewerProvider:completion.provider}:verdict;
   }catch(error){
