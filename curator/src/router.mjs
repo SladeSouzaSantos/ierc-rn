@@ -66,13 +66,21 @@ export class FreeLlmRouter {
     this.providers=providers;this.state=state;this.settings=settings;
     this.fetchImpl=fetchImpl;this.now=now;this.logger=logger;
   }
-  async complete({system,prompt,validateOutput}) {
+  async complete({system,prompt,validateOutput,phase='default'}) {
+    if(!['default','draft','review'].includes(phase))
+      throw new Error('Unsupported LLM editorial phase');
     const attempts=[];
     if (!this.providers.length) throw new LlmExhaustedError('no_free_provider_configured',attempts);
     for (const provider of this.providers) {
       if (attempts.filter(x=>x.action==='attempt').length>=this.settings.maxAttempts) break;
-      const remaining=await this.state.remainingCooldown(provider.id);
-      if (remaining>0) {attempts.push({provider:provider.id,action:'cooldown'});continue;}
+      // Provider API failures remain shared, but malformed prose in one phase
+      // should not prevent a free provider from serving the different review task.
+      const sharedCooldown=await this.state.remainingCooldown(provider.id);
+      const phaseCooldown=phase==='default'?0:
+        await this.state.remainingCooldown(provider.id+'_'+phase);
+      if (Math.max(sharedCooldown,phaseCooldown)>0) {
+        attempts.push({provider:provider.id,action:'cooldown'});continue;
+      }
       const quota=await this.state.reserve(provider);
       if (quota==='global_limited') throw new LlmExhaustedError('global_quota_reached',attempts);
       if (quota==='provider_limited') {attempts.push({provider:provider.id,action:'local_quota'});continue;}
@@ -119,7 +127,8 @@ export class FreeLlmRouter {
           throw new LlmExhaustedError('non_retryable_model_error',attempts);
         }
         const delay=retryDelay(error,this.now(),this.settings.cooldownMs,this.settings.maxCooldownMs,category);
-        await this.state.block(provider.id,delay);
+        await this.state.block(category==='invalid_output'&&phase!=='default'
+          ? provider.id+'_'+phase:provider.id,delay);
         attempts.push({provider:provider.id,action:'attempt',result:category});
         this.logger({event:'llm_attempt',provider:provider.id,result:category,
           ...(category==='invalid_output'?{reason:error?.reason||'invalid_response'}:{}),

@@ -295,3 +295,51 @@ test('production-order failover Groq → Gemini → OpenRouter uses same meterin
     ['groq','rate_limit'],['gemini','invalid_output'],['openrouter','success'],
   ]);
 });
+
+test('draft-invalid free providers remain eligible for independent review without bypassing quotas',async()=>{
+  const env={
+    CURATOR_GROQ_API_KEY:'fake',CURATOR_GROQ_MODEL:'openai/gpt-oss-120b',
+    CURATOR_GROQ_FREE_TIER_CONFIRMED:'true',
+    CURATOR_GEMINI_API_KEY:'fake',CURATOR_GEMINI_MODEL:'gemini-2.5-flash',
+    CURATOR_GEMINI_FREE_TIER_CONFIRMED:'true',
+    CURATOR_OPENROUTER_API_KEY:'fake',CURATOR_OPENROUTER_MODEL:'openrouter/free',
+  };
+  const p=providersFromEnv(env),meter=new MemoryMeter(),calls=[],logs=[];
+  const router=new FreeLlmRouter({providers:p,state:meter,settings:config,
+    logger:x=>logs.push(x),
+    fetchImpl:async(url)=>{
+      const id=p.find(provider=>provider.url===url).id;
+      calls.push(id);
+      if(calls.length<3)return new Response(JSON.stringify({choices:[{
+        message:{content:'invalid article JSON'},finish_reason:'stop',
+      }]}),{status:200});
+      return ok();
+    },
+  });
+  const validate=content=>{if(!content.startsWith('{'))throw Error('Model output is not JSON');};
+  const first=await router.complete({system:'draft',prompt:'p',phase:'draft',validateOutput:validate});
+  assert.equal(first.provider,'openrouter');
+  assert.ok(meter.blocked.groq_draft>0);
+  assert.ok(meter.blocked.gemini_draft>0);
+  assert.equal(meter.blocked.groq||0,0);
+  const review=await router.complete({system:'review',prompt:'p',phase:'review',validateOutput:validate});
+  assert.equal(review.provider,'groq');
+  assert.deepEqual(calls,['groq','gemini','openrouter','groq']);
+  assert.equal(meter.n,4); // Same global budget across both phases.
+  assert.equal(logs.at(-1).result,'success');
+});
+test('provider HTTP quota/rate-limit cooldown remains shared between drafting and review',async()=>{
+  const p=[candidates[0],candidates[1]],meter=new MemoryMeter();
+  let n=0;
+  const router=make(meter,async()=>{
+    n++;
+    return n===1?new Response('',{status:429}):ok();
+  },p);
+  const draft=await router.complete({system:'s',prompt:'p',phase:'draft'});
+  assert.equal(draft.provider,'gemini');
+  assert.ok(meter.blocked.openrouter>0);
+  const review=await router.complete({system:'s',prompt:'p',phase:'review'});
+  assert.equal(review.provider,'gemini');
+  assert.equal(n,3);
+  await assert.rejects(router.complete({system:'s',prompt:'p',phase:'unknown'}),/Unsupported LLM editorial phase/);
+});

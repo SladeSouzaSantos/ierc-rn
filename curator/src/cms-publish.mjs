@@ -11,6 +11,32 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
     throw new Error('Separate scoped CMS publisher token required');
   const headers={Authorization:'Bearer '+token,Accept:'application/json'};
   return {
+    // Explicit one-shot recovery only: read an existing pending Draft with the
+    // separate findOne publisher token; no enumeration, mutation or blind PUT.
+    async readPendingDraft(documentId){
+      if(!/^[a-zA-Z0-9]{12,90}$/.test(documentId||''))
+        throw new Error('Invalid pending CMS document ID');
+      const root=host.origin+'/api/news-articles/'+encodeURIComponent(documentId);
+      const read=async status=>{
+        let response;
+        try {response=await fetchImpl(root+'?status='+status,{
+          method:'GET',headers,redirect:'error',signal:AbortSignal.timeout(8000),
+        });}catch{throw new Error('Pending Draft read unavailable');}
+        if(response.status===404)return null;
+        if(!response.ok)throw new Error('Pending Draft read failed (HTTP '+response.status+')');
+        try{return (await response.json())?.data||null;}
+        catch{throw new Error('Pending Draft response invalid');}
+      };
+      const published=await read('published');
+      if(published?.publishedAt)throw new Error('Article is already published');
+      const pending=await read('draft');
+      if(!pending||pending.documentId!==documentId||pending.publishedAt!==null||
+         pending.editorialStatus!=='em_revisao'||pending.originType!=='externa'||
+         pending.aiAssisted!==true||pending.image||
+         !/^Rascunho criado com IA (?:openrouter|gemini|groq|ollama)\\. Revisar fonte e fatos; n[aã]o publicar sem aprova[cç][aã]o humana\\.$/.test(pending.approvalNote||''))
+        throw new Error('Draft is not an unchanged AI-review-pending candidate');
+      return pending;
+    },
     async publishApprovedDraft(documentId,expected,reviewEvidence){
       if(!/^[a-zA-Z0-9]{12,90}$/.test(documentId))
         throw new Error('Invalid CMS document ID');

@@ -207,6 +207,69 @@ licença, corpo, `editorialStatus=aprovado`, `publishedAt`, visibilidade
 no Radar MAIN (`http://127.0.0.1:3102/radar-da-inclusao`) e link individual.
 Uma revisão por IA não substitui a auditoria humana por amostragem.
 
+## 6.1. Rascunho criado, mas segunda revisão falhou: recuperar sem duplicar
+
+Uma execução pode registrar `draft_created_review_pending` quando nenhuma
+LLM gratuita retorna JSON de revisão válido. O Draft permanece
+`editorialStatus=em_revisao`. **Não é uma publicação**, e não deve
+ser editado para mudar o status artificialmente. O deduplicador grava a
+matéria como vista: repetir `once` **não reavalia aquele Draft** e jamais
+se deve apagar sua chave Redis ou excluir o artigo para forçar uma tentativa.
+
+O subcomando de recuperação exige o `documentId` real de uma notícia
+que foi criada automaticamente, mantém a mesma permissão/licença e cota
+free, relê o texto integral oficial e solicita uma **nova revisão
+independente**. Se aprovada, publica o mesmo registro via token Custom.
+Não gera um novo rascunho. Se a revisão falhar, mantém `em_revisao`.
+
+Para listar apenas IDs de notícias pendentes, use o token Read-only já
+injetado no **portal PROD** (nenhum token é impresso):
+
+```bash
+cd /opt/projects/ierc-rn
+docker compose --env-file deploy/.env.portal.prod -f compose.portal.prod.yml \
+  exec -T portal node -e '
+(async()=>{
+  const response=await fetch("http://cms:1337/api/news-articles?status=draft&pagination[pageSize]=50",{
+    headers:{Authorization:"Bearer "+process.env.CMS_READ_TOKEN}
+  });
+  if(!response.ok)throw Error("CMS_READ_HTTP_"+response.status);
+  const data=(await response.json()).data;
+  for(const item of data){
+    if(item.aiAssisted===true && item.editorialStatus==="em_revisao" &&
+      item.sourceUrl?.startsWith("https://agenciabrasil.ebc.com.br/"))
+      console.log("PENDING_DRAFT",item.documentId,item.title);
+  }
+})().catch(()=>{console.error("PENDING_DRAFT_READ_FAILED");process.exitCode=1;});
+'
+```
+
+Escolha o `documentId` do Draft criado pela tentativa anterior, sem
+alterar seu conteúdo. Não cole tokens nem dados pessoais no chat.
+
+Após `PROD_PREFLIGHT_OK` e Redis saudável:
+
+```bash
+docker compose --env-file curator/.env.prod -f compose.curator.prod.yml \
+  --profile curator build worker
+docker compose --env-file curator/.env.prod -f compose.curator.prod.yml \
+  --profile curator run --rm --no-deps -T worker \
+  node src/cli.mjs retry-pending DOCUMENT_ID_AQUI
+```
+
+O comando **pode publicar efetivamente** o Draft existente. Falhas no
+formato de revisão, evidência, licença ou permissões mantêm o Draft
+não publicado. Conferir depois o mesmo `documentId` e a página no
+Radar MAIN; não iniciar scheduler permanente antes de homologar.
+
+Agora as falhas de JSON editorial geram cooldowns independentes em
+`draft` e `review`: por exemplo, um Groq com Draft incompleto
+pode ainda ser tentado na revisão, sempre com o **mesmo orçamento
+global e por provedor** no Redis. HTTP 429, 402 e demais
+erros de infraestrutura continuam causando cooldown compartilhado.
+A revisão exige quotes literais de blocos diferentes, e a falta
+de duas provas é bloqueio de publicação, não um caso para contornar.
+
 ## 7. Ativar publicação automática nos horários fixos
 
 **Após inspeção da primeira execução e dos controles acima**, ativar
