@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { approvedEventImage, safeEventUploadPath } from "../lib/event-media";
+import { readBoundedStream } from "../lib/stream-limiter";
 
 const photo = { url: "/uploads/convite_natalino_2026_a1b2c3.webp", mime: "image/webp" };
 const approved = {
@@ -121,4 +122,35 @@ test("cartão com imagem mantém o convite ao lado em desktop e reflow no celula
   const overflow = await page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
+});
+
+test("bounded event image streaming rejects undeclared oversized responses", async () => {
+  let canceled = false;
+  const readable = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new Uint8Array([1, 2, 3]));
+      controller.enqueue(new Uint8Array([4, 5, 6, 7]));
+    },
+    cancel() { canceled = true; },
+  });
+  expect(await readBoundedStream(readable, 5)).toBeNull();
+  expect(canceled).toBe(true);
+  const good = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new Uint8Array([1, 2]));
+      controller.enqueue(new Uint8Array([3, 4]));
+      controller.close();
+    },
+  });
+  expect([...((await readBoundedStream(good, 5)) ?? [])]).toEqual([1, 2, 3, 4]);
+  expect(await readBoundedStream(null, 10)).toBeNull();
+});
+
+test("security headers block framing and unsafe base URLs", async ({ request }) => {
+  const response = await request.get("/instituto");
+  expect(response.ok()).toBe(true);
+  expect(response.headers()["x-frame-options"]).toBe("DENY");
+  expect(response.headers()["x-content-type-options"]).toBe("nosniff");
+  expect(response.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(response.headers()["content-security-policy"]).toContain("object-src 'none'");
 });
