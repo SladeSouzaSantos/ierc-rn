@@ -30,7 +30,7 @@ test("Apoie apresenta chave Pix CNPJ informada sem iniciar cobranças online", a
   await expect(page.getByText(/confira no aplicativo do seu banco se o destinatário corresponde/)).toBeVisible();
   await expect(page.getByText(/Se o nome do recebedor não corresponder/)).toBeVisible();
   await expect(page.getByText(/O Pix e o dinheiro aceitos no bazar referem-se a compras presenciais/)).toBeVisible();
-  await expect(page.locator('main input[type="text"], main input[type="email"], main input[type="number"], main input[type="password"], main input[autocomplete="cc-number"], main a[href^="pix:"], main iframe')).toHaveCount(0);
+  await expect(page.locator('main input[type="email"], main input[type="number"], main input[type="password"], main input[autocomplete="cc-number"], main a[href^="pix:"], main iframe')).toHaveCount(0);
   await expect(page.locator('.support-recurring-checkout')).toBeDisabled();
   // Email is the official cancellation/support channel, not a payment collection form.
   await expect(page.locator('main a[href^="tel:"]')).toHaveCount(0);
@@ -85,7 +85,7 @@ test("Apoie oferece seleção mensal com checkout bloqueado até aprovação fin
   await expect(modes.getByText(/até o cancelamento/)).toBeVisible();
 
   // Selection is a safe preview until the institution configures verified links.
-  await expect(modes.locator('input[name="recurring-monthly-amount"]')).toHaveCount(3);
+  await expect(modes.locator('input[name="recurring-monthly-amount"]')).toHaveCount(4);
   await expect(modes.locator('input[name="recurring-payment-method"]')).toHaveCount(3);
   await expect(modes.locator('.support-recurring-checkout')).toBeDisabled();
   await page.locator('input[name="recurring-monthly-amount"][value="100"]').check();
@@ -93,11 +93,16 @@ test("Apoie oferece seleção mensal com checkout bloqueado até aprovação fin
   await expect(modes.locator('.support-recurring-summary')).toContainText("100,00 por mês");
   await expect(modes.locator('.support-recurring-summary')).toContainText("Cartão de crédito");
   await expect(modes.locator('.support-recurring-checkout')).toBeDisabled();
+  await page.locator('input[name="recurring-monthly-amount"][value="custom"]').check();
+  const customValue = modes.getByRole("textbox", { name: "Valor mensal personalizado (R$)" });
+  await customValue.fill("47,80");
+  await expect(modes.locator(".support-recurring-summary")).toContainText("R$ 47,80 por mês");
+  await expect(modes.locator(".support-recurring-checkout")).toBeDisabled();
   await page.getByLabel("Cartão de débito", { exact: false }).check();
   await expect(modes.locator('.support-recurring-status')).toContainText("indisponível");
   await expect(modes.locator('.support-recurring-checkout')).toBeDisabled();
   await expect(page.locator('main a[href*="checkout"], main a[href*="subscribe"], main a[href^="pix:"]')).toHaveCount(0);
-  await expect(page.locator('main input[type="number"], main input[type="text"], main input[type="email"], main input[autocomplete^="cc-"]')).toHaveCount(0);
+  await expect(page.locator('main input[type="number"], main input[type="email"], main input[autocomplete^="cc-"]')).toHaveCount(0);
 });
 
 test("Portal não cria cobrança própria nem recebe webhook antes do contrato financeiro", async ({ request }) => {
