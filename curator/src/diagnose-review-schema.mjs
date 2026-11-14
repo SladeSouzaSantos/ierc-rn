@@ -63,7 +63,10 @@ export async function runSyntheticReviewDiagnostic({
         // Router emits static failure codes only. Never serialize model output.
         if(event.event==='llm_attempt')attempt={
           result:event.result,
-          ...(event.result==='invalid_output'?{reason:event.reason}:{}),
+          ...(['invalid_output','terminal'].includes(event.result) &&
+            typeof event.reason==='string' &&
+            /^(?:http_(?:400|403|413|422)|non_retryable|[a-z_]{3,40})$/.test(event.reason)
+              ? {reason:event.reason}:{}) ,
         };
       },
     });
