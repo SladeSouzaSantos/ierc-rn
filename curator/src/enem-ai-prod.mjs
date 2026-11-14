@@ -162,6 +162,7 @@ export async function runEnemAiProd({
       const safeReasons=new Set([
         'full_article_review_passed','ai_review_hold','review_unavailable',
         'unverifiable_full_article_quotes','sensitive_claims',
+        'source_claims_unverified',
       ]);
       const reason=safeReasons.has(verdict.reason)?
         verdict.reason:'review_held';
