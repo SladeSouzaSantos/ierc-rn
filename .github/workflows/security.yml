@@ -12,8 +12,9 @@ on:
       - 'scripts/security-static-check.mjs'
       - 'scripts/tests/security-static-check.test.mjs'
       - '.github/workflows/security.yml'
+      - '.github/dependabot.yml'
   pull_request:
-    branches: [main]
+    branches: [dev, main]
   workflow_dispatch:
 
 permissions:
