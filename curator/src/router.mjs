@@ -43,15 +43,20 @@ class ModelHttpError extends Error {
 // Fixed diagnostic labels only: never expose a provider body, prompt or credentials.
 const SAFE_EDITORIAL_FIELDS=new Set(['title','summary','body','whyItMatters','category']);
 const SAFE_EDITORIAL_CONSTRAINTS=new Set(['too_short','too_long','unfinished_sentence','invalid_type']);
+const SAFE_SOURCE_CONSTRAINTS=new Set([
+  'source_new_number','source_new_name','unverified_visual_audience',
+]);
 function invalidOutput(reason,diagnostic=null) {
   const error=new Error('Invalid model output');
   error.name='InvalidModelOutput';
   error.reason=reason;
   // Trust ONLY fixed field/constraint labels from the local validator.
   // Never copy text, lengths, prompts, or free-form model diagnostics.
-  if(reason==='incomplete_draft' &&
-     SAFE_EDITORIAL_FIELDS.has(diagnostic?.field) &&
-     SAFE_EDITORIAL_CONSTRAINTS.has(diagnostic?.constraint)){
+  if((reason==='incomplete_draft' &&
+       SAFE_EDITORIAL_CONSTRAINTS.has(diagnostic?.constraint) ||
+      reason==='unverified_source_claim' &&
+       SAFE_SOURCE_CONSTRAINTS.has(diagnostic?.constraint)) &&
+     SAFE_EDITORIAL_FIELDS.has(diagnostic?.field)){
     error.editorialField=diagnostic.field;
     error.editorialConstraint=diagnostic.constraint;
   }
