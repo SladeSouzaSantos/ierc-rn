@@ -36,7 +36,7 @@ test("instituto apresenta missão e finalidade históricas, eixos e cronologia c
   // Decades use three dedicated lines with an accessible full-range label.
   for (const [index, start, end] of [[1, "1970", "1979"], [4, "1980", "1989"]] as const) {
     const year = items.locator(".timeline-year").nth(index);
-    await expect(year).toHaveAttribute("aria-label", `${start} a ${end}`);
+    await expect(year).toHaveText(`${start} a ${end}`);
     await expect(year.locator("span")).toHaveText([start, "a", end]);
     const coordinates = await year.locator("span").evaluateAll(nodes =>
       nodes.map(node => {

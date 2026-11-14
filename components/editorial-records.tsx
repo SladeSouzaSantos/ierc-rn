@@ -19,10 +19,10 @@ function TimelineYear({ year, date }: { year: string; date: string }) {
   const start = range[1];
   const end = start.slice(0, 2) + range[2];
   return (
-    <time className="timeline-year timeline-year-range" dateTime={date} aria-label={`${start} a ${end}`}>
-      <span aria-hidden="true">{start}</span>
-      <span aria-hidden="true" className="timeline-year-separator">a</span>
-      <span aria-hidden="true">{end}</span>
+    <time className="timeline-year timeline-year-range" dateTime={date}>
+      <span>{start}</span>
+      <span className="timeline-year-separator"> a </span>
+      <span>{end}</span>
     </time>
   );
 }
