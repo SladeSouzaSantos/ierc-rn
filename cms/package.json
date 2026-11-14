@@ -20,7 +20,7 @@
     "react-router-dom": "6.30.3",
     "styled-components": "6.1.19",
     "@strapi/typescript-utils": "5.62.0",
-    "typescript": "5.9.3"
+    "typescript": "7.0.2"
   },
   "engines": {
     "node": ">=22 <27"
