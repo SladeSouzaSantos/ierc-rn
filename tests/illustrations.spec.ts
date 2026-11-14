@@ -46,6 +46,23 @@ test("artes mantêm layout sem rolagem horizontal em tela estreita", async ({ pa
   expect(overflow).toBeLessThanOrEqual(1);
 });
 
+test("hero empilhado mantém a ilustração encostada ao limite inferior da faixa azul", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const width of [320, 375, 600, 760]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const section = await page.locator(".hero").boundingBox();
+    const art = await page.locator(".hero-art").boundingBox();
+    const visual = await page.locator(".hero-art-visual").boundingBox();
+    if (!section || !art || !visual) throw new Error("Hero não renderizado");
+    const bottom = section.y + section.height;
+    expect(Math.abs(art.y + art.height - bottom), `Sem espaço após a arte em ${width}px`).toBeLessThanOrEqual(1);
+    expect(visual.y + visual.height, `Arte alcança a borda em ${width}px`).toBeGreaterThanOrEqual(bottom + 4);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, `Sem transbordamento horizontal em ${width}px`).toBeLessThanOrEqual(1);
+  }
+});
+
 test("modo de movimento reduzido não desloca a arte principal", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
