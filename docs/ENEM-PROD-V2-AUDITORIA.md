@@ -42,6 +42,28 @@ Use exclusivamente `/opt/projects/ierc-rn` (MAIN / PROD).
 4. Mantenha os ACKs de política, a allowlist EBC, os tokens customizados
    e as redes privadas conforme o preflight existente.
 
+### Nota sobre permissões de deploy (MiniMac)
+
+Se a sessão de shell utilizou `umask 077` para gerar/proteger
+`curator/.env.prod`, restaure `umask 022` **antes de novos git pulls**.
+Uma nova versão de `.mjs` pode chegar com modo `0600`, causando
+`EACCES` porque a imagem executa o worker como `USER node`.
+O Dockerfile da curadoria agora normaliza **apenas** `/app/src` com
+`chmod -R a+rX` antes de mudar para o usuário não-root.
+
+Em checkouts anteriores, corrija exclusivamente o código:
+
+```bash
+cd /opt/projects/ierc-rn
+umask 022
+find curator/src -type d -exec chmod 755 {} +
+find curator/src -type f -name '*.mjs' -exec chmod 644 {} +
+```
+
+**Nunca** aplique `chmod -R` à raiz do repositório nem altere as
+permissões da chave em `curator/.env.prod`; mantenha o arquivo privado
+(com permissão `0600`).
+
 ### Verificação de versão e imagem
 
 ```bash
