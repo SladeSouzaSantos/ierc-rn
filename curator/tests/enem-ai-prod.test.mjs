@@ -99,7 +99,7 @@ test('preview reads exact PROD draft and rights, never calls models or publishes
   assert.deepEqual(f.calls.map(x=>x[0]),['cms_read','evidence']);
 });
 
-test('independent fully supported AI verdict publishes ONLY same PROD CMS document',async()=>{
+test('even model APPROVE cannot publish historical ENEM draft without source audience evidence',async()=>{
   const f=fixture();let modelCalls=0;
   f.args.router={async complete(request){
     modelCalls++;
@@ -107,14 +107,14 @@ test('independent fully supported AI verdict publishes ONLY same PROD CMS docume
     assert.deepEqual(JSON.parse(request.prompt).draft,ENEM_EDITORIAL_PROPOSAL);
     return {provider:'groq',content:JSON.stringify(review)};
   }};
+  // Test evidence supports an Inep request but not the specific link from
+  // reading aid to visual disability or the 138.329 count in this proposal.
   const result=await runEnemAiProd(f.args);
-  assert.equal(result.status,'draft_published');
-  assert.equal(result.reusedDraft,true);
-  assert.equal(result.correctedByAi,false);
-  assert.equal(result.slug,slugFor({dedupeKey},ENEM_EDITORIAL_PROPOSAL.title));
+  assert.equal(result.status,'draft_review_pending');
+  assert.equal(result.reason,'source_claims_unverified');
   assert.equal(modelCalls,1);
-  assert.equal(f.calls.filter(x=>x[0]==='cms_publish').length,1);
-  assert.equal(f.calls.filter(x=>x[0]==='redis_set').length,3);
+  assert.equal(f.calls.filter(x=>x[0]==='cms_publish').length,0);
+  assert.equal(f.calls.filter(x=>x[0]==='redis_set').length,2);
   assert.equal(f.calls.at(-1)[0],'unlock');
 });
 
@@ -267,8 +267,10 @@ test('even a fully supported real ENEM probe cannot publish the document',async(
   }};
   const result=await runEnemAiProd(f.args);
   assert.equal(result.status,'enem_prod_review_probe');
-  assert.equal(result.approved,true);
-  assert.equal(result.reason,'full_article_review_passed');
+  // Positive model response is not evidence of the audience-specific
+  // assertion; the diagnostic must still reject the attempted publication.
+  assert.equal(result.approved,false);
+  assert.equal(result.reason,'source_claims_unverified');
   assert.equal(result.cmsWrites,0);
   assert.equal(result.publicationAttempts,0);
   assert.equal(f.calls.filter(x=>x[0]==='cms_publish').length,0);
