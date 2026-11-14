@@ -268,3 +268,34 @@ test('publication-ready gate rejects clipped summaries without changing historic
   assert.equal(validatePublicationReadyDraft(JSON.stringify(draft)).summary,draft.summary);
   assert.equal(validatePublicationReadyDraft('{"skip":true}'),null);
 });
+
+
+test('publication-ready diagnostics identify only a static field and violated rule',()=>{
+  const check=(candidate,field,constraint)=>{
+    assert.throws(
+      ()=>validatePublicationReadyDraft(JSON.stringify(candidate)),
+      error=>{
+        assert.equal(error.message,'Incomplete model draft');
+        assert.equal(error.editorialField,field);
+        assert.equal(error.editorialConstraint,constraint);
+        assert.equal(Object.keys(error).includes('content'),false);
+        return true;
+      });
+  };
+  check({...draft,title:'Curto'},'title','too_short');
+  check({...draft,summary:'Resumo curto.'},'summary','too_short');
+  check({...draft,body:'Corpo curto.'},'body','too_short');
+  check({...draft,whyItMatters:'Curto.'},'whyItMatters','too_short');
+  check({...draft,title:'T'.repeat(151)},'title','too_long');
+  check({...draft,summary:'S'.repeat(255)+'.'},'summary','too_long');
+  check({...draft,body:'B'.repeat(1000)+'.'},'body','too_long');
+  check({...draft,whyItMatters:'W'.repeat(355)+'.'},'whyItMatters','too_long');
+  check({...draft,summary:'Resumo completo que foi interrompido no meio de uma oração sem concluir'},'summary','unfinished_sentence');
+  check({...draft,body:'A'.repeat(125)},'body','unfinished_sentence');
+  check({...draft,whyItMatters:'Justificativa extensa mas sem pontuacao ao final'},'whyItMatters','unfinished_sentence');
+  // Legacy imported Drafts retain the same permissive parser; only the
+  // final publication gate adds tighter limits and punctuation.
+  const legacy={...draft,summary:'S'.repeat(255)+'.'};
+  assert.equal(validateDraft(JSON.stringify(legacy)).summary,legacy.summary);
+  assert.equal(validatePublicationReadyDraft('{"skip":true}'),null);
+});
