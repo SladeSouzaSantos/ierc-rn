@@ -26,18 +26,21 @@ function verifyPending(pending,now,allowedSources){
     throw new Error('ENEM source is not allowlisted for PROD autonomous publishing');
   const source=SOURCES.find(x=>x.id===SOURCE_ID);
   if(!source||source.fullTextAccess?.status!=='approved'||
-     source.fullTextAccess.reference!=='https://agenciabrasil.ebc.com.br/sobre'||
-     pending?.documentId!==ENEM_PROD_DOCUMENT_ID||
+     source.fullTextAccess.reference!=='https://agenciabrasil.ebc.com.br/sobre')
+    throw new Error('PROD ENEM source policy mismatch');
+  if(pending?.documentId!==ENEM_PROD_DOCUMENT_ID||
      pending?.sourceUrl!==ENEM_SOURCE_URL||
      pending?.sourceName!==source.name||
      pending?.originalTitle!==ORIGINAL_TITLE||
      pending?.sourceLanguage!==source.language||
-     pending?.originType!=='externa'||pending?.aiAssisted!==true||
+     pending?.dedupeKey!==sha(ENEM_SOURCE_URL))
+    throw new Error('PROD ENEM source or document identity mismatch');
+  if(pending?.originType!=='externa'||pending?.aiAssisted!==true||
      pending?.editorialStatus!=='em_revisao'||pending?.publishedAt!==null||
-     pending?.image!=null||
-     pending?.dedupeKey!==sha(ENEM_SOURCE_URL)||
-     pending?.slug!==slugFor({dedupeKey:pending.dedupeKey},pending.title))
-    throw new Error('PROD ENEM draft or licensed source mismatch');
+     pending?.image!=null)
+    throw new Error('PROD ENEM pending Draft status mismatch');
+  if(pending?.slug!==slugFor({dedupeKey:pending.dedupeKey},pending.title))
+    throw new Error('PROD ENEM source-derived slug mismatch');
   const when=Date.parse(pending.originalPublishedAt||'');
   if(!pending.originalPublishedAt?.startsWith('2026-11-08')||
      !Number.isFinite(when)||when>now+86400000||now-when>45*86400000)
@@ -46,7 +49,17 @@ function verifyPending(pending,now,allowedSources){
     title:pending.title,summary:pending.summary,body:pending.body,
     whyItMatters:pending.whyItMatters,category:pending.category,
   }));
-  if(!original||FIELDS.some(field=>original[field]!==pending[field]))
+  // Historical Strapi Drafts may retain boundary whitespace in summary.
+  // Match the existing retry-pending integrity gate: no truncation,
+  // rewording, case-folding or internal-whitespace normalization permitted.
+  // The publisher separately checks the original raw summary byte-for-byte
+  // before its authorized atomic PUT status=published.
+  const summaryUnchanged=typeof pending.summary==='string'&&
+    pending.summary.trim().length<=270&&
+    original?.summary===pending.summary.trim();
+  if(!original||!summaryUnchanged||
+     FIELDS.filter(field=>field!=='summary')
+       .some(field=>original[field]!==pending[field]))
     throw new Error('PROD ENEM draft failed exact content-integrity verification');
   return {source,original};
 }
