@@ -21,7 +21,7 @@
 
 ## Ampliação da memória histórica — 14/11/2026
 
-A página `/instituto` recebeu sínteses de missão (campanha de 2019) e finalidade (histórico do IERC de 2010), quatro eixos e **12 marcos** entre 1952 e 2026, todos com fonte. Essas sínteses **não substituem** a missão estatutária vigente nem confirmam a data exata de reorganização ou transferência da sede. A pesquisa da UFERSA registra 1982 com base em depoimento; outras referências apontam 1983. Obras históricas divergem sobre a denominação em 1978/1980. Conferir com diretoria e livro de atas. Consulte [matriz de evidências](HISTORIA-INSTITUCIONAL-FONTES.md).
+A página `/instituto` recebeu sínteses de missão (campanha de 2019) e finalidade (histórico do IERC de 2010), quatro eixos e **16 marcos** entre 1952 e 2026, todos com fonte. Essas sínteses **não substituem** a missão estatutária vigente nem confirmam a data exata de reorganização ou transferência da sede. A pesquisa da UFERSA registra 1982 com base em depoimento; outras referências apontam 1983. Obras históricas divergem sobre a denominação em 1978/1980. A monografia da UFERSA fornecida em 14/11/2026 também documenta reconhecimentos municipais e estaduais de utilidade pública (1978/1979), finalidades do estatuto registrado em 26/03/2003 e práticas pedagógicas observadas na pesquisa de 2024, sem comprovar oferta atual. Conferir com diretoria e livro de atas. Não incorporar fotos de crianças, profissionais ou páginas do artigo sem direitos e autorizações. Consulte [matriz de evidências](HISTORIA-INSTITUCIONAL-FONTES.md).
 
 ## Itens necessários antes do lançamento
 

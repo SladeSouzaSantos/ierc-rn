@@ -26,6 +26,25 @@
 | 2026, Série A feminina | [CBDV, 18/08/2026](https://www.cbdv.org.br/serie-a-do-campeonato-brasileiro-de-goalball-2026-agita-sao-paulo-na-proxima-quinta-27) | Não implica vínculo atual de atletas ou resultado de jogo. |
 | 04/11/2026, seleção municipal | [Diário Oficial de Natal, p. 12](https://www2.natal.rn.gov.br/_anexos/publicacao/dom/dom_20261104_245d5d92f97e72a9ae30add96c9f3d3f.pdf) | IERC-RN selecionado na categoria C; documento indica **etapas de celebração ainda futuras**, não repasse executado. |
 
+## Pesquisa do acervo recebida em 14/11/2026 — UFERSA (2024)
+
+**Fonte principal:** Arthur Cassio de Oliveira Vieira; Evanilson Gurgel de Carvalho Filho. *O Instituto de Educação e Reabilitação de Cegos do Rio Grande do Norte (IERC-RN): um espaço de inclusão e de sociabilidade*. Pesquisa de especialização em Atendimento Educacional Especializado, UFERSA, 2024. PDF de 19 páginas recebido para o projeto e identificado também no [repositório da UFERSA](https://repositorio.ufersa.edu.br/bitstreams/b501758f-e9f5-42f1-aa60-32695df02585/download). **O arquivo original não foi adicionado ao repositório GitHub.**
+
+| Páginas do PDF | Informações documentadas | Uso editorial e limites |
+| --- | --- | --- |
+| 6–7 | Fundação em 16/07/1952; iniciativa médica e atendimento inicial nos consultórios das ruas Dr. Barata e Floriano Peixoto; depois a Escola das Rocas. | Incorporado à narrativa de abertura; início da Escola das Rocas sem ano comprovado, portanto não se criou data artificial. |
+| 7 | Entrevista com gestor que situa a primeira etapa da mudança para o prédio atual em 1982. | Mantida atribuição à pesquisa; não resolve divergência 1982/1983. |
+| 7–8 | Estrutura e atividades descritas na visita: Braille, mobilidade, informática, dança, esporte, escrita cursiva, estimulação precoce; quadra, auditório, salas. | Usadas como **registro de 2024**, sem afirmar que todos os serviços e ambientes continuam iguais em 2026. |
+| 8–9 | Pesquisa cita estatuto registrado no 2º Ofício de Notas de Natal em **26/03/2003**; finalidades educacionais, reabilitação, integração social e qualificação profissional. | Atualizada finalidade apresentada na página; **não** é prova de que essa versão seja o estatuto vigente em novembro de 2026. |
+| 9 | Organização prevista no estatuto consultado: Assembleia Geral, Diretoria e Conselho Fiscal. | Mantida somente na documentação, não no site público, pois requer confirmação da estrutura vigente. |
+| 10–12 | Depoimentos sobre acolhimento, ensino de Braille e criação de materiais táteis; ambiente de estimulação precoce com sons e texturas. | Criada seção de memória pedagógica resumida, sem nomes de crianças, citações integrais nem dados pessoais. |
+| 14–16 | Conhecimento sobre Braille compartilhado além do IERC; socialização, encontros culturais e familiares. | Atualizados eixos e seção temática, sem reproduzir nomes/entrevistas individuais. |
+| 16–17 | Pesquisa registra leis de **utilidade pública municipal (1978)** e **estadual (1979)** e relata mudanças históricas no modelo escolar e de financiamento. | Acrescentados dois marcos ao histórico com atribuição à pesquisa; não inferir validade atual das leis, repasses, custos ou oferta de serviços. |
+
+**Marcos adicionados à cronologia:** 1978 (reconhecimento municipal), 1979 (estadual), 2003 (registro do estatuto) e 2024 (pesquisa de campo e acervo). Total: **16**. A menção a 1978 diz respeito a reconhecimento de utilidade pública e **não** confirma que houve mudança jurídica de nome nesse ano. Todos são resumos originais e rastreáveis, não transcrições extensas.
+
+**Direitos autorais e imagem:** a monografia contém fotografia de crianças, profissionais, espaços e documento estatutário. Não se deve copiar fotografias, páginas, depoimentos longos nem identificar crianças ou suas famílias no portal sem comprovação de direitos, autorização de imagem e avaliação de privacidade. As imagens **não foram incorporadas**.
+
 ## Curadoria e pontos para validar com o Instituto
 
 1. Solicitar **estatuto/PPP atualizado** e a redação oficialmente aprovada da missão e finalidade. Até lá, preservar os rótulos datados e o aviso explícito.
@@ -37,6 +56,6 @@
 ## Critérios técnicos
 
 - Componente `components/institution-story.tsx`; dados e referências em `lib/editorial-data.ts`; cronologia em `components/editorial-records.tsx`.
-- Cada um dos doze marcos tem título, período ou data, descrição e fonte individual em nova aba com `rel="noopener noreferrer"`.
+- Cada um dos dezesseis marcos tem título, período ou data, descrição e fonte individual em nova aba com `rel="noopener noreferrer"`.
 - Responsividade: grid 2→1 para missão/finalidade, 4→2→1 para eixos; navegação sem carrossel inacessível, títulos semânticos, leitor de tela, reflow 320–1440 px, contraste alto e testes Playwright/axe.
 - **Data não conhecida = ano ou década**, nunca criar uma data fictícia de dia/mês só para preencher a linha do tempo.

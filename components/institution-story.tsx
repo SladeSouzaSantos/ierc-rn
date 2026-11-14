@@ -16,9 +16,13 @@ export function InstitutionStory() {
           Grande do Norte tornou-se um espaço de aprendizagem, encontros e participação
           social de pessoas cegas e com baixa visão. Sua trajetória reúne iniciativas
           de educação, habilitação, reabilitação, cultura e esporte.</p>
-        <p>A história do IERC também é feita de diferentes gerações de estudantes,
-          educadores, famílias e colaboradores. A linha do tempo abaixo reúne
-          registros verificáveis; datas e descrições são atribuídas às respectivas fontes.</p>
+        <p>Nos primeiros anos, o atendimento ocorreu em consultórios médicos nas ruas
+          Dr. Barata e Floriano Peixoto e, depois, na chamada Escola das Rocas,
+          onde ensino e acolhimento caminhavam juntos. Esses espaços são descritos
+          em pesquisa historiográfica realizada a partir do acervo e de entrevistas no IERC.</p>
+        <p>A história também é feita de estudantes, educadores, famílias e colaboradores.
+          Os marcos abaixo reúnem registros de diferentes épocas, sempre com fontes
+          identificadas e sem confundir memória histórica com oferta atual de serviços.</p>
       </div>
 
       <section className="institution-purpose editorial-section" aria-labelledby="institution-purpose-title">
@@ -41,17 +45,20 @@ export function InstitutionStory() {
           <article className="institution-purpose-card institution-purpose-detail">
             <span className="institution-card-index">02 / Propósito educacional</span>
             <h3>Finalidade</h3>
-            <p>Promover oportunidades de desenvolvimento para pessoas cegas e com
-              deficiência visual grave, apoiando sua educação, habilitação,
-              reabilitação, autonomia e participação na sociedade.</p>
-            <p className="institution-provenance">Síntese da finalidade descrita
-              no histórico publicado pelo próprio IERC-RN em 2010.</p>
-            <SourceLink source="history" label="Consultar histórico institucional (2010)" />
+            <p>Desenvolver ações de habilitação e reabilitação de pessoas cegas
+              e com deficiência visual, além de educação, formação, integração social
+              e qualificação profissional, conforme a finalidade registrada
+              no estatuto de 2003 citado em pesquisa acadêmica.</p>
+            <p className="institution-provenance">Síntese do estatuto registrado
+              em 26 de março de 2003, documentado na pesquisa de Vieira e Carvalho Filho
+              (2024). A versão estatutária vigente ainda deve ser confirmada.</p>
+            <SourceLink source="academiaHistory" label="Consultar pesquisa sobre o estatuto de 2003" />
           </article>
         </div>
         <p className="institution-history-disclaimer">Os textos acima são sínteses de fontes históricas
           identificadas, não transcrições certificadas do estatuto ou da missão formal
-          atualmente aprovada pela diretoria. A redação oficial vigente depende de validação do IERC-RN.</p>
+          atualmente aprovada pela diretoria. O estudo acadêmico consultou um estatuto
+          registrado em 2003; sua vigência e a redação oficial atual dependem de validação do IERC-RN.</p>
       </section>
 
       <section className="institution-axes editorial-section" aria-labelledby="institution-axes-title">
@@ -64,14 +71,14 @@ export function InstitutionStory() {
           <article className="institution-axis">
             <BookOpen size={30} aria-hidden="true" />
             <h3>Educação e aprendizagem</h3>
-            <p>Alfabetização em Braille, leitura, informática e apoio pedagógico
-              integram os registros históricos de formação.</p>
+            <p>Alfabetização em Braille, escrita cursiva, informática e materiais
+              táteis adaptados aparecem nas práticas documentadas pelo estudo de 2024.</p>
           </article>
           <article className="institution-axis">
             <Footprints size={30} aria-hidden="true" />
             <h3>Autonomia e mobilidade</h3>
-            <p>Orientação e mobilidade, estimulação precoce e práticas para a vida
-              diária ampliam possibilidades de independência.</p>
+            <p>Orientação e mobilidade, estimulação precoce e experiências com
+              sons e texturas apoiavam a aprendizagem e a autonomia nas visitas de 2024.</p>
           </article>
           <article className="institution-axis">
             <Music2 size={30} aria-hidden="true" />
@@ -82,8 +89,8 @@ export function InstitutionStory() {
           <article className="institution-axis">
             <Users size={30} aria-hidden="true" />
             <h3>Convivência e cidadania</h3>
-            <p>A participação das famílias, a construção de vínculos e parcerias
-              comunitárias reforçam o caráter social do Instituto.</p>
+            <p>Acolhimento de famílias, troca de saberes, festas e encontros
+              reforçam a dimensão comunitária registrada nas entrevistas de 2024.</p>
           </article>
         </div>
         <p className="institution-axes-link"><Link className="inline-link" href="/atividades">
@@ -91,18 +98,62 @@ export function InstitutionStory() {
         </Link></p>
       </section>
 
+      <section className="institution-research editorial-section" aria-labelledby="institution-research-title">
+        <p className="eyebrow">Memórias registradas em 2024</p>
+        <h2 id="institution-research-title" className="interior-subtitle">
+          O IERC também é feito das relações que acontecem ali
+        </h2>
+        <p className="editorial-intro">Em trabalho de especialização em Atendimento
+          Educacional Especializado pela UFERSA, Arthur Cassio de Oliveira Vieira
+          e Evanilson Gurgel de Carvalho Filho reuniram documentos, visitas e
+          entrevistas para investigar a história e a sociabilidade no IERC-RN.
+          A pesquisa permite conhecer práticas pedagógicas da época sem
+          apresentá-las como programação atual.</p>
+        <div className="institution-research-grid">
+          <article className="institution-research-card">
+            <span>Aprender pelo tato</span>
+            <h3>Braille e materiais criados para ensinar</h3>
+            <p>O estudo documenta professoras que adaptavam materiais de
+              alfabetização com recursos táteis, criando alternativas quando
+              equipamentos especializados eram caros ou indisponíveis.</p>
+          </article>
+          <article className="institution-research-card">
+            <span>Descobrir e experimentar</span>
+            <h3>Estimulação precoce e experiências sensoriais</h3>
+            <p>Nas visitas realizadas para a pesquisa, uma sala de estimulação
+              precoce reunia objetos com diferentes sons, cores, tamanhos e
+              texturas para apoiar o desenvolvimento e a interação infantil.</p>
+          </article>
+          <article className="institution-research-card">
+            <span>Compartilhar saberes</span>
+            <h3>Acolhimento, convivência e cidadania</h3>
+            <p>As entrevistas destacam a presença das famílias, a convivência
+              em atividades culturais e esportivas e pessoas que difundiram
+              aprendizados em Braille para além dos muros do Instituto.</p>
+          </article>
+        </div>
+        <p className="institution-research-footnote">Retrato histórico de 2024.
+          Depoimentos foram resumidos sem reproduzir entrevistas individuais
+          ou expor crianças. Serviços, profissionais, equipamentos e horários
+          atuais devem ser confirmados com o IERC-RN.</p>
+        <SourceLink source="academiaHistory"
+          label="Ler pesquisa de Vieira e Carvalho Filho (UFERSA, 2024)" />
+      </section>
+
       <section className="institution-history-overview editorial-section" aria-labelledby="institution-history-title">
         <p className="eyebrow">Um percurso coletivo</p>
         <h2 id="institution-history-title" className="interior-subtitle">Da assistência inicial à educação e à inclusão</h2>
         <div className="institution-history-columns">
-          <p>Registros históricos apontam que os primeiros atendimentos se relacionavam
-            à assistência e à alfabetização, passando por espaços nas Rocas e pela
-            estruturação do trabalho educativo. A reorganização nas décadas seguintes
-            fortaleceu o papel da educação, da reabilitação e da autonomia.</p>
-          <p>Com a sede no Alecrim e atividades em áreas como Braille, informática, música
-            e esporte, o IERC acumulou experiências que também passaram a ser estudadas
-            por pesquisadores. Os marcos recentes registram ações de cidadania e
-            participações em competições de goalball.</p>
+          <p>Uma pesquisa com documentos e memória oral descreve a iniciativa de
+            médicos de Natal, os primeiros atendimentos em consultórios e o
+            funcionamento da Escola das Rocas. O estudo também cita reconhecimentos
+            de utilidade pública municipal (1978) e estadual (1979), anteriores
+            à transferência para a sede no Alecrim, relatada como ocorrida em 1982.</p>
+          <p>O estatuto registrado em 2003, conforme apresentado no estudo, reúne
+            educação, reabilitação, integração social e formação profissional
+            entre as finalidades do IERC. A trajetória passou por mudanças no
+            modelo escolar e de financiamento, sem que este registro permita
+            determinar o funcionamento ou as fontes de recursos atuais.</p>
         </div>
         <div className="institution-history-sources">
           <SourceLink source="academiaHistory" label="Pesquisa histórica e depoimentos — UFERSA" />
@@ -113,7 +164,10 @@ export function InstitutionStory() {
 
       <p className="institution-history-footer">
         Esta cronologia combina fontes do próprio Instituto, pesquisas acadêmicas,
-        imprensa e registros públicos. Não apresenta números antigos de pessoas
+        imprensa e registros públicos. O trabalho de 2024 é de Arthur Cassio de
+        Oliveira Vieira e Evanilson Gurgel de Carvalho Filho. Fotografias do estudo
+        não foram reproduzidas por dependerem de autorização. Não apresenta
+        números antigos de pessoas
         atendidas como indicadores atuais; documentos, nomes, datas e mudanças
         institucionais ainda podem receber complementações do acervo do IERC-RN.
       </p>

@@ -1368,3 +1368,35 @@ html[data-high-contrast="true"] .institution-history-footer { color: #000; }
   .institution-history-cta { align-items: stretch; flex-direction: column; }
   .institution-history-cta .button { width: 100%; }
 }
+
+
+/* Documentary profile, Vieira & Carvalho Filho (UFERSA, 2024). */
+.institution-research { margin-top: clamp(65px, 7vw, 94px); scroll-margin-top: 115px; }
+.institution-research > .editorial-intro { max-width: 930px; }
+.institution-research-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 17px; margin-top: 29px;
+}
+.institution-research-card {
+  min-width: 0; padding: clamp(23px, 3vw, 35px);
+  background: #fff; border: 1px solid #bfcbd6; border-radius: 16px;
+}
+.institution-research-card > span {
+  color: #5a2c86; font-weight: 800; letter-spacing: .06em;
+  font-size: .78rem; text-transform: uppercase; display: block; margin-bottom: 22px;
+}
+.institution-research-card h3 { font-size: clamp(1.26rem, 2vw, 1.52rem); margin-bottom: 15px; }
+.institution-research-card p { font-size: .96rem; line-height: 1.8; color: #345169; margin-bottom: 0; }
+.institution-research-footnote {
+  max-width: 850px; margin: 22px 0 12px;
+  font-size: .92rem; color: #345169; line-height: 1.7;
+}
+html[data-high-contrast="true"] .institution-research-card {
+  border: 2px solid #000; background: #fff; color: #000;
+}
+html[data-high-contrast="true"] .institution-research-card > span,
+html[data-high-contrast="true"] .institution-research-card p,
+html[data-high-contrast="true"] .institution-research-footnote { color: #000; }
+@media (max-width: 950px) {
+  .institution-research-grid { grid-template-columns: 1fr; }
+}

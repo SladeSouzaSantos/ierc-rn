@@ -12,16 +12,38 @@ test("instituto apresenta missão e finalidade históricas, eixos e cronologia c
   await expect(identity.getByRole("heading", { name: "Finalidade", exact: true })).toBeVisible();
   await expect(identity.getByText(/não transcrições certificadas do estatuto/)).toBeVisible();
   await expect(identity.locator("a[target='_blank']")).toHaveCount(2);
+  await expect(identity.getByText(/26 de março de 2003/)).toBeVisible();
+  await expect(identity.getByText(/qualificação profissional/)).toBeVisible();
+  await expect(identity.getByRole("link", { name: /pesquisa sobre o estatuto/ }))
+    .toHaveAttribute("href", /repositorio\.ufersa\.edu\.br/);
+  const research = page.locator(".institution-research");
+  await expect(research.getByRole("heading", { name: /O IERC também é feito das relações/ })).toBeVisible();
+  await expect(research.locator(".institution-research-card")).toHaveCount(3);
+  await expect(research.getByRole("heading", { name: /Braille e materiais criados/ })).toBeVisible();
+  await expect(research.getByRole("heading", { name: /Estimulação precoce/ })).toBeVisible();
+  await expect(research.getByRole("heading", { name: /Acolhimento, convivência/ })).toBeVisible();
+  await expect(research.getByText(/Retrato histórico de 2024/)).toBeVisible();
+  await expect(research.getByRole("link", { name: /Ler pesquisa de Vieira e Carvalho Filho/ }))
+    .toHaveAttribute("rel", /noopener noreferrer/);
   await expect(page.locator(".institution-axis")).toHaveCount(4);
   for (const title of ["Educação e aprendizagem", "Autonomia e mobilidade", "Cultura e esporte", "Convivência e cidadania"]) {
     await expect(page.locator(".institution-axis").getByRole("heading", { name: title })).toBeVisible();
   }
   await expect(page.getByRole("heading", { name: "Uma trajetória que atravessa décadas" })).toBeVisible();
   const items = page.locator(".editorial-timeline li");
-  await expect(items).toHaveCount(12);
-  await expect(items.locator("a[target='_blank']")).toHaveCount(12);
+  await expect(items).toHaveCount(16);
+  await expect(items.locator("a[target='_blank']")).toHaveCount(16);
   const dates = await items.locator("time[datetime]").evaluateAll(nodes => nodes.map(node => node.getAttribute("datetime")));
   expect(dates).toEqual([...dates].sort());
+  for (const title of [
+    "Reconhecimento de utilidade pública municipal",
+    "Reconhecimento de utilidade pública estadual",
+    "Registro de estatuto institucional",
+    "Memórias e práticas documentadas em pesquisa",
+  ]) {
+    await expect(items.getByRole("heading", { name: title })).toBeVisible();
+  }
+  await expect(items.getByText(/não comprova celebração de parceria ou repasse de recursos/)).toBeVisible();
   await expect(items.getByRole("heading", { name: "Uma nova sede no Alecrim" })).toBeVisible();
   await expect(items.getByRole("heading", { name: "Seleção municipal no paradesporto" })).toBeVisible();
   await expect(items.getByText(/não comprova celebração de parceria ou repasse de recursos/)).toBeVisible();
@@ -140,6 +162,7 @@ test("instituto adapta blocos históricos a telas pequenas e mantém fontes leg�
     expect(overflow, `Rolagem horizontal na história, ${width}px`).toBeLessThanOrEqual(1);
     await expect(page.locator(".institution-purpose-card")).toHaveCount(2);
     await expect(page.locator(".institution-axis")).toHaveCount(4);
-    await expect(page.locator(".editorial-timeline li")).toHaveCount(12);
+    await expect(page.locator(".editorial-timeline li")).toHaveCount(16);
+    await expect(page.locator(".institution-research-card")).toHaveCount(3);
   }
 });

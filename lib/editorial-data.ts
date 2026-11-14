@@ -2,7 +2,7 @@
 export const sources = {
   history: { label: "Histórico e apresentação — IERC, 2010", publisher: "IERC-RN", url: "https://iercrn.blogspot.com/2010/11/o-instituto-de-educacao-e-reabilitacao.html" },
 
-  academiaHistory: { label: "Pesquisa histórica sobre o IERC-RN, acervo e depoimentos", publisher: "UFERSA", url: "https://repositorio.ufersa.edu.br/bitstreams/b501758f-e9f5-42f1-aa60-32695df02585/download" },
+  academiaHistory: { label: "Vieira e Carvalho Filho — inclusão e sociabilidade no IERC-RN (2024)", publisher: "UFERSA", url: "https://repositorio.ufersa.edu.br/bitstreams/b501758f-e9f5-42f1-aa60-32695df02585/download" },
   brailleNortheast: { label: "Duzentos anos do Sistema Braille — RN, p. 34", publisher: "UEPB, 2025", url: "https://eduepb.uepb.edu.br/download/duzentos-anos-do-sistema-braille-no-brasil-um-passeio-pela-regiao-nordeste/?masterkey=nfWAf0EuRYvJQQS8Q7i5lWXVp-lxXnFQINooHsses6WwiGpXxIrCEM4-7QFtppMkLwinQeVswbdEQoLNYn8N5LMY3bS3HOQ-008IYqGoxmE&wpdmdl=5327" },
   libraryResearch2008: { label: "Estudo acadêmico sobre estrutura e trabalho do Instituto", publisher: "Revista da Unicamp, 2008", url: "https://periodicos.sbu.unicamp.br/ojs/index.php/rdbci/article/download/2013/2134/2668" },
   press2018: { label: "Instituto dos Cegos: 66 anos na busca pela inserção social", publisher: "Tribuna do Norte, 2018", url: "https://tribunadonorte.com.br/natal/instituto-dos-cegos-66-anos-na-busca-pela-insercao-social/" },
@@ -30,6 +30,16 @@ export const timeline: { year: string; date: string; title: string; text: string
     source: "brailleNortheast",
   },
   {
+    year: "1978", date: "1978", title: "Reconhecimento de utilidade pública municipal",
+    text: "O estudo histórico de Vieira e Carvalho Filho registra o reconhecimento de utilidade pública municipal em 1978, a partir de documentos consultados no acervo do IERC-RN.",
+    source: "academiaHistory",
+  },
+  {
+    year: "1979", date: "1979", title: "Reconhecimento de utilidade pública estadual",
+    text: "A mesma pesquisa identifica o reconhecimento de utilidade pública estadual em 1979, destacando a importância social reconhecida à instituição naquela época.",
+    source: "academiaHistory",
+  },
+  {
     year: "Anos 1980", date: "1980", title: "Reorganização e foco na reabilitação",
     text: "Relato histórico sobre o Braille no RN descreve a transição da antiga instituição assistencial para o IERC, com maior atenção à escolarização, à reabilitação e às oportunidades de vida independente.",
     source: "brailleNortheast",
@@ -45,6 +55,11 @@ export const timeline: { year: string; date: string; title: string; text: string
     source: "brailleNortheast",
   },
   {
+    year: "2003", date: "2003-03-26", title: "Registro de estatuto institucional",
+    text: "Segundo a pesquisa da UFERSA, o estatuto registrado em 26 de março de 2003 previa educação, formação, habilitação, reabilitação, integração social e qualificação profissional. Sua vigência atual precisa ser confirmada com a diretoria.",
+    source: "academiaHistory",
+  },
+  {
     year: "2008", date: "2008", title: "O trabalho do IERC na pesquisa acadêmica",
     text: "Artigo da Revista Digital de Biblioteconomia e Ciência da Informação documenta a finalidade, a estrutura e as atividades do Instituto à época, ampliando o registro público de sua atuação.",
     source: "libraryResearch2008",
@@ -58,6 +73,11 @@ export const timeline: { year: string; date: string; title: string; text: string
     year: "2019", date: "2019-09-17", title: "Mobilização por informática acessível",
     text: "Campanha pública organizada em apoio ao laboratório de informática registra a busca de recursos para fortalecer oportunidades de aprendizagem digital. A campanha não comprova, por si, aquisição ou entrega dos equipamentos.",
     source: "campaign2019",
+  },
+  {
+    year: "2024", date: "2024", title: "Memórias e práticas documentadas em pesquisa",
+    text: "Visitas, documentos, fotografias e entrevistas reunidos por Arthur Cassio de Oliveira Vieira e Evanilson Gurgel de Carvalho Filho documentam práticas de Braille, estimulação precoce e convivência no IERC, como retrato do período pesquisado.",
+    source: "academiaHistory",
   },
   {
     year: "2025", date: "2025-09-16", title: "Cidadania e acesso ao voto",
