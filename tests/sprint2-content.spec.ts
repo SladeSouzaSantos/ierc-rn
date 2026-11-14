@@ -33,6 +33,12 @@ test("instituto apresenta missão e finalidade históricas, eixos e cronologia c
   const items = page.locator(".editorial-timeline li");
   await expect(items).toHaveCount(16);
   await expect(items.locator("a[target='_blank']")).toHaveCount(16);
+  // Decades are shown as numeric intervals, not as a specific event year.
+  await expect(items.locator(".timeline-year").nth(1)).toHaveText("1970–79");
+  await expect(items.locator(".timeline-year").nth(4)).toHaveText("1980–89");
+  for (const year of await items.locator(".timeline-year").allTextContents()) {
+    expect(year).not.toMatch(/\bAnos\b/i);
+  }
   const dates = await items.locator("time[datetime]").evaluateAll(nodes => nodes.map(node => node.getAttribute("datetime")));
   expect(dates).toEqual([...dates].sort());
   for (const title of [
@@ -46,6 +52,21 @@ test("instituto apresenta missão e finalidade históricas, eixos e cronologia c
   await expect(items.getByText(/não comprova celebração de parceria ou repasse de recursos/)).toBeVisible();
   await expect(items.getByRole("heading", { name: "Uma nova sede no Alecrim" })).toBeVisible();
   await expect(items.getByRole("heading", { name: "Seleção municipal no paradesporto" })).toBeVisible();
+  const overview = page.locator(".institution-history-prose");
+  await expect(overview.locator("p")).toHaveCount(2);
+  const layout = await overview.evaluate(element => {
+    const paragraphs = [...element.querySelectorAll("p")];
+    const first = paragraphs[0].getBoundingClientRect();
+    const second = paragraphs[1].getBoundingClientRect();
+    return {
+      display: getComputedStyle(element).display,
+      width: element.getBoundingClientRect().width,
+      stacked: second.top >= first.bottom - 1,
+    };
+  });
+  expect(layout.display).toBe("block");
+  expect(layout.width).toBeLessThanOrEqual(791);
+  expect(layout.stacked).toBe(true);
   await expect(items.getByText(/não comprova celebração de parceria ou repasse de recursos/)).toBeVisible();
   await expect(page.getByRole("link", { name: /Conhecer as atividades do IERC-RN/ })).toHaveAttribute("href", "/atividades");
 });
@@ -164,5 +185,13 @@ test("instituto adapta blocos históricos a telas pequenas e mantém fontes leg�
     await expect(page.locator(".institution-axis")).toHaveCount(4);
     await expect(page.locator(".editorial-timeline li")).toHaveCount(16);
     await expect(page.locator(".institution-research-card")).toHaveCount(3);
+    const overview = page.locator(".institution-history-prose");
+    await expect(overview.locator("p")).toHaveCount(2);
+    const stacking = await overview.locator("p").evaluateAll(nodes => {
+      const first = nodes[0].getBoundingClientRect();
+      const second = nodes[1].getBoundingClientRect();
+      return second.top >= first.bottom - 1;
+    });
+    expect(stacking, `Narrativa não empilhada em ${width}px`).toBe(true);
   }
 });
