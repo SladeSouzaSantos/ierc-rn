@@ -7,7 +7,7 @@ const doc='a1b2c3d4e5f6g7h8i9j0klmn';
 const expected={
   title:'Uma iniciativa de esporte adaptado para crianças',
   summary:'A publicação descreve projetos acessíveis para a participação de crianças com deficiência.',
-  body:'Atividades esportivas acessíveis são apresentadas em um contexto de participação e aprendizagem.',
+  body:'Atividades esportivas acessíveis são apresentadas em um contexto de participação e aprendizagem. A notícia contextualiza recursos e experiências de inclusão em modalidades adaptadas.',
   slug:'uma-iniciativa-de-esporte-adaptado-aaaaaaaaaa',
   dedupeKey:'a'.repeat(64),sourceUrl:'https://agenciabrasil.ebc.com.br/esportes/noticia/2026-11/exemplo',
 };
