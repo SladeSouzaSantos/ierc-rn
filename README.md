@@ -14,6 +14,10 @@ Foi preparada uma jornada acessível para **doações mensais por Pix recorrente
 
 A separação entre CMS DEV existente e PROD futura (Docker, PostgreSQL, volumes e credenciais) está documentada em [CMS: ambientes e diagnóstico](docs/CMS-ENVIRONMENTS.md). **Não é necessário alterar o Docker local para consultar a lentidão do painel.**
 
+### História institucional e missão (2026)
+
+A rota `/instituto` apresenta missão e finalidade **como sínteses editoriais de fontes datadas** (2019 e 2010), quatro eixos de atuação e cronologia de **12 marcos documentados entre 1952 e 2026**. Cada marco tem fonte identificável; o histórico não atribui datas, eventos, cursos e números passados ao presente sem comprovação. Algumas referências históricas divergem sobre a reorganização institucional e a mudança de sede. Antes de divulgar os textos como **missão/estatuto oficial vigente**, o IERC precisa ratificá-los. Veja a [matriz de fontes históricas e divergências](docs/HISTORIA-INSTITUCIONAL-FONTES.md).
+
 ## Ativação da curadoria automática (DEV)
 
 O operador aprovou a preparação de geração agendada e publicação automática controlada. A ativação **não acontece por git pull**: é necessário criar um token Custom separado para o publicador, conferir licença da matéria, fazer backup com restauração ensaiada, executar o pré-check e homologar `once` antes de iniciar o worker persistente. O cron DEV roda às **08h, 13h e 19h (America/Fortaleza)**, com uma única candidata por horário e fallback **Groq → Gemini → OpenRouter**. Somente fontes EBC originais autorizadas podem publicar automaticamente; se não houver evidência suficiente, a matéria não será publicada. O curador da MAIN/PROD tem opt-in separado, sem ligação automática com a DEV: sua ativação exige backup/restauração PROD, tokens Custom próprios e pré-check de modelos gratuitos.
