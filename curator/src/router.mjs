@@ -183,7 +183,12 @@ export class FreeLlmRouter {
       } catch (error) {
         const category=fallbackFor(error);
         if (!category) {
-          this.logger({event:'llm_attempt',provider:provider.id,result:'terminal'});
+          // HTTP status only, from a fixed allowlist. Provider response
+          // bodies, prompts and tokens must never reach operational logs.
+          const safeStatus=error instanceof ModelHttpError &&
+            [400,403,413,422].includes(error.status) ? error.status : null;
+          this.logger({event:'llm_attempt',provider:provider.id,
+            result:'terminal',reason:safeStatus?`http_${safeStatus}`:'non_retryable'});
           throw new LlmExhaustedError('non_retryable_model_error',attempts);
         }
         const delay=retryDelay(error,this.now(),this.settings.cooldownMs,this.settings.maxCooldownMs,category);
