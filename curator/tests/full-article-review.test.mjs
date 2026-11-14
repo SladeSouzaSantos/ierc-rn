@@ -415,6 +415,6 @@ test('repair prompt targets comfortably bounded complete prose without weakening
   assert.match(VERIFIED_REPAIR_SYSTEM,/summary 90–190/);
   assert.match(VERIFIED_REPAIR_SYSTEM,/whyItMatters 60–220/);
   assert.match(VERIFIED_REPAIR_SYSTEM,/NOVA revisão independente/);
-  assert.match(VERIFIED_REPAIR_SYSTEM,/somente o que as evidências sustentam/);
+  assert.match(VERIFIED_REPAIR_SYSTEM,/Corrija apenas o que as evidências sustentam/);
   assert.match(VERIFIED_REPAIR_SYSTEM,/Não copie frases interrompidas/);
 });
