@@ -5,7 +5,7 @@ Revisão: 14/11/2026. Escopo: código fonte DEV. **Este relatório não é um pe
 Até 760 px, o cabeçalho de períodos como **1970 a 1979** e **1980 a 1989** é exibido em uma linha; acima desse breakpoint, mantém o arranjo vertical com o conector "a". A marcação `<time>` conserva o significado temporal sem ARIA inválido. Playwright cobre reflow em 320, 375, 768 e 1440 px.
 
 ## Fase 1 — Dependências e builds reproduzíveis
-- `next`: fixado em 15.5.18 (linha 15, patch de segurança de maio/2026; conferir atualizações posteriores antes de cada deploy). Fonte: https://vercel.com/changelog/next-js-may-2026-security-release .
+- `next`: fixado em 15.5.29 (linha 15, com os patches de segurança até novembro/2026; nova checagem de advisories obrigatória antes de deploy). Fontes: https://github.com/vercel/next.js/releases/tag/v15.5.29 e https://vercel.com/changelog/next-js-may-2026-security-release .
 - `@strapi/strapi`, `@strapi/plugin-users-permissions`, `@strapi/typescript-utils` e override `@strapi/admin`: alinhados à 5.62.0. Fonte: https://github.com/strapi/strapi/releases/tag/v5.62.0 .
 - `fast-xml-parser`: 4.5.4; `processEntities:false` e rejeição antecipada de DTD/custom entities. Fonte: https://github.com/advisories/GHSA-jmr7-xgp7-cmfj .
 - Três `package-lock.json` foram criados em ambiente controlado do GitHub Actions, sem executar `postinstall` durante a geração, e o workflow temporário de escrita foi **removido**.
