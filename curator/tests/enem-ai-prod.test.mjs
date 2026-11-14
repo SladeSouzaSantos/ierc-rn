@@ -185,7 +185,7 @@ test('historic PROD Draft summary boundary whitespace is allowed but interior ch
     summary:original.summary.replace('acessibilidade','inacessibilidade')});
   // Only boundary whitespace is tolerated. This test does not assert
   // arbitrary changes are accepted; the original stays unaltered in CMS.
-  assert.rejects(runEnemAiProd(different.args),/integrity|mismatch/);
+  await assert.rejects(runEnemAiProd(different.args),/integrity|mismatch/);
 });
 
 test('PROD CLI only exposes preapproved static refusal reasons',()=>{
