@@ -4,7 +4,8 @@ import { useState } from "react";
 import { ArrowUpRight, CreditCard, Landmark, Repeat2, ShieldCheck } from "lucide-react";
 import {
   DONATION_MONTHLY_AMOUNTS,
-  type MonthlyAmount,
+  parseCustomMonthlyAmount,
+  type MonthlyAmountChoice,
   type MonthlyDonationConfig,
 } from "@/lib/recurring-donations";
 import { IERC_OFFICIAL_EMAIL_LINK } from "@/lib/institutional-contact";
@@ -34,10 +35,14 @@ const METHODS: ReadonlyArray<{
 ];
 
 export function RecurringDonations({ config }: { config: MonthlyDonationConfig }) {
-  const [amount, setAmount] = useState<MonthlyAmount>(50);
+  const [choice, setChoice] = useState<MonthlyAmountChoice>(50);
+  const [customAmount, setCustomAmount] = useState("");
   const [method, setMethod] = useState<Method>("pix");
-  const href = method === "debit" ? undefined : config.links[method][amount];
-  const canProceed = config.enabled && Boolean(href);
+  const amount = choice === "custom" ? parseCustomMonthlyAmount(customAmount) : choice;
+  const href = method === "debit" || amount === null
+    ? undefined
+    : config.links[method][choice];
+  const canProceed = config.enabled && amount !== null && Boolean(href);
   const formatter = new Intl.NumberFormat("pt-BR", {
     style: "currency", currency: "BRL", minimumFractionDigits: 2,
   });
@@ -66,13 +71,41 @@ export function RecurringDonations({ config }: { config: MonthlyDonationConfig }
             <label key={value} className="support-recurring-choice">
               <input
                 type="radio" name="recurring-monthly-amount"
-                value={value} checked={amount === value}
-                onChange={() => setAmount(value)}
+                value={value} checked={choice === value}
+                onChange={() => setChoice(value)}
               />
               <span>{formatter.format(value)}</span>
             </label>
           ))}
+          <label className="support-recurring-choice">
+            <input
+              type="radio" name="recurring-monthly-amount"
+              value="custom" checked={choice === "custom"}
+              onChange={() => setChoice("custom")}
+            />
+            <span>Outro valor</span>
+          </label>
         </div>
+        {choice === "custom" && (
+          <div className="support-recurring-custom">
+            <label htmlFor="recurring-custom-amount">Valor mensal personalizado (R$)</label>
+            <div className="support-recurring-custom-input">
+              <span aria-hidden="true">R$</span>
+              <input
+                id="recurring-custom-amount" name="recurring-custom-amount"
+                type="text" inputMode="decimal" autoComplete="off"
+                value={customAmount} onChange={event => setCustomAmount(event.target.value)}
+                placeholder="Ex.: 35,50"
+                aria-invalid={customAmount.length > 0 && amount === null}
+                aria-describedby="recurring-custom-help"
+              />
+            </div>
+            <p id="recurring-custom-help">
+              Informe de R$ 5,00 a R$ 100.000,00, com até duas casas decimais.
+              O valor será confirmado novamente no checkout do Asaas antes de iniciar a assinatura.
+            </p>
+          </div>
+        )}
       </fieldset>
 
       <fieldset className="support-recurring-fieldset">
@@ -97,19 +130,23 @@ export function RecurringDonations({ config }: { config: MonthlyDonationConfig }
       <div className="support-recurring-outcome">
         <div className="support-recurring-summary" aria-live="polite" aria-atomic="true">
           <p>
-            <strong>{formatter.format(amount)} por mês</strong> —{" "}
+            <strong>{amount === null ? "Informe um valor mensal" : `${formatter.format(amount)} por mês`}</strong> —{" "}
             {METHODS.find(option => option.id === method)?.label}
           </p>
           <p className="support-recurring-status">
             {method === "debit"
               ? "Cartão de débito automático ainda indisponível. Necessária habilitação específica pelo adquirente."
-              : !config.enabled
-                ? "Checkout ainda não habilitado pela instituição."
-                : !href
-                  ? "Esta combinação de valor e forma de pagamento ainda não foi disponibilizada."
-                  : method === "pix"
-                    ? "O pagamento de cada cobrança Pix requer confirmação mensal no banco."
-                    : "O provedor administrará as cobranças mensais após sua autorização."}
+              : amount === null
+                ? "Digite um valor válido para sua contribuição mensal."
+                : !config.enabled
+                  ? "Checkout ainda não habilitado pela instituição."
+                  : !href
+                    ? "Esta combinação de valor e forma de pagamento ainda não foi disponibilizada."
+                    : choice === "custom"
+                      ? "O valor digitado é uma simulação. Digite e confirme o mesmo valor no checkout Asaas antes de autorizar a assinatura."
+                      : method === "pix"
+                        ? "O pagamento de cada cobrança Pix requer confirmação mensal no banco."
+                        : "O provedor administrará as cobranças mensais após sua autorização."}
           </p>
         </div>
 
@@ -119,7 +156,9 @@ export function RecurringDonations({ config }: { config: MonthlyDonationConfig }
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`Continuar no checkout seguro para doar ${formatter.format(amount)} por mês, ${METHODS.find(option => option.id === method)?.label} (abre em nova aba)`}
+            aria-label={choice === "custom"
+              ? `Continuar no checkout seguro para informar e confirmar o valor mensal, ${METHODS.find(option => option.id === method)?.label} (abre em nova aba)`
+              : `Continuar no checkout seguro para doar ${formatter.format(amount)} por mês, ${METHODS.find(option => option.id === method)?.label} (abre em nova aba)`}
           >
             Continuar no checkout seguro
             <ArrowUpRight size={19} aria-hidden="true" />
