@@ -20,10 +20,14 @@ test('CMS-dependent pages render dynamically with runtime-only credentials', () 
 test('CMS still filters Published + editorially approved content on the server', () => {
   const src = read('lib/cms.ts');
   assert.match(src, /import ["']server-only["']/);
-  assert.match(src, /status: ["']published["']/);
-  assert.match(src, /"filters\[editorialStatus\]\[\$eq\]": ["']aprovado["']/);
-  assert.match(src, /item\.editorialStatus === ["']aprovado["']/);
-  assert.match(src, /typeof item\.publishedAt === ["']string["']/);
+  assert.match(src, /approvedCmsQuery\(filters\)/);
+  assert.match(src, /payload\.data\.filter\(approvedPublishedRecord\)/);
+  const policy=read('lib/cms-policy.ts');
+  assert.match(policy, /query\.set\("status", "published"\)/);
+  assert.match(policy, /query\.set\(EDITORIAL_FILTER, "aprovado"\)/);
+  assert.match(policy, /row\.editorialStatus === "aprovado"/);
+  assert.match(policy, /typeof row\.publishedAt === "string"/);
+  assert.match(policy, /Editorial CMS query policy override rejected/);
   assert.match(src, /CMS_READ_TOKEN/);
 });
 
