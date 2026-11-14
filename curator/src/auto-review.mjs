@@ -21,16 +21,35 @@ function safeStringArray(value,max=8){
   return Array.isArray(value) && value.length<=max && value.every(v=>
     typeof v==='string'&&v.trim().length>0&&v.length<=220);
 }
+// Fixed, privacy-safe failure categories. Never include model text, article
+// excerpts, source URLs, keys, prompts or arbitrary model-controlled strings.
+const reviewInvalid=reason=>{
+  const error=new Error('Invalid AI review');
+  error.reviewReason=reason;
+  throw error;
+};
 export function validateReview(raw){
-  if(typeof raw!=='string'||raw.length>7000)throw new Error('Invalid AI review');
+  if(typeof raw!=='string'||raw.length>7000)return reviewInvalid('empty_or_oversize');
   let data;
   try{data=JSON.parse(raw.replace(/^`{3}(?:json)?\s*/i,'').replace(/\s*`{3}$/,'').trim());}
-  catch{throw new Error('Invalid AI review');}
-  if(!data||typeof data!=='object'||Array.isArray(data)||
-    !['approve','hold'].includes(data.decision)||
-    !['fully_supported','insufficient'].includes(data.factualSupport)||
-    !safeStringArray(data.evidenceQuotes)||!safeStringArray(data.unsupportedClaims)||
-    !safeStringArray(data.issues))throw new Error('Invalid AI review');
+  catch{return reviewInvalid('json_syntax');}
+  if(!data||typeof data!=='object'||Array.isArray(data))
+    return reviewInvalid('not_object');
+  // Missing fields must not silently become [] for APPROVE: those arrays
+  // carry the model's explicit assessment of unsupported claims and issues.
+  const keys=['decision','factualSupport','evidenceQuotes','unsupportedClaims','issues'];
+  if(keys.some(key=>!Object.hasOwn(data,key)))
+    return reviewInvalid('missing_fields');
+  if(!['approve','hold'].includes(data.decision))
+    return reviewInvalid('invalid_decision');
+  if(!['fully_supported','insufficient'].includes(data.factualSupport))
+    return reviewInvalid('invalid_support');
+  if(!safeStringArray(data.evidenceQuotes))
+    return reviewInvalid('invalid_quotes_type');
+  if(!safeStringArray(data.unsupportedClaims))
+    return reviewInvalid('invalid_claims_type');
+  if(!safeStringArray(data.issues))
+    return reviewInvalid('invalid_issues_type');
   return data;
 }
 const normalize=s=>String(s||'').normalize('NFKC').replace(/\s+/g,' ').trim().toLowerCase();

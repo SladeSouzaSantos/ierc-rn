@@ -3,17 +3,22 @@ import {SOURCES} from './feeds.mjs';
 import {fetchArticleEvidence} from './article-evidence.mjs';
 import {createPacedEbcFetch} from './ebc-archive-worker.mjs';
 import {validateDraft,slugFor} from './editorial.mjs';
-import {reviewFullArticleDraft} from './full-article-review.mjs';
+import {reviewAndRepairFullArticleDraft} from './full-article-review.mjs';
+import {reviewedDraftDigest} from './cms-publish.mjs';
+import {editorialProgressFingerprint} from './editorial-progress.mjs';
 
 /**
  * Explicit, single-ID recovery for an auto-generated Strapi draft left pending
- * after free-provider review exhaustion. Does NOT regenerate, create or edit a
- * news article; publication uses the existing scoped publisher's exact-match
- * draft preflight. Neither a URL nor a CMS title can select another domain.
+ * after free-provider review exhaustion. Does NOT create a second Draft
+ * or alter a pending CMS document without approval. If a one-step AI rewrite
+ * passes another independent review, the scoped publisher atomically submits
+ * that reviewed correction with the publish PUT, after an exact-match GET.
+ * Neither a URL nor a CMS title can select another domain.
  */
 export async function retryPendingDraft({
   documentId,publisher,router,store,allowedSources,
   now=Date.now(),articleReader=fetchArticleEvidence,logger=()=>{},
+  progressStore=null,
 }={}){
   if(!/^[a-zA-Z0-9]{12,90}$/.test(documentId||'') ||
      !publisher||typeof publisher.readPendingDraft!=='function'||
@@ -91,7 +96,17 @@ export async function retryPendingDraft({
        evidence.sourceUrl!==reviewSource.url||evidence.sourceId!==source.id||
        evidence.licenseReference!==source.fullTextAccess.reference)
       throw new Error('Pending Draft full article rights unavailable');
-    const verdict=await reviewFullArticleDraft(reviewSource,draft,evidence,{router,logger});
+    const fingerprint=progressStore?editorialProgressFingerprint({
+      documentId,dedupeKey:pending.dedupeKey,original:draft,evidence,
+    }):null;
+    // Resumption is accepted only AFTER source rights, article digest and
+    // unchanged Strapi Draft were re-verified on THIS invocation.
+    const resumeProgress=progressStore?await progressStore.load(fingerprint):null;
+    const verdict=await reviewAndRepairFullArticleDraft(reviewSource,draft,evidence,{
+      router,logger,maxCorrections:2,resumeProgress,
+      onProgress:progressStore?(progress)=>
+        progressStore.save(fingerprint,progress):null,
+    });
     if(!verdict.approved){
       logger({event:'pending_review_held',documentIdHash,reason:verdict.reason});
       return {status:'draft_review_pending',reason:verdict.reason};
@@ -100,13 +115,20 @@ export async function retryPendingDraft({
       sourceUrl:pending.sourceUrl,dedupeKey:pending.dedupeKey,
       slug:pending.slug,title:pending.title,summary:pending.summary,body:pending.body,
     };
+    const correctedDraft=verdict.revised?verdict.draft:null;
     await publisher.publishApprovedDraft(documentId,expected,{
       evidenceQuotes:verdict.evidenceQuotes,reviewerProvider:verdict.reviewerProvider,
       evidenceMode:verdict.evidenceMode,evidenceDigest:verdict.evidenceDigest,
       licenseReference:verdict.licenseReference,
-    });
+      ...(correctedDraft?{editorialDigest:reviewedDraftDigest(correctedDraft)}:{}),
+    },{correctedDraft});
     await store.set('ierc:curator:seen:'+pending.dedupeKey,'1','EX',31536000);
-    logger({event:'pending_draft_published',documentIdHash,review:'full_article'});
+    if(progressStore){
+      try{await progressStore.clear(fingerprint);}
+      catch{logger({event:'editorial_progress_cleanup_failed'});}
+    }
+    logger({event:'pending_draft_published',documentIdHash,review:'full_article',
+      corrected:!!correctedDraft});
     return {status:'draft_published',reusedDraft:true};
   }finally{
     await store.eval('if redis.call("GET",KEYS[1])==ARGV[1] then return redis.call("DEL",KEYS[1]) else return 0 end',

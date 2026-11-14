@@ -1,8 +1,10 @@
 import { createHash, randomBytes } from 'node:crypto';
+import {reviewedDraftDigest} from './cms-publish.mjs';
+import {editorialProgressFingerprint} from './editorial-progress.mjs';
 import { LlmExhaustedError } from './router.mjs';
 import {reviewAiDraft} from './auto-review.mjs';
 import {cmsNewsReadOnly} from './duplicate-check.mjs';
-import {generateFullArticleDraft,reviewFullArticleDraft} from './full-article-review.mjs';
+import {generateFullArticleDraft,reviewAndRepairFullArticleDraft} from './full-article-review.mjs';
 
 export const SYSTEM=[
   'Você escreve sínteses informativas ORIGINAIS em português do Brasil para um portal sobre inclusão de pessoas cegas e com baixa visão.',
@@ -63,6 +65,24 @@ export function validateDraft(raw){
     throw new Error('Incomplete model draft');
   if(/<\s*script|javascript:|<iframe/i.test(Object.values(article).join(' ')))
     throw new Error('Unsafe draft markup');
+  return article;
+}
+
+/**
+ * Strict, opt-in gate for NEW articles/corrections about to be published.
+ * The legacy Draft parser remains deliberately permissive so historical
+ * encrypted progress can still be audited without deleting/resetting Redis.
+ */
+export function validatePublicationReadyDraft(raw){
+  const article=validateDraft(raw);
+  if(article===null)return null; // explicit {skip:true} is never publication.
+  const fields=['title','summary','body','whyItMatters','category'];
+  const max={title:150,summary:250,body:1000,whyItMatters:350};
+  if(fields.some(k=>typeof article[k]!=='string')||
+     Object.entries(max).some(([k,n])=>article[k].length>n)||
+     !['summary','body','whyItMatters'].every(k=>
+       /[.!?…]$/u.test(article[k])))
+    throw new Error('Incomplete model draft');
   return article;
 }
 /** Friendly, stable and collision-resistant slug from the approved draft title.
@@ -141,7 +161,8 @@ export async function generateAiDraft(source,{router,logger=()=>{}}){
 }
 
 export async function processArticle(source,{router,store,cms,dryRun=true,logger=()=>{},
-  autoPublish=false,publisher=null,fullArticleEvidence=null}){
+  autoPublish=false,publisher=null,fullArticleEvidence=null,
+  progressStore=null}){
   if(dryRun)return {status:'preview',article:source.title};
   if(autoPublish && (!publisher||typeof publisher.publishApprovedDraft!=='function'))
     throw new Error('Independent scoped publisher required for auto publication');
@@ -170,21 +191,39 @@ export async function processArticle(source,{router,store,cms,dryRun=true,logger
     if(autoPublish){
       // A distinct editorial prompt reviews the candidate. Failure or
       // insufficient evidence NEVER escalates a draft to published.
-      const verdict=await reviewFullArticleDraft(source,draft,fullArticleEvidence,{router,logger});
+      const fingerprint=progressStore?editorialProgressFingerprint({
+        documentId,dedupeKey:source.dedupeKey,original:draft,
+        evidence:fullArticleEvidence,
+      }):null;
+      const verdict=await reviewAndRepairFullArticleDraft(source,draft,fullArticleEvidence,{
+        router,logger,maxCorrections:2,
+        onProgress:progressStore?(progress)=>
+          progressStore.save(fingerprint,progress):null,
+      });
       if(!verdict.approved){
         status='draft_created_review_pending';
         logger({event:'auto_review_held',reason:verdict.reason,documentIdHash});
       }else{
         try{
-          await publisher.publishApprovedDraft(documentId,payload,{
+          const correctedDraft=verdict.revised?verdict.draft:null;
+          const audit={
             evidenceQuotes:verdict.evidenceQuotes,
             reviewerProvider:verdict.reviewerProvider,
             evidenceMode:verdict.evidenceMode,
             evidenceDigest:verdict.evidenceDigest,
             licenseReference:verdict.licenseReference,
+            ...(correctedDraft?{editorialDigest:reviewedDraftDigest(correctedDraft)}:{}),
+          };
+          await publisher.publishApprovedDraft(documentId,payload,audit,{
+            correctedDraft,
           });
           status='draft_published';
-          logger({event:'auto_published',documentIdHash,review:'full_article'});
+          if(progressStore){
+            try{await progressStore.clear(fingerprint);}
+            catch{logger({event:'editorial_progress_cleanup_failed'});}
+          }
+          logger({event:'auto_published',documentIdHash,review:'full_article',
+            corrected:!!correctedDraft});
         }catch{
           status='draft_created_publish_failed';
           logger({event:'auto_publish_failed',reason:'cms_rejected_or_unavailable',documentIdHash});

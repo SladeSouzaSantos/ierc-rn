@@ -52,3 +52,21 @@ export function ebcArchivePublishingFromEnv(env,cmd,{autoPublish,allowedSources,
     throw new Error('Archive discovery requires explicit environment authorization and licensed EBC Education auto-publication');
   return true;
 }
+
+
+/**
+ * Read-only CLI commands must never inherit the autonomous publishing policy
+ * from the already-running DEV/PROD schedule. That policy is intentionally
+ * strict for write-capable commands, but cannot gate an isolated preview.
+ *
+ * This is resolved BEFORE Redis, CMS or LLM clients are constructed.
+ */
+export function publishingPolicyForCommand(env,cmd,{dryRun}={}){
+  if(['preview','generate-preview','review-preview','review-full-preview'].includes(cmd))
+    return {autoPublish:false,allowedSources:[],archiveDiscovery:false};
+
+  const {autoPublish,allowedSources}=autoPublishSettingsFromEnv(env,cmd,{dryRun});
+  const archiveDiscovery=ebcArchivePublishingFromEnv(env,cmd,
+    {autoPublish,allowedSources,dryRun});
+  return {autoPublish,allowedSources,archiveDiscovery};
+}

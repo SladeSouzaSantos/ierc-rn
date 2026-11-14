@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {providersFromEnv,settingsFromEnv} from '../src/providers.mjs';
 import {FreeLlmRouter,LlmExhaustedError} from '../src/router.mjs';
+import {validateReview} from '../src/auto-review.mjs';
 const config={globalMax:20,windowMs:86400000,maxAttempts:4,timeoutMs:500,cooldownMs:1000,maxCooldownMs:86400000};
 class MemoryMeter {
   constructor({global=20,perProvider=20}={}) {
@@ -342,4 +343,110 @@ test('provider HTTP quota/rate-limit cooldown remains shared between drafting an
   assert.equal(review.provider,'gemini');
   assert.equal(n,3);
   await assert.rejects(router.complete({system:'s',prompt:'p',phase:'unknown'}),/Unsupported LLM editorial phase/);
+});
+
+
+test('only Groq GPT-OSS 120B independent review requests strict structured JSON',async()=>{
+  const groq=providersFromEnv({
+    CURATOR_GROQ_API_KEY:'test-key-only',
+    CURATOR_GROQ_MODEL:'openai/gpt-oss-120b',
+    CURATOR_GROQ_FREE_TIER_CONFIRMED:'true',
+  })[0];
+  const sent=[];
+  const router=new FreeLlmRouter({
+    providers:[groq],state:new MemoryMeter(),settings:config,
+    fetchImpl:async(_url,options)=>{
+      sent.push(JSON.parse(options.body));
+      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{
+        content:JSON.stringify({decision:'hold',factualSupport:'insufficient',
+          evidenceQuotes:[],unsupportedClaims:[],issues:['Dados insuficientes para aprovar']}),
+      }}]}),{status:200});
+    },
+  });
+  const review=await router.complete({
+    system:'Responda SOMENTE JSON',prompt:'Dados sintéticos para revisão',
+    phase:'review',validateOutput:validateReview,
+  });
+  assert.equal(review.provider,'groq');
+  assert.equal(sent.length,1);
+  assert.equal(sent[0].response_format.type,'json_schema');
+  assert.equal(sent[0].response_format.json_schema.strict,true);
+  const schema=sent[0].response_format.json_schema.schema;
+  assert.equal(schema.type,'object');
+  assert.equal(schema.additionalProperties,false);
+  assert.deepEqual(schema.required,
+    ['decision','factualSupport','evidenceQuotes','unsupportedClaims','issues']);
+  assert.deepEqual(schema.properties.decision.enum,['approve','hold']);
+  assert.deepEqual(schema.properties.factualSupport.enum,['fully_supported','insufficient']);
+  assert.equal(schema.properties.evidenceQuotes.type,'array');
+  assert.equal(schema.properties.evidenceQuotes.items.type,'string');
+  assert.equal(validateReview(review.content).decision,'hold');
+  assert.equal(sent[0].max_tokens,1600);
+});
+
+test('structured review format is model-scoped; drafting and unspecified providers remain unchanged',async()=>{
+  const env={
+    CURATOR_GROQ_API_KEY:'test-groq',CURATOR_GROQ_MODEL:'openai/gpt-oss-120b',
+    CURATOR_GROQ_FREE_TIER_CONFIRMED:'true',
+    CURATOR_GEMINI_API_KEY:'test-gemini',CURATOR_GEMINI_MODEL:'gemini-2.5-flash',
+    CURATOR_GEMINI_FREE_TIER_CONFIRMED:'true',
+    CURATOR_OPENROUTER_API_KEY:'test-or',
+    CURATOR_OPENROUTER_MODEL:'nvidia/nemotron-3.5-super-vl:free',
+  };
+  const [groq,gemini,openrouter]=providersFromEnv(env);
+  const scenarios=[
+    {provider:groq,phase:'draft',strict:null},
+    {provider:gemini,phase:'draft',strict:null},
+    {provider:openrouter,phase:'draft',strict:null},
+    {provider:groq,phase:'default',strict:null},
+    {provider:{...groq,model:'unlisted-model'},phase:'review',strict:null},
+    {provider:{...gemini,model:'gemini-3-pro'},phase:'review',strict:null},
+    {provider:{...openrouter,model:'openrouter/free'},phase:'review',strict:null},
+    {provider:groq,phase:'review',strict:true},
+    {provider:gemini,phase:'review',strict:true},
+    {provider:openrouter,phase:'review',strict:false},
+  ];
+  for(const {provider,phase,strict} of scenarios){
+    let body;
+    const router=new FreeLlmRouter({
+      providers:[provider],state:new MemoryMeter(),settings:config,
+      fetchImpl:async(_url,options)=>{
+        body=JSON.parse(options.body);
+        return ok();
+      },
+    });
+    await router.complete({system:'test',prompt:'test',phase});
+    if(strict===null){
+      assert.equal(body.response_format,undefined,
+        'Unexpected structured review for '+provider.id+'/'+provider.model+'/'+phase);
+    }else{
+      assert.equal(body.response_format.type,'json_schema');
+      assert.equal(body.response_format.json_schema.strict,strict);
+      assert.equal(body.response_format.json_schema.schema.additionalProperties,false);
+      assert.deepEqual(body.response_format.json_schema.schema.required,
+        ['decision','factualSupport','evidenceQuotes','unsupportedClaims','issues']);
+    }
+  }
+});
+
+test('strict JSON response does not relax local review validation',async()=>{
+  const groq=providersFromEnv({
+    CURATOR_GROQ_API_KEY:'test-only',
+    CURATOR_GROQ_MODEL:'openai/gpt-oss-120b',
+    CURATOR_GROQ_FREE_TIER_CONFIRMED:'true',
+  })[0];
+  const meter=new MemoryMeter(),logs=[];
+  const router=new FreeLlmRouter({
+    providers:[groq],state:meter,settings:config,logger:x=>logs.push(x),
+    fetchImpl:async()=>new Response(JSON.stringify({
+      choices:[{finish_reason:'stop',message:{content:'{"decision":"approve"}'}}],
+    }),{status:200}),
+  });
+  await assert.rejects(router.complete({
+    system:'JSON',prompt:'synthetic',phase:'review',
+    validateOutput:validateReview,
+  }),e=>e instanceof LlmExhaustedError);
+  assert.equal(meter.n,1);
+  assert.equal(logs[0].reason,'review_missing_fields');
+  assert.ok(meter.blocked.groq_review>0);
 });

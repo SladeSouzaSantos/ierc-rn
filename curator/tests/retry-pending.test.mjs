@@ -4,6 +4,8 @@ import {createHash} from 'node:crypto';
 import {retryPendingDraft} from '../src/retry-pending.mjs';
 import {slugFor,payloadFor} from '../src/editorial.mjs';
 import {cmsPublisher} from '../src/cms-publish.mjs';
+import {encryptedEditorialProgressStore,editorialProgressFingerprint}
+  from '../src/editorial-progress.mjs';
 
 const doc='a1b2c3d4e5f6g7h8i9j0klmn';
 const url='https://agenciabrasil.ebc.com.br/educacao/noticia/2026-11/inclusao-visual';
@@ -201,4 +203,146 @@ test('invalid or unapproved document ID fails without network or model I/O',asyn
       /recovery prerequisites/);
   }
   assert.equal(counts().modelCalls,0);
+});
+
+test('automatic repair of existing pending Draft preserves document ID, then publishes reviewed corrected text',async()=>{
+  const {args,counts}=config();
+  const hold={decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],unsupportedClaims:['Unsupported original interpretation'],
+    issues:['Restrict implication to article evidence']};
+  const revised={title:article.title,
+    summary:article.summary,
+    body:article.body,
+    whyItMatters:'Os exemplos relatados podem servir para debater formas de tornar atividades educacionais mais acessíveis no Brasil.',
+    category:article.category,
+  };
+  let calls=0,publishOptions=null;
+  args.router={async complete(req){
+    calls++;
+    assert.deepEqual(['review','draft','review'][calls-1],req.phase);
+    return {provider:'groq',content:JSON.stringify([hold,revised,review][calls-1])};
+  }};
+  const publish=args.publisher.publishApprovedDraft;
+  args.publisher.publishApprovedDraft=async(id,expected,evidence,options)=>{
+    publishOptions=options;
+    assert.equal(id,doc);
+    assert.equal(expected.title,article.title);
+    assert.equal(evidence.editorialDigest?.length,64);
+    return publish(id,expected,evidence);
+  };
+  const result=await retryPendingDraft(args);
+  assert.equal(result.status,'draft_published');
+  assert.equal(result.reusedDraft,true);
+  assert.equal(calls,3);
+  assert.equal(publishOptions.correctedDraft.whyItMatters,revised.whyItMatters);
+  assert.equal(counts().published,1);
+  assert.equal(counts().created,0);
+});
+
+test('held correction of existing pending Draft never updates or publishes the CMS article',async()=>{
+  const {args,counts}=config();
+  const hold={decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],unsupportedClaims:[],issues:['Content does not satisfy evidence']};
+  const revised={title:article.title,
+    summary:article.summary,
+    body:article.body,
+    whyItMatters:'Os exemplos relatados podem servir para debater formas de tornar atividades educacionais mais acessíveis no Brasil.',
+    category:article.category,
+  };
+  const revised2={...revised,
+    whyItMatters:'A fonte descreve experiências educacionais com recursos acessíveis para estudantes em escolas brasileiras.'};
+  let calls=0;
+  args.router={async complete(){
+    calls++;
+    return {provider:'groq',content:JSON.stringify(
+      [hold,revised,hold,revised2,hold][calls-1])};
+  }};
+  const result=await retryPendingDraft(args);
+  assert.equal(result.status,'draft_review_pending');
+  assert.equal(result.reason,'ai_review_hold');
+  assert.equal(calls,5); // second correction also received its own independent HOLD
+  assert.equal(counts().published,0);
+  assert.equal(counts().created,0);
+});
+
+test('encrypted DEV history resumes existing Draft at the saved correction after a provider outage',async()=>{
+  const state=new Map(),saves=[];
+  const redis={
+    async get(k){return state.get(k)||null;},
+    async set(k,v,...rest){saves.push(rest);state.set(k,v);return 'OK';},
+    async del(k){return state.delete(k)?1:0;},
+  };
+  const progressStore=encryptedEditorialProgressStore({
+    redis,secret:'c'.repeat(64),instanceKind:'dev',
+  });
+  const original={
+    title:article.title,summary:article.summary,body:article.body,
+    whyItMatters:article.whyItMatters,category:article.category,
+  };
+  const fingerprint=editorialProgressFingerprint({
+    documentId:doc,dedupeKey,original,evidence,
+  });
+  const firstCorrection={...original,
+    whyItMatters:'A reportagem apresenta relatos sobre recursos acessíveis em escolas que podem fundamentar debates de inclusão educacional.'};
+  const secondCorrection={...firstCorrection,
+    whyItMatters:'O texto relata iniciativas educacionais com recursos adaptados descritos pela fonte original.'};
+  const hold1={decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],unsupportedClaims:['Claim without support'],
+    issues:['Limit the broad conclusion']};
+  const hold2={decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],unsupportedClaims:['Another unsupported phrase'],
+    issues:['Narrow the final implication']};
+
+  const first=config();
+  first.args.progressStore=progressStore;
+  let calls=0;
+  first.args.router={async complete(){
+    calls++;
+    if(calls===1)return {provider:'groq',content:JSON.stringify(hold1)};
+    if(calls===2)return {provider:'groq',content:JSON.stringify(firstCorrection)};
+    throw Error('Provider currently unavailable');
+  }};
+  const failed=await retryPendingDraft(first.args);
+  assert.equal(failed.status,'draft_review_pending');
+  assert.equal(failed.reason,'review_unavailable');
+  assert.equal(first.counts().published,0);
+  assert.equal(calls,3);
+  assert.equal(saves.length,2); // objection, then revised prose awaiting review
+  const prior=await progressStore.load(fingerprint);
+  assert.equal(prior.phase,'review');
+  assert.equal(prior.correctionsDone,1);
+  assert.equal(prior.draft.whyItMatters,firstCorrection.whyItMatters);
+  assert.equal(prior.history[0].unsupportedClaims[0],'Claim without support');
+  assert.ok(![...state.values()][0].includes('Another unsupported'));
+
+  const next=config();
+  next.args.progressStore=progressStore;
+  const phases=[];
+  next.args.router={async complete(request){
+    phases.push(request.phase);
+    if(phases.length===1){
+      assert.equal(JSON.parse(request.prompt).draft.whyItMatters,
+        firstCorrection.whyItMatters);
+      return {provider:'groq',content:JSON.stringify(hold2)};
+    }
+    if(phases.length===2){
+      assert.equal(JSON.parse(request.prompt).correctionNumber,2);
+      return {provider:'gemini',content:JSON.stringify(secondCorrection)};
+    }
+    return {provider:'openrouter',content:JSON.stringify(review)};
+  }};
+  let correctedPublished=null;
+  const actualPublish=next.args.publisher.publishApprovedDraft;
+  next.args.publisher.publishApprovedDraft=async(id,expected,audit,options)=>{
+    correctedPublished=options.correctedDraft;
+    assert.equal(audit.editorialDigest.length,64);
+    return actualPublish(id,expected,audit);
+  };
+  const published=await retryPendingDraft(next.args);
+  assert.equal(published.status,'draft_published');
+  assert.deepEqual(phases,['review','draft','review']);
+  assert.equal(next.counts().published,1);
+  assert.equal(next.counts().created,0);
+  assert.equal(correctedPublished.whyItMatters,secondCorrection.whyItMatters);
+  assert.equal(await progressStore.load(fingerprint),null); // cleared after CMS confirms
 });

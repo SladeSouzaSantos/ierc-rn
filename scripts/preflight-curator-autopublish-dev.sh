@@ -44,6 +44,9 @@ if(allowedSources.some(s=>!s.startsWith('agencia-brasil-')))
   throw new Error('Initial live activation is limited to original Agencia Brasil sources');
 if(scheduleDraftLimitFromEnv(env)!==1)
   throw new Error('Unsafe scheduled draft limit');
+if(env.CURATOR_AUTO_RECOVER_PENDING_ENABLED!=='false' &&
+   !/^[a-fA-F0-9]{64}$/.test(env.CURATOR_EDITORIAL_PROGRESS_KEY||''))
+  throw new Error('DEV automatic recovery requires a private 32-byte editorial progress encryption key');
 settingsFromEnv(env);
 const providers=providersFromEnv(env);
 if(!providers.length)throw new Error('No verified free LLM configured');

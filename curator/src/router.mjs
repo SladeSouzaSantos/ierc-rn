@@ -1,4 +1,39 @@
 import { providersFromEnv, settingsFromEnv } from './providers.mjs';
+// Apply structured responses only to exact, documented model routes
+// during the independent review phase. Shape validation is NOT fact checking.
+// Draft generation and any other model retain the previous request contract.
+// Gemini and Groq support strict schema decoding; the free OpenRouter route
+// uses best-effort schema with the exact same fail-closed local validators.
+export const INDEPENDENT_REVIEW_JSON_SCHEMA=Object.freeze({
+  type:'object',
+  properties:{
+    decision:{type:'string',enum:['approve','hold'],
+      description:'Approve only if every drafted fact is directly supported by the numbered source blocks; otherwise hold.'},
+    factualSupport:{type:'string',enum:['fully_supported','insufficient'],
+      description:'Use fully_supported only when ALL claims in the draft match the evidence blocks. Otherwise insufficient.'},
+    evidenceQuotes:{type:'array',items:{type:'string'},
+      description:'If approve: exactly 2 nonempty LITERAL substrings (12-160 characters), each from a DIFFERENT numbered evidence block. If hold: [] is allowed. Do not put E01/E02 IDs inside the quote.'},
+    unsupportedClaims:{type:'array',items:{type:'string'},
+      description:'Required array. If approve: []. If hold: list short unsupported draft claims, or [] if none identifiable.'},
+    issues:{type:'array',items:{type:'string'},
+      description:'Required array. If approve: []. If hold: brief editorial reasons, no article text excerpts.'},
+  },
+  required:['decision','factualSupport','evidenceQuotes','unsupportedClaims','issues'],
+  additionalProperties:false,
+});
+function structuredReviewFormat(provider,phase){
+  if(phase!=='review'||provider.kind!=='openai')return null;
+  const strict=provider.id==='groq'&&provider.model==='openai/gpt-oss-120b' ||
+    provider.id==='gemini'&&provider.model==='gemini-2.5-flash';
+  const bestEffort=provider.id==='openrouter'&&
+    provider.model==='nvidia/nemotron-3.5-super-vl:free';
+  if(!strict&&!bestEffort)return null;
+  return {type:'json_schema',json_schema:{
+    name:'ierc_independent_review',strict:!!strict,
+    schema:INDEPENDENT_REVIEW_JSON_SCHEMA,
+  }};
+}
+
 export class LlmExhaustedError extends Error {
   constructor(reason, diagnostics) { super(reason);this.name='LlmExhaustedError';this.diagnostics=diagnostics; }
 }
@@ -18,6 +53,15 @@ function editorialFailureReason(error) {
   if(message==='Incomplete model draft')return 'incomplete_draft';
   if(message==='Unsafe draft markup')return 'unsafe_markup';
   if(message==='Invalid editorial payload')return 'invalid_structure';
+  // Never expose provider output or text from the copyrighted article.
+  // Static diagnostic tokens pinpoint why a free reviewer was rejected.
+  if(message==='Invalid AI review'){
+    const allowed=new Set(['empty_or_oversize','json_syntax','not_object',
+      'missing_fields','invalid_decision','invalid_support',
+      'invalid_quotes_type','invalid_claims_type','invalid_issues_type']);
+    return allowed.has(error?.reviewReason)
+      ? 'review_'+error.reviewReason:'schema_rejected';
+  }
   return 'schema_rejected';
 }
 const fallbackFor = (err) => {
@@ -96,6 +140,10 @@ export class FreeLlmRouter {
                 ? {reasoning:{enabled:provider.reasoningEnabled}} : {}),
               ...(provider.id==='gemini' && provider.reasoningEffort==='none'
                 ? {reasoning_effort:'none'} : {}),
+              // Schema-constrained reviewer output. An "approve" is not
+              // accepted until independent fact/quote/license gates pass.
+              ...(structuredReviewFormat(provider,phase)
+                ? {response_format:structuredReviewFormat(provider,phase)} : {}),
               messages:[{role:'system',content:system},{role:'user',content:prompt}]};
         const response=await this.fetchImpl(provider.url,{
           method:'POST',headers:{

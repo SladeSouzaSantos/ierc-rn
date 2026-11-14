@@ -1,17 +1,20 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {cmsPublisher} from '../src/cms-publish.mjs';
+import {cmsPublisher,reviewedDraftDigest} from '../src/cms-publish.mjs';
+import {slugFor} from '../src/editorial.mjs';
 
 const doc='a1b2c3d4e5f6g7h8i9j0klmn';
 const expected={
   title:'Uma iniciativa de esporte adaptado para crianças',
   summary:'A publicação descreve projetos acessíveis para a participação de crianças com deficiência.',
-  body:'Atividades esportivas acessíveis são apresentadas em um contexto de participação e aprendizagem.',
+  body:'Atividades esportivas acessíveis são apresentadas em um contexto de participação e aprendizagem. A notícia contextualiza recursos e experiências de inclusão em modalidades adaptadas.',
   slug:'uma-iniciativa-de-esporte-adaptado-aaaaaaaaaa',
   dedupeKey:'a'.repeat(64),sourceUrl:'https://agenciabrasil.ebc.com.br/esportes/noticia/2026-11/exemplo',
 };
 const stored={documentId:doc,publishedAt:null,editorialStatus:'em_revisao',
-  originType:'externa',aiAssisted:true,image:null,...expected};
+  originType:'externa',aiAssisted:true,image:null,...expected,
+  whyItMatters:'As experiências relatadas ajudam a contextualizar debates sobre acessibilidade e educação.',
+  category:'Educação inclusiva'};
 const creds={baseUrl:'http://cms:1337',token:'publisher-demo-12345',draftToken:'draft-demo-12345'};
 const reviewed={evidenceQuotes:[
   'Accessible adaptive sports programs',
@@ -84,4 +87,73 @@ test('publisher requires two fixed-size review quotes, never blind publish',asyn
  await assert.rejects(api.publishApprovedDraft(doc,expected,{...reviewed,evidenceDigest:null}),/full article evidence audit/);
  await assert.rejects(api.publishApprovedDraft(doc,expected,{...reviewed,licenseReference:'https://example.com/other'}),/documented source reuse permission/);
  assert.equal(network,0);
+});
+
+test('licensed publisher writes exactly reviewed corrected prose and slug with one status=published PUT',async()=>{
+  const correctedDraft={
+    title:'Esporte adaptado apresentado em iniciativa para crianças',
+    summary:'A matéria apresenta modalidades de esporte adaptado e orientações de participação em atividades acessíveis a crianças com deficiência.',
+    body:'O texto da matéria apresenta modalidades de esporte adaptado. Também descreve caminhos de participação de crianças em projetos acessíveis desenvolvidos nesse contexto.',
+    whyItMatters:'A notícia oferece um exemplo de acesso ao esporte e de oportunidades de participação em atividades adaptadas.',
+    category:'Esporte adaptado',
+  };
+  let put=0,get=0;
+  const api=cmsPublisher({...creds,fetchImpl:async(_url,opts)=>{
+    if(opts.method==='GET'){
+      get++;
+      return new Response(JSON.stringify({data:stored}),{status:200});
+    }
+    put++;
+    const data=JSON.parse(opts.body).data;
+    assert.equal(data.title,correctedDraft.title);
+    assert.equal(data.summary,correctedDraft.summary);
+    assert.equal(data.body,correctedDraft.body);
+    assert.equal(data.whyItMatters,correctedDraft.whyItMatters);
+    assert.equal(data.category,'Esporte adaptado');
+    assert.equal(data.slug,slugFor({dedupeKey:expected.dedupeKey},correctedDraft.title));
+    assert.equal(data.editorialStatus,'aprovado');
+    return new Response(JSON.stringify({data:{
+      ...stored,...data,publishedAt:'2026-11-13T21:00:00Z',
+    }}),{status:200});
+  }});
+  assert.deepEqual(await api.publishApprovedDraft(doc,expected,{
+    ...reviewed,editorialDigest:reviewedDraftDigest(correctedDraft),
+  },{correctedDraft}),{published:true});
+  assert.equal(get,1);assert.equal(put,1);
+});
+
+test('a corrected draft with unreviewed digest or clipped prose cannot reach CMS',async()=>{
+  const correctedDraft={
+    title:'Esporte adaptado apresentado em iniciativa para crianças',
+    summary:'A matéria apresenta modalidades de esporte adaptado e orientações de participação em atividades acessíveis a crianças com deficiência.',
+    body:'O texto da matéria apresenta modalidades de esporte adaptado. Também descreve caminhos de participação de crianças em projetos acessíveis desenvolvidos nesse contexto.',
+    whyItMatters:'A notícia oferece um exemplo de acesso ao esporte e de oportunidades de participação em atividades adaptadas.',
+    category:'Esporte adaptado',
+  };
+  let network=0;
+  const api=cmsPublisher({...creds,fetchImpl:async()=>{network++;throw Error('CMS called');}});
+  await assert.rejects(api.publishApprovedDraft(doc,expected,reviewed,{correctedDraft}),
+    /not the reviewed text/);
+  await assert.rejects(api.publishApprovedDraft(doc,expected,{
+    ...reviewed,editorialDigest:reviewedDraftDigest(correctedDraft),
+  },{correctedDraft:{...correctedDraft,summary:'Invented materially different statement.'}}),
+    /Invalid corrected editorial draft|not the reviewed text/);
+  assert.throws(()=>reviewedDraftDigest({...correctedDraft,body:'Incomplete'}),/Invalid corrected/);
+  assert.equal(network,0);
+});
+
+test('publisher refuses to confirm corrected publication when Strapi did not return corrected fields',async()=>{
+  const correctedDraft={
+    title:'Esporte adaptado apresentado em iniciativa para crianças',
+    summary:'A matéria apresenta modalidades de esporte adaptado e orientações de participação em atividades acessíveis a crianças com deficiência.',
+    body:'O texto da matéria apresenta modalidades de esporte adaptado. Também descreve caminhos de participação de crianças em projetos acessíveis desenvolvidos nesse contexto.',
+    whyItMatters:'A notícia oferece um exemplo de acesso ao esporte e de oportunidades de participação em atividades adaptadas.',
+    category:'Esporte adaptado',
+  };
+  const api=cmsPublisher({...creds,fetchImpl:async(_url,opts)=>new Response(JSON.stringify({data:
+    opts.method==='GET'?stored:{...stored,publishedAt:'2026-11-13T21:00:00Z',
+      editorialStatus:'aprovado'}}),{status:200})});
+  await assert.rejects(api.publishApprovedDraft(doc,expected,{
+    ...reviewed,editorialDigest:reviewedDraftDigest(correctedDraft),
+  },{correctedDraft}),/did not confirm published status or corrected text/);
 });

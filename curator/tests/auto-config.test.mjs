@@ -1,6 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {autoPublishSettingsFromEnv} from '../src/auto-config.mjs';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {autoPublishSettingsFromEnv,publishingPolicyForCommand} from '../src/auto-config.mjs';
 
 // Pure policy tests are independent of the host OS, Node process startup,
 // anti-virus scanners and available Docker/Redis connections.
@@ -81,4 +83,79 @@ test('RSS-only acknowledgments and disabled full-article gate cannot publish',()
    /licensed full-article review/);
  assert.throws(()=>configure({CURATOR_AUTO_PUBLISH_ACK:'RSS_ONLY_REVIEW_ACCEPTED'}),
    /licensed full-article review/);
+});
+
+
+test('read-only previews work even when DEV autonomous publisher is enabled',()=>{
+  const env={
+    ...approved,
+    CURATOR_ENABLED:'true',
+    CURATOR_WRITE_DRAFTS:'true',
+    CURATOR_EBC_ARCHIVE_PUBLISH_ENABLED:'true',
+  };
+  for(const cmd of ['preview','generate-preview','review-preview','review-full-preview']){
+    assert.deepEqual(publishingPolicyForCommand(env,cmd,{dryRun:true}),{
+      autoPublish:false,allowedSources:[],archiveDiscovery:false,
+    });
+  }
+  // Model previews must never acquire write privileges even if caller passes
+  // an inconsistent dryRun flag; CLI separately sets dryRun=true.
+  assert.deepEqual(publishingPolicyForCommand(env,'review-full-preview',{dryRun:false}),{
+    autoPublish:false,allowedSources:[],archiveDiscovery:false,
+  });
+});
+
+test('PROD preview never needs publishing acknowledgments or CMS write privileges',()=>{
+  const env={
+    ...approved,
+    CURATOR_INSTANCE_KIND:'prod',
+    CURATOR_WRITE_DRAFTS:'true',
+    CURATOR_AUTO_PUBLISH_ACK:'',
+    CURATOR_PROD_WRITE_ACK:'',
+    CURATOR_PROD_AUTO_PUBLISH_ACK:'',
+    CURATOR_EBC_ARCHIVE_PUBLISH_ENABLED:'true',
+  };
+  assert.deepEqual(publishingPolicyForCommand(env,'review-full-preview',{dryRun:true}),{
+    autoPublish:false,allowedSources:[],archiveDiscovery:false,
+  });
+  assert.throws(()=>publishingPolicyForCommand(env,'once',{dryRun:false}),
+    /environment-specific acknowledgment/);
+});
+
+test('live once/schedule and pending retry retain licensed write authorization',()=>{
+  const env={...approved};
+  assert.deepEqual(publishingPolicyForCommand(env,'once',{dryRun:false}),{
+    autoPublish:true,allowedSources:['agencia-brasil-esportes'],archiveDiscovery:false,
+  });
+  assert.deepEqual(publishingPolicyForCommand(env,'schedule',{dryRun:false}),{
+    autoPublish:true,allowedSources:['agencia-brasil-esportes'],archiveDiscovery:false,
+  });
+  assert.throws(()=>publishingPolicyForCommand(env,'once',{dryRun:true}),
+    /environment-specific acknowledgment/);
+  assert.throws(()=>publishingPolicyForCommand({
+    ...env,CURATOR_AUTO_PUBLISH_ALLOWED_SOURCES:'rnib',
+  },'once',{dryRun:false}),/allowlist/);
+  assert.throws(()=>publishingPolicyForCommand(env,'retry-pending',{dryRun:false}),
+    /environment-specific acknowledgment/);
+});
+
+
+test('actual review-full-preview CLI bypasses live auto-publish gate before Redis I/O',()=>{
+  // This is the exact operational regression: DEV has write-mode scheduler
+  // enabled, yet the user invokes an isolated read-only preview. Deliberately
+  // point to a closed Redis port to fail before ANY CMS/LLM request.
+  const env={...process.env,...approved,
+    CURATOR_ENABLED:'true',
+    CURATOR_WRITE_DRAFTS:'true',
+    CURATOR_EBC_ARCHIVE_PUBLISH_ENABLED:'true',
+    CURATOR_REDIS_URL:'redis://127.0.0.1:1',
+  };
+  const p=spawnSync(process.execPath,['src/cli.mjs','review-full-preview'],{
+    cwd:fileURLToPath(new URL('..',import.meta.url)),
+    env,encoding:'utf8',timeout:5000,
+  });
+  assert.equal(p.error,undefined);
+  assert.notEqual(p.status,0);
+  assert.match(p.stderr,/Redis is unavailable or not ready/);
+  assert.doesNotMatch(p.stderr,/Auto publication requires explicit|Archive discovery requires explicit/);
 });
