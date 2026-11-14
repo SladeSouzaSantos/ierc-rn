@@ -626,7 +626,7 @@ html[data-high-contrast="true"] :where(.hero,.sport-section,.site-footer,.interi
     grid-template-columns: 1fr;
     gap: 12px;
     padding-top: 40px;
-    padding-bottom: 16px;
+    padding-bottom: 0;
   }
   .hero-copy { padding-bottom: 0; }
   .hero-art {
@@ -634,7 +634,8 @@ html[data-high-contrast="true"] :where(.hero,.sport-section,.site-footer,.interi
     max-width: 620px;
     margin: 0 auto;
   }
-  .hero-art-visual { inset: 0 -5% -1% -5%; }
+  /* Keep the illustration beneath the clipped hero edge, even at the top of its 5px floating animation. */
+  .hero-art-visual { inset: 0 -5% -12px -5%; }
   .hero h1 { max-width: 100%; font-size: clamp(2.2rem, 8.7vw, 4rem); }
   .sport-layout { grid-template-columns:1fr; gap:22px; padding-block:70px; }
   .sport-art { min-height:0; max-width:620px; height:auto; aspect-ratio:740 / 480; }
@@ -692,7 +693,7 @@ html[data-high-contrast="true"] .bazar-card,
 html[data-high-contrast="true"] .visit-card { background: #ffda55; }
 @media (max-width: 760px) {
   .hero-art-illustration {
-    transform: translateY(-2%) scale(1.06);
+    transform: scale(1.06);
     transform-origin: center bottom;
   }
   .intro-section, .activities-section, .stories-section, .updates-section { padding-block: 70px; }
