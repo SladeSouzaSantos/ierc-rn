@@ -5,6 +5,7 @@ import {SOURCES} from '../src/feeds.mjs';
 import {slugFor} from '../src/editorial.mjs';
 import {ENEM_EDITORIAL_PROPOSAL,ENEM_SOURCE_URL} from '../src/enem-human-publication.mjs';
 import {ENEM_PROD_DOCUMENT_ID,runEnemAiProd} from '../src/enem-ai-prod.mjs';
+import {LlmExhaustedError} from '../src/router.mjs';
 import {safeEnemProdDenial} from '../src/publish-enem-ai-prod.mjs';
 
 const source=SOURCES.find(s=>s.id==='agencia-brasil-educacao');
@@ -204,4 +205,71 @@ test('PROD CLI only exposes preapproved static refusal reasons',()=>{
   assert.equal(safeEnemProdDenial(new Error('secret CMS token and full article text')),'unclassified');
   assert.equal(safeEnemProdDenial({
     name:'ArticleEvidenceError',reason:'secret source contents'}),'unclassified');
+});
+
+test('one-time real ENEM reviewer probe returns factual HOLD without CMS writes or draft repairs',async()=>{
+  const f=fixture(),log=[];
+  f.args.mode='probe';
+  f.args.logger=x=>log.push(x);
+  let modelCalls=0;
+  f.args.router={async complete(request){
+    modelCalls++;
+    assert.equal(request.phase,'review');
+    assert.deepEqual(JSON.parse(request.prompt).draft,ENEM_EDITORIAL_PROPOSAL);
+    return {provider:'groq',content:JSON.stringify({
+      decision:'hold',factualSupport:'insufficient',
+      evidenceQuotes:[],unsupportedClaims:['unsupported claim'],
+      issues:['Evidence does not support every detail'],
+    })};
+  }};
+  const held=await runEnemAiProd(f.args);
+  assert.equal(held.status,'enem_prod_review_probe');
+  assert.equal(held.approved,false);
+  assert.equal(held.reason,'ai_review_hold');
+  assert.equal(held.cmsWrites,0);
+  assert.equal(held.publicationAttempts,0);
+  assert.equal(held.repairs,0);
+  assert.equal(modelCalls,1);
+  assert.equal(f.calls.some(x=>x[0]==='cms_publish'),false);
+  assert.equal(f.calls.filter(x=>x[0]==='redis_set').length,2);
+  assert.equal(f.calls.at(-1)[0],'unlock');
+  assert.ok(log.some(x=>x.event==='full_article_review_held'));
+  const repeat=await runEnemAiProd(f.args);
+  assert.equal(repeat.status,'probe_already_attempted');
+  assert.equal(modelCalls,1);
+  assert.equal(f.calls.some(x=>x[0]==='cms_publish'),false);
+});
+
+test('one-time real ENEM reviewer probe reports transport failure without retry or publish',async()=>{
+  const f=fixture();let calls=0;
+  f.args.mode='probe';
+  f.args.router={async complete(){
+    calls++;
+    throw new LlmExhaustedError('non_retryable_model_error',[]);
+  }};
+  const report=await runEnemAiProd(f.args);
+  assert.equal(report.status,'enem_prod_review_probe');
+  assert.equal(report.approved,false);
+  assert.equal(report.reason,'review_unavailable');
+  assert.equal(calls,1);
+  assert.equal(f.calls.filter(x=>x[0]==='cms_publish').length,0);
+  const repeat=await runEnemAiProd(f.args);
+  assert.equal(repeat.status,'probe_already_attempted');
+  assert.equal(calls,1);
+});
+
+test('even a fully supported real ENEM probe cannot publish the document',async()=>{
+  const f=fixture();
+  f.args.mode='probe';
+  f.args.router={async complete(req){
+    assert.equal(req.phase,'review');
+    return {provider:'groq',content:JSON.stringify(review)};
+  }};
+  const result=await runEnemAiProd(f.args);
+  assert.equal(result.status,'enem_prod_review_probe');
+  assert.equal(result.approved,true);
+  assert.equal(result.reason,'full_article_review_passed');
+  assert.equal(result.cmsWrites,0);
+  assert.equal(result.publicationAttempts,0);
+  assert.equal(f.calls.filter(x=>x[0]==='cms_publish').length,0);
 });
