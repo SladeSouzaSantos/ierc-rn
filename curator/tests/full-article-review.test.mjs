@@ -94,7 +94,8 @@ test('second-review prompt preserves fixed five-field approve/hold JSON without 
   assert.match(VERIFIED_REVIEW_SYSTEM,/TODAS as afirmações/);
   assert.match(VERIFIED_REVIEW_SYSTEM,/evidenceQuotes=\[\]/);
   assert.match(VERIFIED_REVIEW_SYSTEM,/factualSupport="insufficient"/);
-  assert.match(VERIFIED_REVIEW_SYSTEM,/dois blocos/);
+  assert.match(VERIFIED_REVIEW_SYSTEM,/dois blocos numerados DIFERENTES/);
+  assert.match(VERIFIED_REVIEW_SYSTEM,/E08 e E12/);
   assert.match(VERIFIED_REVIEW_SYSTEM,/não omita arrays vazios/);
   assert.match(VERIFIED_REVIEW_SYSTEM,/não uma revisão das afirmações reais/);
 });
