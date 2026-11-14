@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {SYSTEM,canonicalCategory,cmsClient,validateDraft,payloadFor,slugFor,processArticle} from '../src/editorial.mjs';
+import {SYSTEM,canonicalCategory,cmsClient,validateDraft,validatePublicationReadyDraft,payloadFor,slugFor,processArticle} from '../src/editorial.mjs';
 const source={title:'New accessible device',summary:'A new tool for low vision has been described.',
   url:'https://www.w3.org/WAI/news/test',publishedAt:'2026-11-09T12:00:00Z',
   country:'Internacional',language:'en',source:'W3C WAI',dedupeKey:'a'.repeat(64)};
@@ -259,4 +259,12 @@ test('model JSON with clipped editorial prose is rejected even if parsed',()=>{
   assert.equal(validateDraft(JSON.stringify({...draft,
     whyItMatters:'A inclusão deve ser considerada em projetos de educação acessível!'}))
     .category,'Tecnologia assistiva');
+});
+
+test('publication-ready gate rejects clipped summaries without changing historical Draft audit parser',()=>{
+  const clipped={...draft,summary:'Uma reportagem descreve recursos de acessibilidade para estudantes e prevê novas condições para participação. A'};
+  assert.equal(validateDraft(JSON.stringify(clipped)).summary,clipped.summary);
+  assert.throws(()=>validatePublicationReadyDraft(JSON.stringify(clipped)),/Incomplete model draft/);
+  assert.equal(validatePublicationReadyDraft(JSON.stringify(draft)).summary,draft.summary);
+  assert.equal(validatePublicationReadyDraft('{"skip":true}'),null);
 });
