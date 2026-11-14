@@ -3,12 +3,29 @@ import { IERC_MAPS_LINK, IERC_MAPS_EMBED } from "../lib/location";
 import { IERC_OFFICIAL_EMAIL, IERC_OFFICIAL_EMAIL_LINK, IERC_OFFICIAL_WHATSAPP, IERC_OFFICIAL_WHATSAPP_LINK } from "../lib/institutional-contact";
 import { expect, test } from "@playwright/test";
 
-test("instituto documenta fundação e linha do tempo com fontes", async ({ page }) => {
+test("instituto apresenta missão e finalidade históricas, eixos e cronologia com fontes", async ({ page }) => {
   await page.goto("/instituto");
-  await expect(page.getByText("Fundado em 16 de julho de 1952")).toBeVisible();
+  await expect(page.getByText("Desde 16 de julho de 1952")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Por que o IERC existe e o que busca construir" })).toBeVisible();
+  const identity = page.locator(".institution-purpose");
+  await expect(identity.getByRole("heading", { name: "Missão", exact: true })).toBeVisible();
+  await expect(identity.getByRole("heading", { name: "Finalidade", exact: true })).toBeVisible();
+  await expect(identity.getByText(/não transcrições certificadas do estatuto/)).toBeVisible();
+  await expect(identity.locator("a[target='_blank']")).toHaveCount(2);
+  await expect(page.locator(".institution-axis")).toHaveCount(4);
+  for (const title of ["Educação e aprendizagem", "Autonomia e mobilidade", "Cultura e esporte", "Convivência e cidadania"]) {
+    await expect(page.locator(".institution-axis").getByRole("heading", { name: title })).toBeVisible();
+  }
   await expect(page.getByRole("heading", { name: "Uma trajetória que atravessa décadas" })).toBeVisible();
-  await expect(page.locator(".editorial-timeline li")).toHaveCount(4);
-  await expect(page.locator('.editorial-timeline a[target="_blank"]')).toHaveCount(4);
+  const items = page.locator(".editorial-timeline li");
+  await expect(items).toHaveCount(13);
+  await expect(items.locator("a[target='_blank']")).toHaveCount(13);
+  const dates = await items.locator("time[datetime]").evaluateAll(nodes => nodes.map(node => node.getAttribute("datetime")));
+  expect(dates).toEqual([...dates].sort());
+  await expect(items.getByRole("heading", { name: "Uma nova sede no Alecrim" })).toBeVisible();
+  await expect(items.getByRole("heading", { name: "Seleção municipal no paradesporto" })).toBeVisible();
+  await expect(items.getByText(/não comprova celebração de parceria ou repasse de recursos/)).toBeVisible();
+  await expect(page.getByRole("link", { name: /Conhecer as atividades do IERC-RN/ })).toHaveAttribute("href", "/atividades");
 });
 
 test("esporte diferencia registro público de elenco atual", async ({ page }) => {
@@ -111,5 +128,18 @@ test("seções editoriais mantêm reflow e testes automáticos de acessibilidade
     await page.goto(route);
     const audit = await new AxeBuilder({ page }).withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa"]).analyze();
     expect(audit.violations, "axe: " + route).toEqual([]);
+  }
+});
+
+test("instituto adapta blocos históricos a telas pequenas e mantém fontes legíveis", async ({ page }) => {
+  for (const width of [320, 375, 768, 1440]) {
+    await page.setViewportSize({ width, height: 850 });
+    await page.goto("/instituto");
+    const overflow = await page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, `Rolagem horizontal na história, ${width}px`).toBeLessThanOrEqual(1);
+    await expect(page.locator(".institution-purpose-card")).toHaveCount(2);
+    await expect(page.locator(".institution-axis")).toHaveCount(4);
+    await expect(page.locator(".editorial-timeline li")).toHaveCount(13);
   }
 });
