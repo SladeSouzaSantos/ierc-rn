@@ -11,13 +11,29 @@ export function SourceLink({ source, label }: { source: SourceId; label?: string
   </a>;
 }
 
+/** Display historical decade ranges as three intentional lines, not accidental wrapping. */
+function TimelineYear({ year, date }: { year: string; date: string }) {
+  const range = /^(\d{4})–(\d{2})$/.exec(year);
+  if (!range) return <time className="timeline-year" dateTime={date}>{year}</time>;
+
+  const start = range[1];
+  const end = start.slice(0, 2) + range[2];
+  return (
+    <time className="timeline-year timeline-year-range" dateTime={date}>
+      <span>{start}</span>
+      <span className="timeline-year-separator"> a </span>
+      <span>{end}</span>
+    </time>
+  );
+}
+
 export function Timeline() {
   return <section className="editorial-section" aria-labelledby="timeline-title">
     <p className="eyebrow">Marcos documentados</p>
     <h2 className="interior-subtitle" id="timeline-title">Uma trajetória que atravessa décadas</h2>
     <ol className="editorial-timeline">
       {timeline.map((item, index) => <li key={item.date + index} className="timeline-item">
-        <time className="timeline-year" dateTime={item.date}>{item.year}</time>
+        <TimelineYear year={item.year} date={item.date} />
         <div><h3>{item.title}</h3><p>{item.text}</p><SourceLink source={item.source}/></div>
       </li>)}
     </ol>
