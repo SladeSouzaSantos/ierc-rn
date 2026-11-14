@@ -25,32 +25,27 @@ export const timeline: { year: string; date: string; title: string; text: string
     source: "history",
   },
   {
-    year: "Déc. 1950", date: "1953-01-01", title: "Primeiros espaços de atendimento",
-    text: "Pesquisa baseada em registros e relatos históricos descreve atendimentos iniciais ligados a consultórios médicos e, posteriormente, atividades na chamada Escola das Rocas, com alfabetização e acolhimento.",
-    source: "academiaHistory",
-  },
-  {
-    year: "Anos 1970", date: "1970-01-01", title: "A educação ganha espaço",
+    year: "Anos 1970", date: "1970", title: "A educação ganha espaço",
     text: "Formação de profissionais especializados, inclusive em Recife, e colaboração pública impulsionam o ensino das pessoas cegas no Rio Grande do Norte. Trata-se de uma transformação gradual, sem data única de início.",
     source: "brailleNortheast",
   },
   {
-    year: "Anos 1980", date: "1980-01-01", title: "Reorganização e foco na reabilitação",
+    year: "Anos 1980", date: "1980", title: "Reorganização e foco na reabilitação",
     text: "Relato histórico sobre o Braille no RN descreve a transição da antiga instituição assistencial para o IERC, com maior atenção à escolarização, à reabilitação e às oportunidades de vida independente.",
     source: "brailleNortheast",
   },
   {
-    year: "1982", date: "1982-01-01", title: "Uma nova sede no Alecrim",
+    year: "1982", date: "1982", title: "Uma nova sede no Alecrim",
     text: "Pesquisa da UFERSA registra a transferência para a área do atual prédio em 1982 e a construção de sua primeira etapa. A data provém de depoimento histórico e deve ser validada no arquivo institucional.",
     source: "academiaHistory",
   },
   {
-    year: "2002", date: "2002-01-01", title: "Novos horizontes de formação",
+    year: "2002", date: "2002", title: "Novos horizontes de formação",
     text: "Um registro sobre a história do Braille no estado destaca o ingresso de pessoas cegas do RN no ensino superior a partir de 2002. Esse marco é do contexto educacional potiguar, não uma contagem de egressos do IERC.",
     source: "brailleNortheast",
   },
   {
-    year: "2008", date: "2008-01-01", title: "O trabalho do IERC na pesquisa acadêmica",
+    year: "2008", date: "2008", title: "O trabalho do IERC na pesquisa acadêmica",
     text: "Artigo da Revista Digital de Biblioteconomia e Ciência da Informação documenta a finalidade, a estrutura e as atividades do Instituto à época, ampliando o registro público de sua atuação.",
     source: "libraryResearch2008",
   },
