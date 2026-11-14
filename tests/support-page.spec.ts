@@ -88,7 +88,7 @@ test("Apoie oferece seleção mensal com checkout bloqueado até aprovação fin
   await expect(modes.locator('input[name="recurring-monthly-amount"]')).toHaveCount(3);
   await expect(modes.locator('input[name="recurring-payment-method"]')).toHaveCount(3);
   await expect(modes.locator('.support-recurring-checkout')).toBeDisabled();
-  await page.getByLabel("R$ 100,00").check();
+  await page.locator('input[name="recurring-monthly-amount"][value="100"]').check();
   await page.getByLabel("Cartão de crédito", { exact: false }).check();
   await expect(modes.locator('.support-recurring-summary')).toContainText("100,00 por mês");
   await expect(modes.locator('.support-recurring-summary')).toContainText("Cartão de crédito");
