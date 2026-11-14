@@ -13,15 +13,14 @@ const terms=value=>new Set(normalize(value).split(' ').filter(w=>w.length>=5));
 export function summarizeObjection(note,blocks){
   if(typeof note!=='string'||note.length>240||!Array.isArray(blocks))
     throw new Error('Invalid private editorial objection');
-  const needle=normalize(note);
+  const needle=note.trim();
   const words=terms(note);
   const options=blocks.map(b=>{
     if(!/^E\d{2}$/.test(b?.id||'')||typeof b?.text!=='string')
       throw new Error('Invalid verified article block');
-    const normalized=normalize(b.text);
     const refWords=terms(b.text);
     const overlap=words.size===0?0:[...words].filter(w=>refWords.has(w)).length/words.size;
-    return {blockId:b.id,literalMatch:needle.length>=12&&normalized.includes(needle),
+    return {blockId:b.id,literalMatch:needle.length>=12&&b.text.includes(needle),
       wordOverlap:Number(overlap.toFixed(2))};
   }).sort((a,b)=>Number(b.literalMatch)-Number(a.literalMatch)||
     b.wordOverlap-a.wordOverlap||a.blockId.localeCompare(b.blockId));
