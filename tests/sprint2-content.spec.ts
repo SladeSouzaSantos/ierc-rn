@@ -43,8 +43,14 @@ test("instituto apresenta missão e finalidade históricas, eixos e cronologia c
         const rect = node.getBoundingClientRect();
         return { top: rect.top, left: rect.left, right: rect.right };
       }));
-    expect(coordinates[0].top).toBeLessThan(coordinates[1].top);
-    expect(coordinates[1].top).toBeLessThan(coordinates[2].top);
+    const isStacked = (page.viewportSize()?.width ?? 1440) > 760;
+    if (isStacked) {
+      expect(coordinates[0].top).toBeLessThan(coordinates[1].top);
+      expect(coordinates[1].top).toBeLessThan(coordinates[2].top);
+    } else {
+      expect(Math.abs(coordinates[0].top - coordinates[1].top)).toBeLessThan(12);
+      expect(Math.abs(coordinates[1].top - coordinates[2].top)).toBeLessThan(12);
+    }
   }
   for (const year of await items.locator(".timeline-year").allTextContents()) {
     expect(year).not.toMatch(/\bAnos\b/i);
@@ -197,8 +203,13 @@ test("instituto adapta blocos históricos a telas pequenas e mantém fontes leg�
     for (const index of [1, 4]) {
       const yearLines = page.locator(".editorial-timeline .timeline-year-range").nth(index === 1 ? 0 : 1).locator("span");
       const tops = await yearLines.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().top));
-      expect(tops[0]).toBeLessThan(tops[1]);
-      expect(tops[1]).toBeLessThan(tops[2]);
+      if (width <= 760) {
+        expect(Math.abs(tops[0] - tops[1])).toBeLessThan(12);
+        expect(Math.abs(tops[1] - tops[2])).toBeLessThan(12);
+      } else {
+        expect(tops[0]).toBeLessThan(tops[1]);
+        expect(tops[1]).toBeLessThan(tops[2]);
+      }
     }
     await expect(page.locator(".institution-research-card")).toHaveCount(3);
     const overview = page.locator(".institution-history-prose");
