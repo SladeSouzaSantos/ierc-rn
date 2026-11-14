@@ -35,8 +35,11 @@ function validateProposal(){
 
 function sameCmsDraft(a,b){
   return ['documentId','title','summary','body','whyItMatters','category',
-    'slug','sourceUrl','dedupeKey','editorialStatus','approvalNote']
-    .every(k=>a?.[k]===b?.[k])&&a?.publishedAt===null&&b?.publishedAt===null;
+    'slug','sourceUrl','dedupeKey','editorialStatus','approvalNote',
+    'originalTitle','originalPublishedAt','sourceName','sourceLanguage',
+    'originType','aiAssisted'].every(k=>a?.[k]===b?.[k])&&
+    a?.publishedAt===null&&b?.publishedAt===null&&
+    a?.image==null&&b?.image==null;
 }
 
 export async function prepareEnemEditorialPublication({
