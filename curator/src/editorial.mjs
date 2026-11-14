@@ -67,6 +67,24 @@ export function validateDraft(raw){
     throw new Error('Unsafe draft markup');
   return article;
 }
+
+/**
+ * Strict, opt-in gate for NEW articles/corrections about to be published.
+ * The legacy Draft parser remains deliberately permissive so historical
+ * encrypted progress can still be audited without deleting/resetting Redis.
+ */
+export function validatePublicationReadyDraft(raw){
+  const article=validateDraft(raw);
+  if(article===null)return null; // explicit {skip:true} is never publication.
+  const fields=['title','summary','body','whyItMatters','category'];
+  const max={title:150,summary:250,body:1000,whyItMatters:350};
+  if(fields.some(k=>typeof article[k]!=='string')||
+     Object.entries(max).some(([k,n])=>article[k].length>n)||
+     !['summary','body','whyItMatters'].every(k=>
+       /[.!?…]$/u.test(article[k])))
+    throw new Error('Incomplete model draft');
+  return article;
+}
 /** Friendly, stable and collision-resistant slug from the approved draft title.
  * Keep the source key suffix so recurring titles from separate articles cannot collide.
  */
