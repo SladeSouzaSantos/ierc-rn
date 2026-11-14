@@ -32,8 +32,7 @@ export function recoveryProvidersFromEnv(env){
   const selected=all.filter(provider=>
     provider.id==='gemini'||provider.id==='openrouter');
   if(selected.length!==2||selected[0].id!=='gemini'||
-     selected[1].id!=='openrouter'||
-     all.some(p=>p.id==='ollama') && selected.some(p=>p.id==='ollama'))
+     selected[1].id!=='openrouter')
     throw new Error('ENEM PROD technical recovery requires two free-tier providers');
   return {providers:selected,allowedSources:policy.allowedSources};
 }
