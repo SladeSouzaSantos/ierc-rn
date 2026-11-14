@@ -1,23 +1,26 @@
 import Link from "next/link";
 import { PixDonationKey } from "@/components/pix-donation-key";
+import { RecurringDonations } from "@/components/recurring-donations";
+import { donationConfigForServer } from "@/lib/recurring-donations";
 import {
   ArrowUpRight, CalendarDays, HeartHandshake, Handshake,
-  MessageCircle, ShoppingBag, ShieldCheck, Repeat2, HandCoins,
+  MessageCircle, ShoppingBag, ShieldCheck, HandCoins, PackageCheck, SprayCan,
 } from "lucide-react";
 
 /**
  * Bazaar logistics from an institutional contact (11 Nov 2026).
  * Purchases can be paid at the physical bazaar by Pix or cash. The
  * site separately displays the donation Pix CNPJ supplied by the operator.
- * No online checkout, recurring charge, bank-account verification or QR code.
+ * No bank/card information is ever collected by this portal. Hosted monthly
+ * checkout stays off until the IERC verifies its own payment provider account.
  */
 export function SupportPage() {
   return <>
     <div className="detail-intro support-intro">
       <p className="eyebrow">Solidariedade e participação</p>
       <h2>Seu apoio fortalece as atividades do IERC-RN.</h2>
-      <p>Você pode doar roupas, sapatos e bolsas em bom estado,
-        comprar no Bazar Solidário ou propor parcerias com a instituição.
+      <p>Você pode doar roupas, sapatos, bolsas, alimentos não perecíveis ou
+        material de limpeza, comprar no Bazar Solidário ou propor parcerias com a instituição.
         Conheça os horários de atendimento e as formas de contribuir.</p>
     </div>
 
@@ -66,8 +69,9 @@ export function SupportPage() {
       aria-labelledby="support-options-title">
       <p className="eyebrow">Formas de contribuir</p>
       <h2 className="interior-subtitle" id="support-options-title">Como apoiar o IERC-RN</h2>
-      <p className="editorial-intro">As doações de itens e as compras no Bazar Solidário
-        são formas de apoiar a instituição. Empresas e organizações também
+      <p className="editorial-intro">As doações de itens — inclusive alimentos não perecíveis e materiais de
+        limpeza — e as compras no Bazar Solidário são formas de apoiar o Instituto.
+        Empresas e organizações também
         podem colaborar por meio de parcerias, com materiais ou serviços,
         conforme as necessidades do IERC-RN.</p>
       <div className="support-choice-grid">
@@ -102,6 +106,26 @@ export function SupportPage() {
             Propor uma parceria <ArrowUpRight size={17} aria-hidden="true" />
           </Link>
         </article>
+        <article className="detail-card support-choice">
+          <span className="support-choice-icon" aria-hidden="true"><PackageCheck size={30} /></span>
+          <h3>Alimentos não perecíveis</h3>
+          <p>O IERC-RN recebe doações de alimentos não perecíveis.
+            Prefira produtos dentro da validade e com embalagens íntegras;
+            confirme com a equipe os itens prioritários e a entrega.</p>
+          <Link className="inline-link" href="/contato">
+            Combinar a entrega <ArrowUpRight size={17} aria-hidden="true" />
+          </Link>
+        </article>
+        <article className="detail-card support-choice">
+          <span className="support-choice-icon" aria-hidden="true"><SprayCan size={30} /></span>
+          <h3>Material de limpeza</h3>
+          <p>Também são recebidos materiais de limpeza para apoiar a rotina
+            institucional. Consulte a equipe sobre a necessidade dos produtos
+            e como entregá-los com segurança.</p>
+          <Link className="inline-link" href="/contato">
+            Consultar necessidades <ArrowUpRight size={17} aria-hidden="true" />
+          </Link>
+        </article>
       </div>
     </section>
 
@@ -111,7 +135,7 @@ export function SupportPage() {
       <h2 className="interior-subtitle" id="support-guidance-title">Uma contribuição bem combinada começa pela informação.</h2>
       <ol className="support-steps">
         <li><strong>Conheça o Instituto.</strong> Saiba mais sobre as atividades que integram seu trabalho.</li>
-        <li><strong>Prepare a contribuição.</strong> Separe apenas roupas, sapatos e bolsas em bom estado; para outros tipos de apoio, consulte a equipe.</li>
+        <li><strong>Prepare a contribuição.</strong> Separe roupas, sapatos e bolsas em bom estado para o bazar. Alimentos não perecíveis e materiais de limpeza também são aceitos; confirme com a equipe as necessidades e o recebimento.</li>
         <li><strong>Visite nos horários informados.</strong> A entrega de itens ocorre de segunda a quinta, das 8h às 11h; o bazar atende às terças, das 8h às 11h.</li>
       </ol>
       <aside className="support-finance" aria-labelledby="support-finance-title">
@@ -124,40 +148,43 @@ export function SupportPage() {
             Instituto. <strong>Se o nome do recebedor não corresponder, não
             transfira e entre em contato com o IERC-RN.</strong></p>
           <PixDonationKey />
-          <p>Este portal não processa pagamentos nem possui cobrança ou QR Code.
-            O Pix e o dinheiro aceitos no bazar referem-se a compras presenciais.</p>
+          <p>O portal não recebe dados de cartão ou conta bancária. A chave Pix acima
+            é para transferências avulsas. O Pix e o dinheiro aceitos no bazar
+            referem-se a compras presenciais.</p>
         </div>
       </aside>
 
       <section className="support-donation-modes" aria-labelledby="support-donation-modes-title">
-        <p className="eyebrow">Planejamento de doações</p>
-        <h3 id="support-donation-modes-title">Opções para contribuições financeiras</h3>
-        <p className="support-donation-lead">A chave Pix acima permite realizar uma
-          transferência avulsa diretamente no aplicativo do banco. A opção de
-          contribuições mensais ainda está em planejamento. Este portal não
-          solicita dados bancários nem processa cobranças.</p>
+        <p className="eyebrow">Doações financeiras</p>
+        <h3 id="support-donation-modes-title">Contribua uma vez ou todos os meses</h3>
+        <p className="support-donation-lead">A contribuição pode ser feita diretamente por
+          Pix utilizando a chave acima. Estamos preparando um checkout externo
+          seguro para doações mensais com valores definidos e autorização
+          expressa da pessoa doadora.</p>
         <div className="support-donation-grid">
           <article className="support-donation-card">
             <span className="support-donation-icon" aria-hidden="true"><HandCoins size={27}/></span>
             <h4>Doação única por Pix</h4>
-            <p>Copie a chave Pix indicada acima, acesse o aplicativo do banco
-              e confirme o nome da instituição antes de transferir.</p>
+            <p>Copie a chave Pix indicada acima, abra seu aplicativo bancário
+              e confira se a conta recebedora pertence ao IERC-RN antes de transferir.</p>
             <p className="support-donation-status">Transferência externa — sem checkout no portal</p>
           </article>
           <article className="support-donation-card">
-            <span className="support-donation-icon" aria-hidden="true"><Repeat2 size={27}/></span>
-            <h4>Apoio mensal recorrente</h4>
-            <p>Uma contribuição a cada mês, mediante autorização expressa.
-              A pessoa poderá consultar as condições e cancelar a recorrência
-              pelos canais seguros do provedor escolhido.</p>
-            <p className="support-donation-status">Em preparação — sem assinatura ativa</p>
+            <span className="support-donation-icon" aria-hidden="true"><ShieldCheck size={27}/></span>
+            <h4>Doações mensais com autorização</h4>
+            <p>Planeje uma contribuição mensal por Pix ou cartão de crédito.
+              A assinatura só poderá ser concluída no ambiente do provedor
+              financeiro aprovado pelo Instituto.</p>
+            <p className="support-donation-status">Checkout condicionado à confirmação institucional</p>
           </article>
         </div>
+        <RecurringDonations config={donationConfigForServer()} />
         <p className="support-donation-disclosure">
-          <strong>Importante:</strong> as compras no Bazar Solidário continuam
-          presenciais. A doação mensal só será ativada após a confirmação
-          da conta recebedora, das regras de cancelamento e do provedor de
-          pagamentos autorizado pela instituição.
+          <strong>Importante:</strong> não há cobranças em nome do portal.
+          O IERC-RN deverá confirmar o provedor, a conta beneficiária, as tarifas,
+          o atendimento a cancelamentos e as regras de proteção de dados antes
+          de ativar qualquer assinatura. Pix Automático e débito recorrente
+          por cartão exigem habilitações específicas.
         </p>
       </section>
     </section>
