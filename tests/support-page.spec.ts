@@ -79,7 +79,7 @@ test("Apoie oferece seleção mensal com checkout bloqueado até aprovação fin
   const modes = page.locator(".support-donation-modes");
   await expect(modes.getByRole("heading", { name: "Contribua uma vez ou todos os meses" })).toBeVisible();
   await expect(modes.getByRole("heading", { name: "Doação única por Pix" })).toBeVisible();
-  await expect(modes.getByRole("heading", { name: "Apoio mensal recorrente" })).toBeVisible();
+  await expect(modes.getByRole("heading", { name: "Doações mensais com autorização" })).toBeVisible();
   await expect(modes.getByText("Transferência externa — sem checkout no portal")).toBeVisible();
   await expect(modes.getByText("Checkout condicionado à confirmação institucional")).toBeVisible();
   await expect(modes.getByText(/até o cancelamento/)).toBeVisible();
