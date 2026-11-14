@@ -15,7 +15,7 @@ for (const file of FILES) {
   test(`${file}: private donation checkout config is explicitly passed to server only`, () => {
     const compose = readFileSync(path.join(process.cwd(), file), "utf8");
     for (const key of KEYS) {
-      expect(compose).toContain(`      ${key}: ${`${`}${key}:-`);
+      expect(compose).toContain('      ' + key + ': ${' + key + ':-');
       expect(compose).not.toContain(`NEXT_PUBLIC_${key}`);
     }
     expect(compose).toContain("IERCRN_DONATIONS_RECURRING_ENABLED: ${IERCRN_DONATIONS_RECURRING_ENABLED:-false}");
