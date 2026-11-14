@@ -179,3 +179,11 @@ test('Discovery-only publisher feeds cannot be selected by automatic publication
  assert.equal(modelCalls,0);
  assert.equal(writes,0);
 });
+
+test('RSS malicious DTD and custom entities are rejected before parsing', () => {
+ const now=Date.parse('2026-11-09T15:00:00Z');
+ const xml='<?xml version="1.0"?><!DOCTYPE feed [<!ENTITY x "recursive">]>'+
+   '<feed><entry><title>&x;</title></entry></feed>';
+ assert.throws(()=>parseFeed(xml,source,now),/DTD is not allowed/);
+ assert.equal(parseFeed(atom,source,now).length,1);
+});

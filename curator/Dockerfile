@@ -1,8 +1,8 @@
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package.json ./
-RUN npm install --no-audit --no-fund --omit=dev
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund --omit=dev
 COPY src ./src
 # Git checkouts made under umask 077 can carry 0600 .mjs files.
 # Normalize ONLY bundled application source, never environment secrets.

@@ -1,4 +1,5 @@
 import { getCmsEventImageBySlug } from "@/lib/cms";
+import { readBoundedStream } from "@/lib/stream-limiter";
 
 /**
  * Same-origin event image transport. Browser never sees the private Strapi
@@ -39,6 +40,7 @@ export async function GET(
     const imageUrl = new URL(media.path, cms.origin);
     const response = await fetch(imageUrl, {
       cache: "no-store",
+      redirect: "error",
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) return unavailable();
@@ -49,9 +51,12 @@ export async function GET(
       await response.body?.cancel();
       return unavailable();
     }
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    if (!bytes.length || bytes.byteLength > MAX_IMAGE_BYTES) return unavailable();
-    return new Response(bytes, {
+    const bytes = await readBoundedStream(response.body, MAX_IMAGE_BYTES);
+    if (!bytes) return unavailable();
+    // Copy into a concrete ArrayBuffer: Web Response requires an owned BodyInit.
+    const owned = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(owned).set(bytes);
+    return new Response(owned, {
       status: 200,
       headers: {
         "Content-Type": type,

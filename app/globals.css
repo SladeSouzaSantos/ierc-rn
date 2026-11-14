@@ -1410,3 +1410,18 @@ html[data-high-contrast="true"] .institution-research-footnote { color: #000; }
 @media (max-width: 950px) {
   .institution-research-grid { grid-template-columns: 1fr; }
 }
+
+
+/* Responsive timeline: when labels stack above descriptions, keep the range inline. */
+@media (max-width: 760px) {
+  .timeline-year-range {
+    flex-direction: row;
+    align-items: baseline;
+    gap: .28em;
+    white-space: nowrap;
+  }
+  .timeline-year-range .timeline-year-separator {
+    font-size: .65em;
+    line-height: inherit;
+  }
+}
