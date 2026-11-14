@@ -148,8 +148,10 @@ test('one fresh approval publishes same CMS doc and writes encrypted audit stage
   assert.equal(f.audit.outcome,'published');
   const inspect=await runEnemV2({...f.args,mode:'inspect'});
   assert.deepEqual(inspect,f.audit);
-  const repeated=await runEnemV2({...f.args,mode:'publish',router});
-  await assert.fail('second publication must deny'); // unreachable
+  await assert.rejects(runEnemV2({...f.args,mode:'publish',router}),
+    /not authorized/);
+  assert.equal(calls,1);
+  assert.equal(f.publishes,1);
 });
 test('v2 without previous journal or with exhausted provider capacity fails closed',async()=>{
   const f=fixture();f.memory.delete(f.keys.previous);
