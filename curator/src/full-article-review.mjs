@@ -257,8 +257,11 @@ export async function reviewAndRepairFullArticleDraft(source,draft,evidence,{
     });
     let repaired,repairProvider;
     try{
+      // Validate against the FINAL publication contract before declaring an
+      // LLM answer successful. Invalid rewrites can then fall back to another
+      // free provider; they must never be mistaken for reviewed corrections.
       const completion=await router.complete({system:VERIFIED_REPAIR_SYSTEM,prompt,
-        validateOutput:validateDraft,phase:'draft'});
+        validateOutput:validatePublicationReadyDraft,phase:'draft'});
       repaired=validatePublicationReadyDraft(completion.content);
       repairProvider=completion.provider;
     }catch{
