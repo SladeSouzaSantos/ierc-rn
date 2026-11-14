@@ -1,14 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { plannedLinks, createSandboxLinks } from "../scripts/asaas-recurring-links.mjs";
 
-test("provisioning plan is six sandbox-only recurring links with explicit monthly method", () => {
+test("provisioning plan is eight sandbox-only recurring links with explicit monthly method", () => {
   const plans=plannedLinks();
-  expect(plans).toHaveLength(6);
-  expect(plans.map(p=>p.method)).toEqual(["pix","pix","pix","credit","credit","credit"]);
+  expect(plans).toHaveLength(8);
+  expect(plans.map(p=>p.method)).toEqual(["pix","pix","pix","pix","credit","credit","credit","credit"]);
   for (const entry of plans) {
     expect(entry.payload.chargeType).toBe("RECURRENT");
     expect(entry.payload.subscriptionCycle).toBe("MONTHLY");
-    expect(entry.payload.value).toBe(entry.amount);
+    if (entry.amount === "custom") {
+      expect(entry.payload).not.toHaveProperty("value");
+    } else {
+      expect(entry.payload.value).toBe(entry.amount);
+    }
     expect(["PIX","CREDIT_CARD"]).toContain(entry.payload.billingType);
     expect(JSON.stringify(entry.payload)).not.toMatch(/cpf|card_number|password|token|account/i);
   }
@@ -26,15 +30,15 @@ test("sandbox provisioning uses only fixed Asaas sandbox endpoint, no live merch
       }),{status:200});
     },
   });
-  expect(requests).toHaveLength(6);
+  expect(requests).toHaveLength(8);
   for (const request of requests) {
     expect(request.url).toBe("https://api-sandbox.asaas.com/v3/paymentLinks");
     expect(request.options.method).toBe("POST");
     expect(request.options.redirect).toBe("error");
     expect((request.options.headers as Record<string,string>).access_token).toBe("A".repeat(32));
   }
-  expect(Object.keys(links.pix)).toEqual(["20","50","100"]);
-  expect(Object.keys(links.credit)).toEqual(["20","50","100"]);
+  expect(Object.keys(links.pix)).toEqual(["20","50","100","custom"]);
+  expect(Object.keys(links.credit)).toEqual(["20","50","100","custom"]);
 });
 
 test("provider failure stops creation and never falls back to a live endpoint", async () => {
