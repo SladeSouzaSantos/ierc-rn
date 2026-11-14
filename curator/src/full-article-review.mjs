@@ -19,7 +19,7 @@ export const VERIFIED_WRITER_SYSTEM=[
   'Mantenha nomes, gênero da instituição e conceitos educacionais; não chame relatório de avaliação educacional de laudo médico.',
   'Se os blocos não sustentarem uma notícia original informativa, responda somente {"skip":true}.',
   'Caso contrário, responda APENAS um objeto JSON válido com cinco propriedades string: title, summary, body, whyItMatters e category; sem Markdown, HTML, comentários nem texto fora do JSON.',
-  'O validador exige title com 15 a 150 caracteres, summary de 60 a 250, body de 100 a 1000 e whyItMatters de 40 a 350. Produza de duas a quatro frases curtas em body e pelo menos uma frase completa em whyItMatters, usando somente os fatos comprovados nos blocos.',
+  'O validador exige title com 15 a 150 caracteres, summary de 60 a 250, body de 100 a 1000 e whyItMatters de 40 a 350. Prefira um resumo de UMA frase completa com 90–160 caracteres (meta editorial, máximo técnico continua 250). Produza de duas a quatro frases curtas em body e pelo menos uma frase completa em whyItMatters, usando somente os fatos comprovados nos blocos.',
   'Finalize body e whyItMatters com frases completas e pontuação de encerramento (., ! ou ?); não encerre campos com palavras ou frases interrompidas.',
   'Se a fonte não permitir esses mínimos com informações verificáveis, responda somente {"skip":true}; jamais preencha espaço inventando fatos.',
   'Não diga que a reportagem não traz informações ausentes dos blocos extraídos.',
