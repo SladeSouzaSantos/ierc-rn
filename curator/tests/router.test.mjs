@@ -510,3 +510,21 @@ test('free-form error diagnostics cannot be injected into operational logs',asyn
   assert.equal(events[0].constraint,undefined);
   assert.doesNotMatch(JSON.stringify(events),/private secret|leaked private/);
 });
+
+test('terminal provider diagnostics report only safe HTTP status without provider body',async()=>{
+  for(const status of [400,403,413,422]){
+    const logs=[],state=new MemoryMeter();
+    const router=new FreeLlmRouter({providers:[candidates[0],candidates[1]],
+      state,settings:config,
+      fetchImpl:async()=>new Response('PRIVATE PROVIDER ERROR BODY',{status}),
+      logger:x=>logs.push(x),
+    });
+    await assert.rejects(router.complete({system:'secret prompt',
+      prompt:'secret CMS draft',phase:'review'}),LlmExhaustedError);
+    assert.deepEqual(logs,[{event:'llm_attempt',provider:'openrouter',
+      result:'terminal',reason:'http_'+status}]);
+    assert.equal(state.n,1);
+    assert.doesNotMatch(JSON.stringify(logs),
+      /PRIVATE PROVIDER|secret prompt|secret CMS draft|dummy/);
+  }
+});
