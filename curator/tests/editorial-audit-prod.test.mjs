@@ -47,7 +47,9 @@ test('PROD audit is encrypted, digest-bound and keeps notes private from Redis',
     /Uma alegação|A fonte não sustenta|Enem 2026|s5fc7fiy2wtub65mwbndg7j2/);
   assert.deepEqual(await audit.load(fingerprint()),hold);
   const changed={...fingerprint(),originalDigest:'c'.repeat(64)};
-  await assert.rejects(audit.load(changed),/integrity failed/);
+  // Fingerprints select distinct HMAC-derived keys; replaying a different
+  // revision is unavailable rather than restoring the wrong history.
+  assert.equal(await audit.load(changed),null);
   const attack=JSON.parse(value);
   attack.ciphertext=(attack.ciphertext[0]==='f'?'e':'f')+
     attack.ciphertext.slice(1);
