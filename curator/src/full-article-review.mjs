@@ -156,7 +156,10 @@ export const VERIFIED_REPAIR_SYSTEM=[
   'Não copie parágrafos do artigo. Produza uma síntese curta, original e bem atribuída, nunca a íntegra ou uma tradução da reportagem.',
   'Se as evidências não sustentam uma notícia minimamente informativa e fiel, retorne SOMENTE {"skip":true}; nunca invente fatos para preencher texto.',
   'Se corrigível, responda SOMENTE JSON com exatamente cinco campos string title, summary, body, whyItMatters, category; sem Markdown nem texto adicional.',
-  'Respeite title 15 a 150 caracteres, summary 60 a 250, body 100 a 1000, whyItMatters 40 a 350. Mantenha body e whyItMatters completos, terminando em pontuação final.',
+  'Limites ESTRITOS do validador: title 15–150 caracteres, summary 60–250, body 100–1000 e whyItMatters 40–350. Não exceda limites; não use preenchimento artificial para atingir mínimos.',
+  'Para evitar estouro dos limites, ALMEJE title 40–110 caracteres, summary 90–190, body 150–650, whyItMatters 60–220. Essas faixas são metas de redação, não relaxamento dos limites do validador.',
+  'Responda obrigatoriamente com as CINCO propriedades JSON string: title, summary, body, whyItMatters e category, sem texto externo. summary, body e whyItMatters DEVEM terminar em frase completa com ponto final, exclamação ou interrogação.',
+  'Não copie frases interrompidas do rascunho. Corrija apenas o que as evidências sustentam e confira se cada afirmação corrigida está ancorada nos blocos antes de responder.',
   'A síntese corrigida será submetida a uma NOVA revisão independente. Esta etapa NÃO autoriza publicação.',
 ].join(' ');
 

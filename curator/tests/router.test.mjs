@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {providersFromEnv,settingsFromEnv} from '../src/providers.mjs';
 import {FreeLlmRouter,LlmExhaustedError} from '../src/router.mjs';
 import {validateReview} from '../src/auto-review.mjs';
+import {validatePublicationReadyDraft} from '../src/editorial.mjs';
 const config={globalMax:20,windowMs:86400000,maxAttempts:4,timeoutMs:500,cooldownMs:1000,maxCooldownMs:86400000};
 class MemoryMeter {
   constructor({global=20,perProvider=20}={}) {
@@ -449,4 +450,63 @@ test('strict JSON response does not relax local review validation',async()=>{
   assert.equal(meter.n,1);
   assert.equal(logs[0].reason,'review_missing_fields');
   assert.ok(meter.blocked.groq_review>0);
+});
+
+
+test('LLM fallback logs editorial field+rule only, without leaking model text',async()=>{
+  const meter=new MemoryMeter(),events=[],responses=[
+    {title:'Título de laboratório sobre acessibilidade e inclusão',
+      summary:'T'.repeat(260)+'.',
+      body:'Uma publicação fictícia informa recursos de acessibilidade em uma biblioteca. O relato descreve iniciativas educativas de orientação para visitantes e estudantes.',
+      whyItMatters:'O exemplo serve de referência para debater acessibilidade na educação.',
+      category:'Educação inclusiva'},
+    {title:'Título de laboratório sobre acessibilidade e inclusão',
+      summary:'A publicação fictícia descreve recursos de acessibilidade em uma biblioteca para visitantes e estudantes.',
+      body:'Uma publicação fictícia informa recursos de acessibilidade em uma biblioteca. O relato descreve iniciativas educativas de orientação para visitantes e estudantes.',
+      whyItMatters:'O exemplo serve de referência para debater acessibilidade na educação.',
+      category:'Educação inclusiva'},
+  ];
+  let count=0;
+  const router=new FreeLlmRouter({providers:candidates.slice(0,2),
+    state:meter,settings:config,logger:x=>events.push(x),
+    fetchImpl:async()=>new Response(JSON.stringify({
+      choices:[{message:{content:JSON.stringify(responses[count++])},
+        finish_reason:'stop'}],
+    }),{status:200}),
+  });
+  const output=await router.complete({system:'fictitious-only',prompt:'synthetic-only',
+    validateOutput:validatePublicationReadyDraft,phase:'draft'});
+  assert.equal(output.provider,'gemini');
+  assert.equal(count,2);
+  assert.equal(events[0].result,'invalid_output');
+  assert.equal(events[0].reason,'incomplete_draft');
+  assert.equal(events[0].field,'summary');
+  assert.equal(events[0].constraint,'too_long');
+  assert.equal(events[1].result,'success');
+  assert.equal(events[1].field,undefined);
+  assert.equal(events[1].constraint,undefined);
+  assert.ok(!JSON.stringify(events).includes('publicação fictícia'));
+  assert.ok(!JSON.stringify(events).includes('biblioteca'));
+});
+
+test('free-form error diagnostics cannot be injected into operational logs',async()=>{
+  const meter=new MemoryMeter(),events=[];
+  const router=new FreeLlmRouter({providers:[candidates[0]],state:meter,
+    settings:config,logger:x=>events.push(x),
+    fetchImpl:async()=>new Response(JSON.stringify({
+      choices:[{message:{content:'{"safe":true}'},finish_reason:'stop'}],
+    }),{status:200}),
+  });
+  await assert.rejects(router.complete({system:'only synthetic data',prompt:'only synthetic data',
+    phase:'draft',validateOutput:()=>{
+      const e=new Error('Incomplete model draft');
+      e.editorialField='private secret prompt';
+      e.editorialConstraint='leaked private source text';
+      throw e;
+    },
+  }),LlmExhaustedError);
+  assert.equal(events[0].reason,'incomplete_draft');
+  assert.equal(events[0].field,undefined);
+  assert.equal(events[0].constraint,undefined);
+  assert.doesNotMatch(JSON.stringify(events),/private secret|leaked private/);
 });
