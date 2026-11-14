@@ -18,7 +18,8 @@ test("sandbox provisioning uses only fixed Asaas sandbox endpoint, no live merch
   const requests: Array<{ url: string; options: RequestInit }> = [];
   const links=await createSandboxLinks({
     key:"A".repeat(32),
-    fetchImpl:async (url: string | URL | Request, options: RequestInit) => {
+    fetchImpl:async (url: string | URL | Request, options?: RequestInit) => {
+      if (!options) throw new Error("Expected explicit sandbox request");
       requests.push({url:String(url),options});
       return new Response(JSON.stringify({
         url:"https://sandbox.asaas.com/c/"+requests.length+"234567890",
