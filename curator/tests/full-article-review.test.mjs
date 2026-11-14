@@ -413,7 +413,7 @@ test('repair validates publication-ready boundaries before provider success and 
 
 test('repair prompt targets comfortably bounded complete prose without weakening factual gates',()=>{
   assert.match(VERIFIED_REPAIR_SYSTEM,/summary 60–250/);
-  assert.match(VERIFIED_REPAIR_SYSTEM,/summary 90–190/);
+  assert.match(VERIFIED_REPAIR_SYSTEM,/summary 90–160/);
   assert.match(VERIFIED_REPAIR_SYSTEM,/whyItMatters 60–220/);
   assert.match(VERIFIED_REPAIR_SYSTEM,/NOVA revisão independente/);
   assert.match(VERIFIED_REPAIR_SYSTEM,/Corrija apenas o que as evidências sustentam/);

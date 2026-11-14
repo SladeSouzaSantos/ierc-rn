@@ -1,6 +1,7 @@
 import {validateDraft,validatePublicationReadyDraft} from './editorial.mjs';
 import {validateReview} from './auto-review.mjs';
 import {LlmExhaustedError} from './router.mjs';
+import {candidateEvidenceForObjections} from './evidence-guidance.mjs';
 
 const asEvidence=e=>e?.verified===true&&e?.mode==='full_article'&&
   typeof e.digest==='string'&&/^[a-f0-9]{64}$/.test(e.digest)&&
@@ -18,7 +19,7 @@ export const VERIFIED_WRITER_SYSTEM=[
   'Mantenha nomes, gênero da instituição e conceitos educacionais; não chame relatório de avaliação educacional de laudo médico.',
   'Se os blocos não sustentarem uma notícia original informativa, responda somente {"skip":true}.',
   'Caso contrário, responda APENAS um objeto JSON válido com cinco propriedades string: title, summary, body, whyItMatters e category; sem Markdown, HTML, comentários nem texto fora do JSON.',
-  'O validador exige title com 15 a 150 caracteres, summary de 60 a 250, body de 100 a 1000 e whyItMatters de 40 a 350. Produza de duas a quatro frases curtas em body e pelo menos uma frase completa em whyItMatters, usando somente os fatos comprovados nos blocos.',
+  'O validador exige title com 15 a 150 caracteres, summary de 60 a 250, body de 100 a 1000 e whyItMatters de 40 a 350. Prefira um resumo de UMA frase completa com 90–160 caracteres (meta editorial, máximo técnico continua 250). Produza de duas a quatro frases curtas em body e pelo menos uma frase completa em whyItMatters, usando somente os fatos comprovados nos blocos.',
   'Finalize body e whyItMatters com frases completas e pontuação de encerramento (., ! ou ?); não encerre campos com palavras ou frases interrompidas.',
   'Se a fonte não permitir esses mínimos com informações verificáveis, responda somente {"skip":true}; jamais preencha espaço inventando fatos.',
   'Não diga que a reportagem não traz informações ausentes dos blocos extraídos.',
@@ -153,11 +154,12 @@ export const VERIFIED_REPAIR_SYSTEM=[
   'Reescreva ou remova TODA afirmação sem sustentação literal ou inequívoca. Preserve somente fatos realmente presentes nos blocos; não acrescente números, nomes, eventos, efeitos causais, vínculos com o IERC ou ações no Brasil não comprovados.',
   'Concentre a correção NAS AFIRMAÇÕES APONTADAS pela revisão anterior; preserve as partes corretamente comprovadas. Não reescreva informações corretas apenas para variar o texto.',
   'A revisão anterior apontou preocupações, mas não é autoridade factual. Verifique cada uma contra a evidência original antes de corrigir.',
+  'Cada item em objectionHints corresponde pela posição a uma observação do revisor. candidateBlockIds são SUGESTÕES LEXICAIS, NÃO PROVAS: confira os trechos originais indicados e os demais blocos. Se não existir evidência suficiente, REMOVA a afirmação; nunca cite um bloco apenas porque suas palavras são semelhantes.',
   'Não copie parágrafos do artigo. Produza uma síntese curta, original e bem atribuída, nunca a íntegra ou uma tradução da reportagem.',
   'Se as evidências não sustentam uma notícia minimamente informativa e fiel, retorne SOMENTE {"skip":true}; nunca invente fatos para preencher texto.',
   'Se corrigível, responda SOMENTE JSON com exatamente cinco campos string title, summary, body, whyItMatters, category; sem Markdown nem texto adicional.',
   'Limites ESTRITOS do validador: title 15–150 caracteres, summary 60–250, body 100–1000 e whyItMatters 40–350. Não exceda limites; não use preenchimento artificial para atingir mínimos.',
-  'Para evitar estouro dos limites, ALMEJE title 40–110 caracteres, summary 90–190, body 150–650, whyItMatters 60–220. Essas faixas são metas de redação, não relaxamento dos limites do validador.',
+  'Para evitar estouro dos limites, ALMEJE title 40–110 caracteres, summary 90–160, body 150–650, whyItMatters 60–220. Essas faixas são metas de redação, não relaxamento dos limites do validador. Resumo ideal: UMA frase de até 160 caracteres, sem encher de detalhes secundários.',
   'Responda obrigatoriamente com as CINCO propriedades JSON string: title, summary, body, whyItMatters e category, sem texto externo. summary, body e whyItMatters DEVEM terminar em frase completa com ponto final, exclamação ou interrogação.',
   'Não copie frases interrompidas do rascunho. Corrija apenas o que as evidências sustentam e confira se cada afirmação corrigida está ancorada nos blocos antes de responder.',
   'A síntese corrigida será submetida a uma NOVA revisão independente. Esta etapa NÃO autoriza publicação.',
@@ -256,6 +258,7 @@ export async function reviewAndRepairFullArticleDraft(source,draft,evidence,{
         unsupportedClaims:assessment.unsupportedClaims,
         issues:assessment.issues,
       },
+      objectionHints:candidateEvidenceForObjections(assessment,evidence),
       correctionNumber:correctionsDone+1,maxCorrections,
     });
     let repaired,repairProvider;
