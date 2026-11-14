@@ -368,3 +368,43 @@ test('resumption reviews the exact preserved correction before attempting anothe
   assert.deepEqual(phases,['review','draft','review']);
   assert.equal(second.draft.whyItMatters,corrected2.whyItMatters);
 });
+
+test('repair validates publication-ready boundaries before provider success and independent rereview',async()=>{
+  const hold={decision:'hold',factualSupport:'insufficient',
+    evidenceQuotes:[],unsupportedClaims:['Unverified statement'],
+    issues:['Remove the unsupported claim']};
+  const corrected={...draft,
+    whyItMatters:'O texto descreve materiais acessíveis que podem contribuir para uma discussão educativa sobre inclusão.'};
+  // This was accepted by the lenient validateDraft (<=270) but rejected
+  // later by validatePublicationReadyDraft (>250): false provider success.
+  const oversized={...corrected,summary:'A'.repeat(259)+'.'};
+  const phases=[],events=[];
+  const response=await reviewAndRepairFullArticleDraft(article,draft,evidence,{
+    router:{async complete(request){
+      phases.push(request.phase);
+      if(phases.length===1)return {content:JSON.stringify(hold),provider:'groq'};
+      if(phases.length===2){
+        assert.equal(request.phase,'draft');
+        // A model's invalid rewrite must be rejected at the router boundary,
+        // giving the normal free-provider fallback a chance to run.
+        assert.throws(
+          ()=>request.validateOutput(JSON.stringify(oversized)),
+          /Incomplete model draft/);
+        const valid=request.validateOutput(JSON.stringify(corrected));
+        assert.equal(valid.summary,corrected.summary);
+        return {content:JSON.stringify(corrected),provider:'gemini'};
+      }
+      assert.equal(request.phase,'review');
+      assert.deepEqual(JSON.parse(request.prompt).draft,
+        {...corrected,category:'Educação inclusiva'});
+      return {content:JSON.stringify(review),provider:'openrouter'};
+    }},
+    logger:event=>events.push(event),
+  });
+  assert.deepEqual(phases,['review','draft','review']);
+  assert.equal(response.approved,true);
+  assert.equal(response.revised,true);
+  assert.equal(response.reviewerProvider,'openrouter');
+  assert.equal(events.some(x=>x.event==='editorial_repair_generated'),true);
+  assert.equal(events.some(x=>x.event==='editorial_review_approved'),true);
+});
