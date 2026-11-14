@@ -169,7 +169,7 @@ test('no general documentId argument or bypass of publisher/prod license gate',a
   await assert.rejects(runEnemAiProd(missing.args),/prerequisites missing/);
 });
 
-test('historic PROD Draft summary boundary whitespace is allowed but interior changes fail',async()=>{
+test('historic PROD Draft summary boundary whitespace is allowed without accepting truncation',async()=>{
   const f=fixture();
   f.args.mode='preview';
   const original=pending();
@@ -182,9 +182,9 @@ test('historic PROD Draft summary boundary whitespace is allowed but interior ch
   const different=fixture();
   different.args.mode='preview';
   different.args.publisher.readPendingDraft=async()=>({...original,
-    summary:original.summary.replace('acessibilidade','inacessibilidade')});
-  // Only boundary whitespace is tolerated. This test does not assert
-  // arbitrary changes are accepted; the original stays unaltered in CMS.
+    summary:'S'.repeat(271)});
+  // Legacy source content >270 non-space characters cannot be silently
+  // truncated and treated as an equivalent CMS Draft.
   await assert.rejects(runEnemAiProd(different.args),/integrity|mismatch/);
 });
 
