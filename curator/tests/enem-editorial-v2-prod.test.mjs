@@ -129,7 +129,7 @@ test('v2 check reads prior history and 60/20 quotas without any writes or calls'
   assert.equal(f.operations.some(x=>x[0]==='set'||x[0]==='audit_save'),false);
   assert.equal(f.publishes,0);
 });
-test('one fresh approval publishes same CMS doc and writes encrypted audit stages',async()=>{
+test('AI APPROVE cannot publish Enem v2 visual-audience overclaim without literal evidence',async()=>{
   const f=fixture();let calls=0;
   const router={providers,async complete(req){
     calls++;
@@ -138,20 +138,21 @@ test('one fresh approval publishes same CMS doc and writes encrypted audit stage
     return {provider:'groq',content:JSON.stringify(review)};
   }};
   const out=await runEnemV2({...f.args,mode:'publish',router});
-  assert.equal(out.status,'draft_published');
+  assert.equal(out.status,'draft_review_pending');
+  assert.equal(out.reason,'source_claims_unverified');
   assert.equal(out.auditEncrypted,true);
   assert.equal(calls,1);
-  assert.equal(f.publishes,1);
+  assert.equal(f.publishes,0);
   assert.equal(f.memory.get(f.keys.previous),'claimed');
   assert.equal(f.memory.get(f.keys.attempt),'claimed');
-  assert.equal(f.audit.phase,'published');
-  assert.equal(f.audit.outcome,'published');
+  assert.equal(f.audit.phase,'terminal');
+  assert.equal(f.audit.outcome,'source_claims_unverified');
   const inspect=await runEnemV2({...f.args,mode:'inspect'});
   assert.deepEqual(inspect,f.audit);
   await assert.rejects(runEnemV2({...f.args,mode:'publish',router}),
     /not authorized/);
   assert.equal(calls,1);
-  assert.equal(f.publishes,1);
+  assert.equal(f.publishes,0);
 });
 test('v2 without previous journal or with exhausted provider capacity fails closed',async()=>{
   const f=fixture();f.memory.delete(f.keys.previous);
