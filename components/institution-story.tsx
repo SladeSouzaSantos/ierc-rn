@@ -143,7 +143,7 @@ export function InstitutionStory() {
       <section className="institution-history-overview editorial-section" aria-labelledby="institution-history-title">
         <p className="eyebrow">Um percurso coletivo</p>
         <h2 id="institution-history-title" className="interior-subtitle">Da assistência inicial à educação e à inclusão</h2>
-        <div className="institution-history-columns">
+        <div className="institution-history-prose">
           <p>Uma pesquisa com documentos e memória oral descreve a iniciativa de
             médicos de Natal, os primeiros atendimentos em consultórios e o
             funcionamento da Escola das Rocas. O estudo também cita reconhecimentos
