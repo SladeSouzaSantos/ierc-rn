@@ -528,3 +528,58 @@ test('terminal provider diagnostics report only safe HTTP status without provide
       /PRIVATE PROVIDER|secret prompt|secret CMS draft|dummy/);
   }
 });
+
+
+test('source-claim rejections log only fixed field/rule and fall back to a free model',async()=>{
+  const meter=new MemoryMeter(),logs=[];let received=0;
+  const router=new FreeLlmRouter({
+    providers:candidates.slice(0,2),
+    state:meter,settings:config,logger:v=>logs.push(v),
+    fetchImpl:async()=>new Response(JSON.stringify({
+      choices:[{message:{content:JSON.stringify({safe:received++>0})},finish_reason:'stop'}],
+    }),{status:200}),
+  });
+  const result=await router.complete({
+    system:'Synthetic news source only',prompt:'synthetic data',phase:'draft',
+    validateOutput:text=>{
+      const sample=JSON.parse(text);
+      if(!sample.safe){
+        const error=new Error('Unsupported source-anchored editorial claim');
+        error.editorialField='whyItMatters';
+        error.editorialConstraint='unverified_visual_audience';
+        throw error;
+      }
+      return sample;
+    },
+  });
+  assert.equal(result.provider,'gemini');
+  assert.equal(meter.n,2);
+  assert.equal(logs[0].result,'invalid_output');
+  assert.equal(logs[0].reason,'unverified_source_claim');
+  assert.equal(logs[0].field,'whyItMatters');
+  assert.equal(logs[0].constraint,'unverified_visual_audience');
+  assert.equal(logs[1].result,'success');
+  assert.doesNotMatch(JSON.stringify(logs),/Synthetic news source|synthetic data/);
+});
+
+test('source-claim gate cannot leak untrusted field names or constraints into operational logs',async()=>{
+  const meter=new MemoryMeter(),logs=[];
+  const router=new FreeLlmRouter({
+    providers:[candidates[0]],state:meter,settings:config,
+    logger:v=>logs.push(v),
+    fetchImpl:async()=>ok(),
+  });
+  await assert.rejects(router.complete({
+    system:'private reporter prompt',prompt:'private source',
+    phase:'draft',validateOutput:()=>{
+      const e=new Error('Unsupported source-anchored editorial claim');
+      e.editorialField='API key and private prompt';
+      e.editorialConstraint='untrusted article body';
+      throw e;
+    },
+  }),LlmExhaustedError);
+  assert.equal(logs[0].reason,'unverified_source_claim');
+  assert.equal(logs[0].field,undefined);
+  assert.equal(logs[0].constraint,undefined);
+  assert.doesNotMatch(JSON.stringify(logs),/private reporter|private source|API key|untrusted article/);
+});
