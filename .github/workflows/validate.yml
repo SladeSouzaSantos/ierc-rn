@@ -73,7 +73,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: CMS schema and editorial safety contract
         run: node --test cms/tests/*.test.cjs
       - name: Build
@@ -117,13 +117,14 @@ jobs:
         with:
           node-version: "22"
       - name: Install curator dependencies (no external AI calls)
-        run: npm install --prefix curator --no-audit --no-fund
+        run: npm ci --prefix curator --no-audit --no-fund
       - name: Validate MiniMac read-only monitor Compose
         run: |
           docker compose -f compose.curator.monitor.yml config --quiet
           docker compose -f compose.curator.monitor.yml config | grep -q 'CURATOR_MONITOR_READ_ONLY: "true"'
       - name: Validate DEV-only backup and auto-publication preflight shell syntax
         run: |
+          bash -n scripts/security-preflight.sh
           bash -n scripts/backup-cms-dev.sh
           bash -n scripts/backup-cms-prod.sh
           bash -n scripts/preflight-curator-autopublish-prod.sh
@@ -212,7 +213,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install isolated CMS dependencies
-        run: npm install --prefix cms --no-audit --no-fund
+        run: npm ci --prefix cms --no-audit --no-fund
       - name: Build Strapi editorial admin
         run: npm run --prefix cms build
         env:
