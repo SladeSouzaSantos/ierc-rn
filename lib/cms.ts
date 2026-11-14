@@ -1,4 +1,5 @@
 import "server-only";
+import { approvedCmsQuery, approvedPublishedRecord } from "@/lib/cms-policy";
 import { activities as baselineActivities } from "@/lib/site-data";
 import { OFFICIAL_VISIT_FORM_URL, safeGoogleVisitFormUrl } from "@/lib/visit-booking";
 import { approvedEventImage, type EventImage } from "@/lib/event-media";
@@ -107,8 +108,7 @@ export async function getCmsVisitBookingUrl(): Promise<string> {
     const body: unknown = await response.json();
     if (!validRecord(body) || !validRecord(body.data)) return OFFICIAL_VISIT_FORM_URL;
     const config = body.data;
-    if (config.editorialStatus !== "aprovado" ||
-        typeof config.publishedAt !== "string" || !config.publishedAt) {
+    if (!approvedPublishedRecord(config)) {
       return OFFICIAL_VISIT_FORM_URL;
     }
     return safeGoogleVisitFormUrl(config.visitBookingUrl) ?? OFFICIAL_VISIT_FORM_URL;
@@ -121,12 +121,7 @@ const slugs = new Set(["news-articles", "events", "sport-competitions", "activit
 async function find(collection: string, filters?: Record<string, string>): Promise<Json[]> {
   const env = environment();
   if (!env || !slugs.has(collection)) return [];
-  const q = new URLSearchParams({
-    status: "published",
-    "filters[editorialStatus][$eq]": "aprovado",
-    "pagination[pageSize]": "30",
-  });
-  for (const [key, value] of Object.entries(filters || {})) q.set(key, value);
+  const q = approvedCmsQuery(filters);
   try {
     const response = await fetch(env.endpoint + "/api/" + collection + "?" + q.toString(), {
       headers: { Authorization: "Bearer " + env.token, Accept: "application/json" },
@@ -136,10 +131,7 @@ async function find(collection: string, filters?: Record<string, string>): Promi
     if (!response.ok) return [];
     const payload: unknown = await response.json();
     if (!validRecord(payload) || !Array.isArray(payload.data)) return [];
-    return payload.data.filter((item): item is Json =>
-      validRecord(item) && item.editorialStatus === "aprovado" &&
-      typeof item.publishedAt === "string" && item.publishedAt.length > 0
-    );
+    return payload.data.filter(approvedPublishedRecord);
   } catch {
     // Falha fechada: nunca mostra rascunhos nem torna a pagina indisponivel.
     return [];
