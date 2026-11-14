@@ -108,6 +108,14 @@ export async function runEnemAiProd({
        (mode==='recover'&&typeof redis.get!=='function'))))
     throw new Error('ENEM PROD single-document review prerequisites missing');
 
+  // Defense in depth: the technical recovery MUST exclude exhausted Groq,
+  // paid routes, local Ollama, or a caller-supplied single arbitrary model.
+  if(mode==='recover'&&(
+    !Array.isArray(router.providers)||router.providers.length!==2||
+    router.providers[0]?.id!=='gemini'||
+    router.providers[1]?.id!=='openrouter'))
+    throw new Error('ENEM PROD technical recovery provider contract violated');
+
   const pending=await publisher.readPendingDraft(ENEM_PROD_DOCUMENT_ID);
   const {source}=verifyPending(pending,now,allowedSources);
   const reviewedSeed=proposal();
