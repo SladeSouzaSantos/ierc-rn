@@ -18,8 +18,8 @@ test("instituto apresenta missão e finalidade históricas, eixos e cronologia c
   }
   await expect(page.getByRole("heading", { name: "Uma trajetória que atravessa décadas" })).toBeVisible();
   const items = page.locator(".editorial-timeline li");
-  await expect(items).toHaveCount(13);
-  await expect(items.locator("a[target='_blank']")).toHaveCount(13);
+  await expect(items).toHaveCount(12);
+  await expect(items.locator("a[target='_blank']")).toHaveCount(12);
   const dates = await items.locator("time[datetime]").evaluateAll(nodes => nodes.map(node => node.getAttribute("datetime")));
   expect(dates).toEqual([...dates].sort());
   await expect(items.getByRole("heading", { name: "Uma nova sede no Alecrim" })).toBeVisible();
@@ -140,6 +140,6 @@ test("instituto adapta blocos históricos a telas pequenas e mantém fontes leg�
     expect(overflow, `Rolagem horizontal na história, ${width}px`).toBeLessThanOrEqual(1);
     await expect(page.locator(".institution-purpose-card")).toHaveCount(2);
     await expect(page.locator(".institution-axis")).toHaveCount(4);
-    await expect(page.locator(".editorial-timeline li")).toHaveCount(13);
+    await expect(page.locator(".editorial-timeline li")).toHaveCount(12);
   }
 });
