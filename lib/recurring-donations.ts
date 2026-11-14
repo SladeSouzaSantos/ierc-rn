@@ -23,9 +23,13 @@ export function safeHostedCheckoutUrl(input: unknown): string | null {
   try {
     const url = new URL(input);
     if (url.protocol !== "https:" || url.hostname !== "www.asaas.com" ||
-        url.username || url.password || url.port || url.hash ||
-        url.search || !url.pathname.startsWith("/") ||
-        url.pathname === "/" || /[\\%]/.test(url.pathname)) return null;
+        input.trim() !== input || url.username || url.password || url.port ||
+        url.hash || url.search || /[\\%]/.test(input)) return null;
+    // Asaas can prepend an account segment (e.g. /000/c/<id>).
+    // Validate a checkout link rather than a general provider page.
+    const parts = url.pathname.split("/").filter(Boolean);
+    if (parts.length < 2 || parts[parts.length - 2] !== "c" ||
+        !/^[A-Za-z0-9_-]{5,100}$/.test(parts[parts.length - 1])) return null;
     return url.href;
   } catch {
     return null;
