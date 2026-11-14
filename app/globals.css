@@ -1278,3 +1278,25 @@ html[data-high-contrast="true"] .support-recurring p { color: #000; }
   .support-recurring-values { display: grid; grid-template-columns: 1fr; }
   .support-recurring-checkout { width: 100%; }
 }
+
+/* Custom recurring donation: legible in reflow, keyboard and high contrast. */
+.support-recurring-custom { margin-top: 16px; max-width: 520px; }
+.support-recurring-custom > label { display: block; font-weight: 800; color: #17354c; margin-bottom: 9px; }
+.support-recurring-custom-input {
+  display: flex; align-items: center; gap: 10px; min-height: 52px;
+  border: 2px solid #8997a9; border-radius: 11px; padding: 4px 14px;
+  background: #fff; color: #163d55;
+}
+.support-recurring-custom-input:focus-within { outline: 3px solid #d38905; outline-offset: 2px; border-color: #5a2c86; }
+.support-recurring-custom-input > span { font-weight: 800; flex: 0 0 auto; }
+.support-recurring-custom-input input {
+  flex: 1; min-width: 0; width: 100%; padding: 8px 0;
+  font: inherit; font-variant-numeric: tabular-nums;
+  background: transparent; border: 0; color: inherit; outline: 0;
+}
+.support-recurring-custom-input:has(input[aria-invalid="true"]) { border-color: #a43131; }
+.support-recurring-custom > p { color: #345169; font-size: .92rem; line-height: 1.7; margin-top: 9px; }
+html[data-high-contrast="true"] .support-recurring-custom > label,
+html[data-high-contrast="true"] .support-recurring-custom-input,
+html[data-high-contrast="true"] .support-recurring-custom > p { color: #000; background: #fff; }
+html[data-high-contrast="true"] .support-recurring-custom-input { border: 2px solid #000; }
