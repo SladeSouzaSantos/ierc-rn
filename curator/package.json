@@ -9,7 +9,7 @@
     "once": "node src/cli.mjs once",
     "schedule": "node src/cli.mjs schedule",
     "monitor": "node src/monitor.mjs",
-    "check": "node --check src/monitor.mjs && node --check src/monitor-report.mjs && node --check src/router.mjs && node --check src/pipeline.mjs && node --check src/cli.mjs && node --check src/retry-pending.mjs && node --check src/auto-config.mjs && node --check src/duplicate-check.mjs && node --check src/article-evidence.mjs && node --check src/full-article-review.mjs && node --check src/auto-review.mjs && node --check src/cms-publish.mjs && node --check src/redis-connection.mjs && node --check src/check-cms.mjs && node --check src/listings.mjs && node --check src/relevance.mjs && node --check src/check-discovery.mjs && node --check src/check-ebc-readiness.mjs && node --check src/ebc-archive.mjs && node --check src/check-ebc-archive.mjs && node --check src/ebc-archive-worker.mjs && node --check src/diagnose-review-schema.mjs && node --check src/schedule-slot.mjs && node --check src/list-pending.mjs && node --check src/editorial-progress.mjs && node --check src/editorial-audit.mjs && node --check src/audit-pending.mjs && node --check src/enem-human-publication.mjs && node --check src/publish-enem-human.mjs",
+    "check": "node --check src/monitor.mjs && node --check src/monitor-report.mjs && node --check src/router.mjs && node --check src/pipeline.mjs && node --check src/cli.mjs && node --check src/retry-pending.mjs && node --check src/auto-config.mjs && node --check src/duplicate-check.mjs && node --check src/article-evidence.mjs && node --check src/full-article-review.mjs && node --check src/auto-review.mjs && node --check src/cms-publish.mjs && node --check src/redis-connection.mjs && node --check src/check-cms.mjs && node --check src/listings.mjs && node --check src/relevance.mjs && node --check src/check-discovery.mjs && node --check src/check-ebc-readiness.mjs && node --check src/ebc-archive.mjs && node --check src/check-ebc-archive.mjs && node --check src/ebc-archive-worker.mjs && node --check src/diagnose-review-schema.mjs && node --check src/schedule-slot.mjs && node --check src/list-pending.mjs && node --check src/editorial-progress.mjs && node --check src/editorial-audit.mjs && node --check src/audit-pending.mjs && node --check src/enem-human-publication.mjs && node --check src/publish-enem-human.mjs && node --check src/enem-ai-prod.mjs && node --check src/publish-enem-ai-prod.mjs",
     "preview": "node src/cli.mjs preview",
     "generate:preview": "node src/cli.mjs generate-preview",
     "review:preview": "node src/cli.mjs review-preview",
@@ -21,7 +21,8 @@
     "diagnose:review-schema": "node src/diagnose-review-schema.mjs",
     "pending:list:dev": "node src/list-pending.mjs",
     "audit:pending:dev": "node src/audit-pending.mjs",
-    "editorial:enem:dev": "node src/publish-enem-human.mjs"
+    "editorial:enem:dev": "node src/publish-enem-human.mjs",
+    "editorial:enem:prod:ai": "node src/publish-enem-ai-prod.mjs"
   },
   "engines": {
     "node": ">=22 <27"
