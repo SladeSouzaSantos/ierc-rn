@@ -1216,3 +1216,65 @@ html[data-high-contrast="true"] .support-donation-icon { background: #fff; color
 @media (max-width: 620px) {
   .support-donation-grid { grid-template-columns: 1fr; }
 }
+
+/* Voluntary monthly donations: clear eligibility and keyboard/touch targets. */
+.support-recurring {
+  margin-top: 30px; padding: clamp(21px, 3.5vw, 38px);
+  border: 1px solid #bdc7d4; border-radius: 18px; background: #fff;
+  max-width: 970px;
+}
+.support-recurring-header { display: flex; gap: 18px; align-items: flex-start; }
+.support-recurring-header .support-donation-icon { margin: 0; }
+.support-recurring-header h4 { font-size: clamp(1.35rem, 2.3vw, 1.8rem); margin: 0 0 8px; }
+.support-recurring-header p { color: #345169; margin: 0 0 20px; }
+.support-recurring-notice {
+  background: #fff8de; border: 1px solid #c4a455; padding: 15px 18px;
+  border-radius: 11px; line-height: 1.65;
+}
+.support-recurring-fieldset { border: 0; margin: 21px 0 0; padding: 0; min-width: 0; }
+.support-recurring-fieldset legend { font-weight: 800; margin-bottom: 12px; color: #17354c; }
+.support-recurring-values { display: flex; flex-wrap: wrap; gap: 11px; }
+.support-recurring-choice { position: relative; display: flex; cursor: pointer; }
+.support-recurring-choice input { position: absolute; left: 17px; top: 50%; transform: translateY(-50%); margin: 0; width: 18px; height: 18px; accent-color: #5a2c86; }
+.support-recurring-choice span {
+  display: flex; align-items: center; min-height: 54px;
+  padding: 10px 20px 10px 46px;
+  font-weight: 750; color: #1d405d;
+  background: #f6f5f9; border: 2px solid #c4cbdb; border-radius: 12px;
+}
+.support-recurring-choice input:checked + span { border-color: #5a2c86; background: #f2e9fa; }
+.support-recurring-choice input:focus-visible + span { outline: 3px solid #d38905; outline-offset: 3px; }
+.support-recurring-methods { display: grid; gap: 10px; }
+.support-recurring-method {
+  cursor: pointer; display: flex; align-items: flex-start; gap: 14px;
+  padding: 17px; border: 2px solid #c9d2da; border-radius: 11px;
+}
+.support-recurring-method:has(input:checked) { border-color: #5a2c86; background: #f7f1fc; }
+.support-recurring-method input { flex: 0 0 auto; width: 19px; height: 19px; margin-top: 3px; accent-color: #5a2c86; }
+.support-recurring-method input:focus-visible { outline: 3px solid #d38905; outline-offset: 3px; }
+.support-recurring-method span { display: grid; gap: 5px; }
+.support-recurring-method small { font-size: .94rem; color: #3b586d; line-height: 1.6; }
+.support-recurring-outcome { margin-top: 24px; border-top: 1px solid #c9d2da; padding-top: 22px; }
+.support-recurring-summary p { margin: 0 0 8px; }
+.support-recurring-summary .support-recurring-status { color: #345169; }
+.support-recurring-checkout { margin-top: 16px; text-align: center; gap: 12px; min-height: 52px; }
+.support-recurring-checkout:disabled {
+  opacity: 1; cursor: not-allowed; background: #596a78; border-color: #596a78; color: #fff;
+}
+.support-recurring-notes { margin-top: 22px; border-top: 1px solid #dae1e5; padding-top: 18px; }
+.support-recurring-notes p { display: flex; align-items: flex-start; gap: 11px; font-size: .93rem; color: #345169; line-height: 1.7; margin: 0 0 14px; }
+.support-recurring-notes svg { flex-shrink: 0; margin-top: 2px; color: #5a2c86; }
+.support-recurring-notes a { color: #502a7a; font-weight: 750; text-decoration: underline; }
+html[data-high-contrast="true"] .support-recurring,
+html[data-high-contrast="true"] .support-recurring-notice,
+html[data-high-contrast="true"] .support-recurring-choice span,
+html[data-high-contrast="true"] .support-recurring-method {
+  background: #fff; color: #000; border: 2px solid #000;
+}
+html[data-high-contrast="true"] .support-recurring small,
+html[data-high-contrast="true"] .support-recurring p { color: #000; }
+@media (max-width: 620px) {
+  .support-recurring-header { flex-direction: column; }
+  .support-recurring-values { display: grid; grid-template-columns: 1fr; }
+  .support-recurring-checkout { width: 100%; }
+}
