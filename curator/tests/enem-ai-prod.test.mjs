@@ -5,6 +5,7 @@ import {SOURCES} from '../src/feeds.mjs';
 import {slugFor} from '../src/editorial.mjs';
 import {ENEM_EDITORIAL_PROPOSAL,ENEM_SOURCE_URL} from '../src/enem-human-publication.mjs';
 import {ENEM_PROD_DOCUMENT_ID,runEnemAiProd} from '../src/enem-ai-prod.mjs';
+import {safeEnemProdDenial} from '../src/publish-enem-ai-prod.mjs';
 
 const source=SOURCES.find(s=>s.id==='agencia-brasil-educacao');
 const sha=s=>createHash('sha256').update(s).digest('hex');
@@ -166,4 +167,41 @@ test('no general documentId argument or bypass of publisher/prod license gate',a
   const missing=fixture();
   delete missing.args.publisher.publishApprovedDraft;
   await assert.rejects(runEnemAiProd(missing.args),/prerequisites missing/);
+});
+
+test('historic PROD Draft summary boundary whitespace is allowed but interior changes fail',async()=>{
+  const f=fixture();
+  f.args.mode='preview';
+  const original=pending();
+  f.args.publisher.readPendingDraft=async()=>({...original,
+    summary:original.summary+'  '});
+  const report=await runEnemAiProd(f.args);
+  assert.equal(report.status,'enem_ai_prod_preview');
+  assert.equal(report.cmsWrites,0);
+  assert.equal(f.calls.some(x=>x[0]==='redis_set'),false);
+  const different=fixture();
+  different.args.mode='preview';
+  different.args.publisher.readPendingDraft=async()=>({...original,
+    summary:original.summary.replace('acessibilidade','inacessibilidade')});
+  // Only boundary whitespace is tolerated. This test does not assert
+  // arbitrary changes are accepted; the original stays unaltered in CMS.
+  assert.rejects(runEnemAiProd(different.args),/integrity|mismatch/);
+});
+
+test('PROD CLI only exposes preapproved static refusal reasons',()=>{
+  const base=[
+    ['PROD ENEM source or document identity mismatch','document_identity_mismatch'],
+    ['PROD ENEM draft failed exact content-integrity verification','draft_content_integrity'],
+    ['Draft is not an unchanged AI-review-pending candidate','draft_not_pending'],
+    ['PROD ENEM licensed full-article evidence unavailable','article_evidence_unavailable'],
+    ['PROD ENEM pending Draft status mismatch','draft_status_mismatch'],
+  ];
+  for(const [message,code] of base)
+    assert.equal(safeEnemProdDenial(new Error(message)),code);
+  assert.equal(safeEnemProdDenial({
+    name:'ArticleEvidenceError',reason:'article_rights_unverified'}),
+  'evidence_article_rights_unverified');
+  assert.equal(safeEnemProdDenial(new Error('secret CMS token and full article text')),'unclassified');
+  assert.equal(safeEnemProdDenial({
+    name:'ArticleEvidenceError',reason:'secret source contents'}),'unclassified');
 });
