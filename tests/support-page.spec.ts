@@ -32,7 +32,9 @@ test("Apoie apresenta chave Pix CNPJ informada sem iniciar cobranças online", a
   await expect(page.getByText(/O Pix e o dinheiro aceitos no bazar referem-se a compras presenciais/)).toBeVisible();
   await expect(page.locator('main input[type="text"], main input[type="email"], main input[type="number"], main input[type="password"], main input[autocomplete="cc-number"], main a[href^="pix:"], main iframe')).toHaveCount(0);
   await expect(page.locator('.support-recurring-checkout')).toBeDisabled();
-  await expect(page.locator('main a[href^="tel:"], main a[href^="mailto:"]')).toHaveCount(0);
+  // Email is the official cancellation/support channel, not a payment collection form.
+  await expect(page.locator('main a[href^="tel:"]')).toHaveCount(0);
+  await expect(page.locator('main a[href^="mailto:"]')).toHaveCount(1);
 
   const actions = page.locator('.support-bazar a[href="/contato"], .support-choice a[href="/contato"], .support-contact a[href="/contato"]');
   await expect(actions).toHaveCount(7);
@@ -75,7 +77,7 @@ test("Apoie oferece seleção mensal com checkout bloqueado até aprovação fin
   await page.goto("/apoie");
 
   const modes = page.locator(".support-donation-modes");
-  await expect(modes.getByRole("heading", { name: "Opções para contribuições financeiras" })).toBeVisible();
+  await expect(modes.getByRole("heading", { name: "Contribua uma vez ou todos os meses" })).toBeVisible();
   await expect(modes.getByRole("heading", { name: "Doação única por Pix" })).toBeVisible();
   await expect(modes.getByRole("heading", { name: "Apoio mensal recorrente" })).toBeVisible();
   await expect(modes.getByText("Transferência externa — sem checkout no portal")).toBeVisible();
