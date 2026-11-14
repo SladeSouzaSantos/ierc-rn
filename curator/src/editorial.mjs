@@ -45,6 +45,14 @@ export function canonicalCategory(value){
   return CATEGORY_ALIASES.get(key)||'Inclusão e acessibilidade';
 }
 
+// Fixed diagnostics are safe to log: never include generated text or sources.
+function incompleteDraftField(field,constraint){
+  const error=new Error('Incomplete model draft');
+  error.editorialField=field;
+  error.editorialConstraint=constraint;
+  throw error;
+}
+
 export function validateDraft(raw){
   if(typeof raw!=='string'||raw.length>15000)throw new Error('Invalid model output');
   let input;
@@ -57,12 +65,13 @@ export function validateDraft(raw){
     body:str(input.body,1300),whyItMatters:str(input.whyItMatters,400),
     category:canonicalCategory(str(input.category,80)),
   };
-  if(article.title.length<15||article.summary.length<60||
-     article.body.length<100||article.whyItMatters.length<40)throw new Error('Incomplete model draft');
-  // Valid JSON can still contain clipped prose (e.g. whyItMatters ending in 'pol').
-  // Never accept an unfinished sentence as a ready-to-review editorial draft.
-  if(![article.body,article.whyItMatters].every(value=>/[.!?…]$/u.test(value)))
-    throw new Error('Incomplete model draft');
+  const minimum={title:15,summary:60,body:100,whyItMatters:40};
+  for(const [field,min] of Object.entries(minimum))
+    if(article[field].length<min)incompleteDraftField(field,'too_short');
+  // Preserve historical Draft parsing bounds, but refuse clipped sentences.
+  for(const field of ['body','whyItMatters'])
+    if(!/[.!?…]$/u.test(article[field]))
+      incompleteDraftField(field,'unfinished_sentence');
   if(/<\s*script|javascript:|<iframe/i.test(Object.values(article).join(' ')))
     throw new Error('Unsafe draft markup');
   return article;
@@ -78,11 +87,13 @@ export function validatePublicationReadyDraft(raw){
   if(article===null)return null; // explicit {skip:true} is never publication.
   const fields=['title','summary','body','whyItMatters','category'];
   const max={title:150,summary:250,body:1000,whyItMatters:350};
-  if(fields.some(k=>typeof article[k]!=='string')||
-     Object.entries(max).some(([k,n])=>article[k].length>n)||
-     !['summary','body','whyItMatters'].every(k=>
-       /[.!?…]$/u.test(article[k])))
-    throw new Error('Incomplete model draft');
+  for(const field of fields)
+    if(typeof article[field]!=='string')incompleteDraftField(field,'invalid_type');
+  for(const [field,limit] of Object.entries(max))
+    if(article[field].length>limit)incompleteDraftField(field,'too_long');
+  for(const field of ['summary','body','whyItMatters'])
+    if(!/[.!?…]$/u.test(article[field]))
+      incompleteDraftField(field,'unfinished_sentence');
   return article;
 }
 /** Friendly, stable and collision-resistant slug from the approved draft title.
