@@ -4,6 +4,12 @@ Primeira versão de homologação do portal do **Instituto de Educação e Reabi
 
 O site apresenta as frentes de educação, reabilitação, cultura e esporte, com espaço para goalball, histórias, notícias, eventos, galerias, bazar solidário, visitas e apoio à instituição.
 
+### Doações de itens e preparação de recorrência
+
+A página `/apoie` apresenta **alimentos não perecíveis e material de limpeza** além do Bazar Solidário (roupas, sapatos e bolsas em bom estado). A chave Pix CNPJ `08.049.504/0001-08` é mantida para transferências avulsas, com conferência do recebedor no aplicativo do banco.
+
+Foi preparada uma jornada acessível para **doações mensais por Pix recorrente com pagamento de cada cobrança** e **cartão de crédito com cobrança recorrente no provedor Asaas**. O checkout externo permanece **desativado por padrão** até o IERC aprovar a conta recebedora, tarifas e links oficiais; o portal não coleta dados de cartão. **Pix Automático** e **débito recorrente pinless** exigem integrações e elegibilidades distintas e não são anunciados como habilitados. Consulte [Doações recorrentes, sandbox e gates de ativação](docs/DOACOES-RECORRENTES.md).
+
 > **Status — 14/11/2026:** Portal Next.js, CMS Strapi e Radar/curadoria integrados ao código de `dev` e `main`. O operador confirmou o worker PROD no MiniMac com `schedule_started`, `autoPublish:true`, `writeDrafts:true` e horários 08h/13h/19h (America/Fortaleza); isso comprova a inicialização do agendador, **não** uma publicação automática end-to-end. Uma notícia do Enem foi copiada e publicada **manualmente** no Strapi pelo operador, separada dos históricos de revisões retidas da IA. O portal ainda exige homologação institucional, de mídias e acessibilidade manual (zoom/leitores de tela).
 
 A separação entre CMS DEV existente e PROD futura (Docker, PostgreSQL, volumes e credenciais) está documentada em [CMS: ambientes e diagnóstico](docs/CMS-ENVIRONMENTS.md). **Não é necessário alterar o Docker local para consultar a lentidão do painel.**
