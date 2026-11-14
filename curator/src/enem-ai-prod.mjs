@@ -9,6 +9,25 @@ import {ENEM_SOURCE_URL,ENEM_EDITORIAL_PROPOSAL} from './enem-human-publication.
 // proposal already reviewed and published in DEV. This is NOT a way to retry
 // a rejected AI lineage or ignore an independent reviewer HOLD.
 export const ENEM_PROD_DOCUMENT_ID='s5fc7fiy2wtub65mwbndg7j2';
+// Anchored to the verified 2026-11-14 PROD preview, so a silently changed
+// article or proposal cannot authorize a fresh publishing lineage.
+export const ENEM_RECOVERY_PROPOSAL_DIGEST='06f7ad3af3577b66e1ca409149e8c0948fd90c3f5df371e35205e493d0c3cfd8';
+export const ENEM_RECOVERY_EVIDENCE_DIGEST='ee52788257081d2a327b7362c585336c2f96cb93042565be37f084c0d7213cf6';
+const ENEM_JOURNAL_PREFIX='ierc:curator:enem-prod-ai:';
+export function enemRecoveryKeys(documentId,proposalDigest,evidenceDigest){
+  if(documentId!==ENEM_PROD_DOCUMENT_ID||
+     proposalDigest!==ENEM_RECOVERY_PROPOSAL_DIGEST||
+     evidenceDigest!==ENEM_RECOVERY_EVIDENCE_DIGEST)
+    throw new Error('ENEM PROD technical recovery source/proposal digest mismatch');
+  const idRevision=createHash('sha256').update(documentId+':'+proposalDigest).digest('hex');
+  const evidenceRevision=createHash('sha256')
+    .update(documentId+':'+proposalDigest+':'+evidenceDigest).digest('hex');
+  return Object.freeze({
+    previous:ENEM_JOURNAL_PREFIX+'v1:'+idRevision,
+    diagnostic:'ierc:curator:enem-prod-review-probe:v1:'+evidenceRevision,
+    recovery:ENEM_JOURNAL_PREFIX+'technical-recovery-v1:'+evidenceRevision,
+  });
+}
 const ORIGINAL_TITLE='Enem 2026 estreia apoio emocional e novas regras de acessibilidade';
 const SOURCE_ID='agencia-brasil-educacao';
 const FIELDS=['title','summary','body','whyItMatters','category'];
@@ -79,14 +98,23 @@ export async function runEnemAiProd({
   mode,publisher,router=null,redis=null,articleReader,allowedSources=[],
   logger=()=>{},now=Date.now(),
 }={}){
-  if(!['preview','probe','publish'].includes(mode)||
+  if(!['preview','probe','publish','recover'].includes(mode)||
      !publisher||typeof publisher.readPendingDraft!=='function'||
      typeof articleReader!=='function'||
-     (['probe','publish'].includes(mode)&&(
+     (['probe','publish','recover'].includes(mode)&&(
        !router||typeof router.complete!=='function'||
-       (mode==='publish'&&!publisher.publishApprovedDraft)||
-       !redis||typeof redis.set!=='function'||typeof redis.eval!=='function')))
+       (['publish','recover'].includes(mode)&&!publisher.publishApprovedDraft)||
+       !redis||typeof redis.set!=='function'||typeof redis.eval!=='function'||
+       (mode==='recover'&&typeof redis.get!=='function'))))
     throw new Error('ENEM PROD single-document review prerequisites missing');
+
+  // Defense in depth: the technical recovery MUST exclude exhausted Groq,
+  // paid routes, local Ollama, or a caller-supplied single arbitrary model.
+  if(mode==='recover'&&(
+    !Array.isArray(router.providers)||router.providers.length!==2||
+    router.providers[0]?.id!=='gemini'||
+    router.providers[1]?.id!=='openrouter'))
+    throw new Error('ENEM PROD technical recovery provider contract violated');
 
   const pending=await publisher.readPendingDraft(ENEM_PROD_DOCUMENT_ID);
   const {source}=verifyPending(pending,now,allowedSources);
@@ -156,11 +184,30 @@ export async function runEnemAiProd({
     // A durable, revision-scoped one-shot marker prevents repeatedly
     // shopping model verdicts for approval after two factual reviewer HOLDs.
     // A new attempt requires a separately reviewed code/proposal revision.
-    const attemptKey='ierc:curator:enem-prod-ai:v1:'+
-      sha(ENEM_PROD_DOCUMENT_ID+':'+revision);
+    // Keep BOTH prior immutable claims unchanged. The factual review in
+    // this controlled recovery did not run earlier: Groq was out of quota.
+    // A new, separately named one-shot claim is permitted ONLY for the
+    // exact proposal and evidence digests already confirmed on PROD.
+    let attemptKey;
+    if(mode==='recover'){
+      const keys=enemRecoveryKeys(ENEM_PROD_DOCUMENT_ID,revision,evidence.digest);
+      const [initial,diagnostic]=await Promise.all([
+        redis.get(keys.previous),redis.get(keys.diagnostic),
+      ]);
+      if(initial!=='claimed'||diagnostic!=='claimed')
+        throw new Error('ENEM PROD technical recovery requires both previous attempts');
+      attemptKey=keys.recovery;
+    }else{
+      attemptKey=ENEM_JOURNAL_PREFIX+'v1:'+
+        sha(ENEM_PROD_DOCUMENT_ID+':'+revision);
+    }
     const claim=await redis.set(attemptKey,'claimed','EX',45*86400,'NX');
     if(claim===null)return {status:'already_attempted',reason:'revision_locked'};
     if(claim!=='OK')throw new Error('Invalid immutable ENEM AI attempt claim');
+    if(mode==='recover')
+      logger({event:'enem_prod_technical_recovery_started',
+        documentIdHash:docHash,providers:['gemini','openrouter'],
+        originalAndDiagnosticClaimsPreserved:true});
 
     const verdict=await reviewAndRepairFullArticleDraft(candidate,reviewedSeed,evidence,{
       router,logger,maxCorrections:2,
