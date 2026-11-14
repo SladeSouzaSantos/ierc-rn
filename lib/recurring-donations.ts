@@ -13,7 +13,7 @@ export type MonthlyLinks = Record<MonthlyMethod, Partial<Record<MonthlyAmountCho
  */
 export function parseCustomMonthlyAmount(value: string): number | null {
   const input = value.trim();
-  if (!/^\\d{1,6}(?:[.,]\\d{1,2})?$/.test(input)) return null;
+  if (!/^\d{1,6}(?:[.,]\d{1,2})?$/.test(input)) return null;
   const amount = Number(input.replace(",", "."));
   return Number.isFinite(amount) && amount >= 5 && amount <= 100000
     ? amount
