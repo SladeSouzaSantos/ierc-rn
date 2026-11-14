@@ -5,9 +5,10 @@ import { ArrowUpRight, CalendarDays, Instagram, Mail, MapPin, MessageCircle, Tro
 import { PageHero } from "@/components/page-hero";
 import { getDisplayActivities, getCmsNews, getCmsEvents, getCmsAthletes, getCmsSportCompetitions, getCmsVisitBookingUrl } from "@/lib/cms";
 import { CmsNewsList, CmsIercPressList, CmsEventsList, CmsInstitutionalEventNews, CmsAthletesList } from "@/components/cms-public";
-import { Timeline, SportRecords, ExternalClippings, PastEvents, SourceLink, VerifiedAddress } from "@/components/editorial-records";
+import { SportRecords, ExternalClippings, PastEvents, VerifiedAddress } from "@/components/editorial-records";
 import { AthleteStories } from "@/components/athlete-stories";
 import { SupportPage } from "@/components/support-page";
+import { InstitutionStory } from "@/components/institution-story";
 import { LocationMap } from "@/components/location-map";
 import { IERC_MAPS_LINK } from "@/lib/location";
 import { IERC_OFFICIAL_EMAIL, IERC_OFFICIAL_EMAIL_LINK, IERC_OFFICIAL_WHATSAPP, IERC_OFFICIAL_WHATSAPP_LINK } from "@/lib/institutional-contact";
@@ -64,17 +65,7 @@ export default async function ContentPage({ params }: RouteProps) {
     <>
       <PageHero {...entry} />
       <div className="container interior-body">
-        {slug === "instituto" && <>
-          <div className="detail-intro"><p className="eyebrow">Fundado em 16 de julho de 1952</p><h2>Histórias compartilhadas. Possibilidades multiplicadas.</h2><p>O Instituto de Educação e Reabilitação de Cegos do Rio Grande do Norte é uma entidade sem fins lucrativos dedicada à educação, à habilitação e à reabilitação de pessoas com deficiência visual. Sua missão histórica destaca autonomia e participação social.</p><SourceLink source="history" label="Consultar histórico do Instituto"/></div>
-          <div className="detail-grid">
-            <article className="detail-card"><span>01 /</span><h3>Educação e aprendizagem</h3><p>O acesso à leitura, ao conhecimento e à aprendizagem integra a trajetória do IERC.</p></article>
-            <article className="detail-card"><span>02 /</span><h3>Autonomia e mobilidade</h3><p>Práticas de orientação e reabilitação contribuem para a participação na vida cotidiana.</p></article>
-            <article className="detail-card"><span>03 /</span><h3>Cultura e esporte</h3><p>Experiências musicais e culturais e a participação no goalball fazem parte da atuação divulgada pelo Instituto.</p></article>
-          </div>
-          <Timeline />
-          <Note>Missão e finalidade citadas no acervo histórico do IERC, publicado em 2010. O texto institucional vigente, a equipe e os horários ainda aguardam revisão da instituição.</Note>
-          <Callout title="Conheça nossas atividades" href="/atividades" label="Explorar atividades">Música, informática, Braille, orientação e mobilidade, estimulação precoce e outras iniciativas em curadoria.</Callout>
-        </>}
+        {slug === "instituto" && <InstitutionStory />}
 
         {slug === "atividades" && <>
           <div className="detail-intro"><p className="eyebrow">Oito frentes de atuação</p><h2>Aprendizado em diferentes formas.</h2><p>Cada atividade é uma oportunidade para desenvolver habilidades, ampliar repertórios e criar novas conexões. Informações sobre vagas e horários serão acrescentadas após confirmação institucional.</p></div>
