@@ -19,6 +19,10 @@
 - Pessoas sugeridas para histórias sem prova de vínculo foram retiradas da interface até validação. Não foram adicionadas imagens sem permissão.
 - Ver [matriz de fontes, divergências e gate editorial](SOURCES-SPRINT2.md).
 
+## Ampliação da memória histórica — 14/11/2026
+
+A página `/instituto` recebeu sínteses de missão (campanha de 2019) e finalidade (histórico do IERC de 2010), quatro eixos e **12 marcos** entre 1952 e 2026, todos com fonte. Essas sínteses **não substituem** a missão estatutária vigente nem confirmam a data exata de reorganização ou transferência da sede. A pesquisa da UFERSA registra 1982 com base em depoimento; outras referências apontam 1983. Obras históricas divergem sobre a denominação em 1978/1980. Conferir com diretoria e livro de atas. Consulte [matriz de evidências](HISTORIA-INSTITUCIONAL-FONTES.md).
+
 ## Itens necessários antes do lançamento
 
 1. **Marca**: logo recebida do responsável pelo projeto em baixa resolução, recortada para fundo transparente e integrada ao protótipo. Substituir por original SVG/PNG em alta resolução quando disponível e homologar uso oficial.
