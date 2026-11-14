@@ -2,7 +2,7 @@ import {createHash,randomBytes} from 'node:crypto';
 import {SOURCES} from './feeds.mjs';
 import {validateDraft,validatePublicationReadyDraft,slugFor} from './editorial.mjs';
 import {reviewedDraftDigest} from './cms-publish.mjs';
-import {reviewAndRepairFullArticleDraft} from './full-article-review.mjs';
+import {reviewAndRepairFullArticleDraft,reviewFullArticleDraft} from './full-article-review.mjs';
 import {ENEM_SOURCE_URL,ENEM_EDITORIAL_PROPOSAL} from './enem-human-publication.mjs';
 
 // One audited, one-shot PROD publication candidate based on the factual
@@ -79,12 +79,12 @@ export async function runEnemAiProd({
   mode,publisher,router=null,redis=null,articleReader,allowedSources=[],
   logger=()=>{},now=Date.now(),
 }={}){
-  if(!['preview','publish'].includes(mode)||
+  if(!['preview','probe','publish'].includes(mode)||
      !publisher||typeof publisher.readPendingDraft!=='function'||
      typeof articleReader!=='function'||
-     (mode==='publish'&&(
+     (['probe','publish'].includes(mode)&&(
        !router||typeof router.complete!=='function'||
-       !publisher.publishApprovedDraft||
+       (mode==='publish'&&!publisher.publishApprovedDraft)||
        !redis||typeof redis.set!=='function'||typeof redis.eval!=='function')))
     throw new Error('ENEM PROD single-document review prerequisites missing');
 
@@ -109,6 +109,42 @@ export async function runEnemAiProd({
       originalDraftPublished:false,proposalDigest:revision,
       evidenceDigest:evidence.digest,
       aiUsed:false,cmsWrites:0,willPublishOnlyAfterIndependentApproval:true};
+  }
+
+  // A one-time, NON-PUBLISHING diagnostic uses the exact article and
+  // proposal review path. It never calls the repair orchestrator, never
+  // writes to CMS, and never reads/mutates the publication attempt journal.
+  // The separate fingerprint prevents repeatedly shopping reviewer verdicts.
+  if(mode==='probe'){
+    const lock='ierc:curator:lock:'+pending.dedupeKey;
+    const owner=randomBytes(16).toString('hex');
+    if(await redis.set(lock,owner,'PX',180000,'NX')!=='OK')
+      return {status:'locked'};
+    try{
+      const probeKey='ierc:curator:enem-prod-review-probe:v1:'+
+        sha(ENEM_PROD_DOCUMENT_ID+':'+revision+':'+evidence.digest);
+      const claimed=await redis.set(probeKey,'claimed','EX',45*86400,'NX');
+      if(claimed===null)return {status:'probe_already_attempted'};
+      if(claimed!=='OK')throw new Error('Invalid immutable ENEM AI probe claim');
+      logger({event:'enem_prod_review_probe_started',documentIdHash:docHash,
+        sourceBlocks:evidence.blocks.length});
+      const verdict=await reviewFullArticleDraft(candidate,reviewedSeed,evidence,{
+        router,logger,
+      });
+      const safeReasons=new Set([
+        'full_article_review_passed','ai_review_hold','review_unavailable',
+        'unverifiable_full_article_quotes','sensitive_claims',
+      ]);
+      const reason=safeReasons.has(verdict.reason)?
+        verdict.reason:'review_held';
+      return {status:'enem_prod_review_probe',documentIdHash:docHash,
+        approved:verdict.approved===true,reason,
+        cmsWrites:0,publicationAttempts:0,repairs:0};
+    }finally{
+      await redis.eval(
+        'if redis.call("GET",KEYS[1])==ARGV[1] then return redis.call("DEL",KEYS[1]) else return 0 end',
+        1,lock,owner);
+    }
   }
 
   // Reuse the existing document lock; never race a scheduled/explicit retry.
