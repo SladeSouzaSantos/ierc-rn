@@ -75,7 +75,7 @@ async function main(){
     note:'URLs refer to SANDBOX only. Never place them in PROD environment.',
     links},null,2));
 }
-if(process.argv[1] && /(?:^|[\\/])asaas-recurring-links\\.mjs$/.test(process.argv[1])){
+if(process.argv[1]?.endsWith('/asaas-recurring-links.mjs')){
   main().catch(error=>{
     // Do not print provider error bodies or credentials.
     console.error('SANDBOX_PROVISIONING_DENIED: '+(
