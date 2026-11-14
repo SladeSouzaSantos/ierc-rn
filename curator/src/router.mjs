@@ -41,10 +41,20 @@ class ModelHttpError extends Error {
   constructor(status,retryAfter) { super('Model HTTP status '+status);this.status=status;this.retryAfter=retryAfter; }
 }
 // Fixed diagnostic labels only: never expose a provider body, prompt or credentials.
-function invalidOutput(reason) {
+const SAFE_EDITORIAL_FIELDS=new Set(['title','summary','body','whyItMatters','category']);
+const SAFE_EDITORIAL_CONSTRAINTS=new Set(['too_short','too_long','unfinished_sentence','invalid_type']);
+function invalidOutput(reason,diagnostic=null) {
   const error=new Error('Invalid model output');
   error.name='InvalidModelOutput';
   error.reason=reason;
+  // Trust ONLY fixed field/constraint labels from the local validator.
+  // Never copy text, lengths, prompts, or free-form model diagnostics.
+  if(reason==='incomplete_draft' &&
+     SAFE_EDITORIAL_FIELDS.has(diagnostic?.field) &&
+     SAFE_EDITORIAL_CONSTRAINTS.has(diagnostic?.constraint)){
+    error.editorialField=diagnostic.field;
+    error.editorialConstraint=diagnostic.constraint;
+  }
   return error;
 }
 function editorialFailureReason(error) {
@@ -162,7 +172,9 @@ export class FreeLlmRouter {
         if (validateOutput) {
           try { validateOutput(content); }
           catch (error) {
-            throw invalidOutput(editorialFailureReason(error));
+            throw invalidOutput(editorialFailureReason(error),{
+              field:error?.editorialField,constraint:error?.editorialConstraint,
+            });
           }
         }
         attempts.push({provider:provider.id,action:'attempt',result:'success'});
@@ -179,7 +191,11 @@ export class FreeLlmRouter {
           ? provider.id+'_'+phase:provider.id,delay);
         attempts.push({provider:provider.id,action:'attempt',result:category});
         this.logger({event:'llm_attempt',provider:provider.id,result:category,
-          ...(category==='invalid_output'?{reason:error?.reason||'invalid_response'}:{}),
+          ...(category==='invalid_output'?{
+            reason:error?.reason||'invalid_response',
+            ...(error?.editorialField&&error?.editorialConstraint?
+              {field:error.editorialField,constraint:error.editorialConstraint}:{})
+          }:{}),
           ms:this.now()-start});
       } finally {clearTimeout(timer);}
     }
