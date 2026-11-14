@@ -25,7 +25,7 @@ export const timeline: { year: string; date: string; title: string; text: string
     source: "history",
   },
   {
-    year: "Anos 1970", date: "1970", title: "A educação ganha espaço",
+    year: "1970–79", date: "1970", title: "A educação ganha espaço",
     text: "Formação de profissionais especializados, inclusive em Recife, e colaboração pública impulsionam o ensino das pessoas cegas no Rio Grande do Norte. Trata-se de uma transformação gradual, sem data única de início.",
     source: "brailleNortheast",
   },
@@ -40,7 +40,7 @@ export const timeline: { year: string; date: string; title: string; text: string
     source: "academiaHistory",
   },
   {
-    year: "Anos 1980", date: "1980", title: "Reorganização e foco na reabilitação",
+    year: "1980–89", date: "1980", title: "Reorganização e foco na reabilitação",
     text: "Relato histórico sobre o Braille no RN descreve a transição da antiga instituição assistencial para o IERC, com maior atenção à escolarização, à reabilitação e às oportunidades de vida independente.",
     source: "brailleNortheast",
   },
