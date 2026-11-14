@@ -53,7 +53,10 @@ export async function GET(
     }
     const bytes = await readBoundedStream(response.body, MAX_IMAGE_BYTES);
     if (!bytes) return unavailable();
-    return new Response(bytes, {
+    // Copy into a concrete ArrayBuffer: Web Response requires an owned BodyInit.
+    const owned = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(owned).set(bytes);
+    return new Response(owned, {
       status: 200,
       headers: {
         "Content-Type": type,
