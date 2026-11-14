@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {validateDraft,slugFor,canonicalCategory} from './editorial.mjs';
+import {validateDraft,validatePublicationReadyDraft,slugFor,canonicalCategory} from './editorial.mjs';
 
 // Separate least-privilege REST client. It only receives a token with findOne
 // and update for News-article. It cannot create drafts or modify other types.
@@ -60,6 +60,17 @@ export function cmsPublisher({baseUrl,token,draftToken,fetchImpl=fetch}){
       if(!expected||!/^https:\/\//.test(expected.sourceUrl||'')||
          !/^[a-f0-9]{64}$/i.test(expected.dedupeKey||''))
         throw new Error('Invalid approved source');
+      // Final safety check: a model cannot publish clipped summary text,
+      // even if older JSON/AI reviewers or a historical resume accepted it.
+      // This does not alter stored Drafts or encrypted terminal progress.
+      const finalDraft=correctedDraft||{
+        title:expected.title,summary:expected.summary,body:expected.body,
+        whyItMatters:expected.whyItMatters,category:expected.category,
+      };
+      let publishReady;
+      try{publishReady=validatePublicationReadyDraft(JSON.stringify(finalDraft));}
+      catch{throw new Error('Publisher refuses incomplete editorial prose');}
+      if(!publishReady)throw new Error('Publisher refuses incomplete editorial prose');
       const quotes=reviewEvidence?.evidenceQuotes;
       if(!Array.isArray(quotes)||quotes.length!==2||
          quotes.some(x=>typeof x!=='string'||x.length<12||x.length>160||
