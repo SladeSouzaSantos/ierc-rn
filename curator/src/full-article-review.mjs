@@ -1,4 +1,4 @@
-import {validateDraft} from './editorial.mjs';
+import {validateDraft,validatePublicationReadyDraft} from './editorial.mjs';
 import {validateReview} from './auto-review.mjs';
 import {LlmExhaustedError} from './router.mjs';
 
@@ -57,13 +57,13 @@ export async function generateFullArticleDraft(source,evidence,{router,logger=()
   let completion;
   try{
     completion=await router.complete({system:VERIFIED_WRITER_SYSTEM,prompt,
-      validateOutput:validateDraft,phase:'draft'});
+      validateOutput:validatePublicationReadyDraft,phase:'draft'});
   }catch(error){
     logger({event:'llm_unavailable',category:error instanceof LlmExhaustedError?error.message:'other'});
     return {status:'llm_unavailable'};
   }
   let draft;
-  try{draft=validateDraft(completion.content);}
+  try{draft=validatePublicationReadyDraft(completion.content);}
   catch{logger({event:'invalid_model_draft'});return {status:'invalid_draft'};}
   if(!draft)return {status:'insufficient_evidence'};
   return {status:'draft_ready',draft,provider:completion.provider};
@@ -259,7 +259,7 @@ export async function reviewAndRepairFullArticleDraft(source,draft,evidence,{
     try{
       const completion=await router.complete({system:VERIFIED_REPAIR_SYSTEM,prompt,
         validateOutput:validateDraft,phase:'draft'});
-      repaired=validateDraft(completion.content);
+      repaired=validatePublicationReadyDraft(completion.content);
       repairProvider=completion.provider;
     }catch{
       logger({event:'editorial_repair_held',reason:'rewrite_unavailable',
