@@ -12,7 +12,9 @@ const expected={
   dedupeKey:'a'.repeat(64),sourceUrl:'https://agenciabrasil.ebc.com.br/esportes/noticia/2026-11/exemplo',
 };
 const stored={documentId:doc,publishedAt:null,editorialStatus:'em_revisao',
-  originType:'externa',aiAssisted:true,image:null,...expected};
+  originType:'externa',aiAssisted:true,image:null,...expected,
+  whyItMatters:'As experiências relatadas ajudam a contextualizar debates sobre acessibilidade e educação.',
+  category:'Educação inclusiva'};
 const creds={baseUrl:'http://cms:1337',token:'publisher-demo-12345',draftToken:'draft-demo-12345'};
 const reviewed={evidenceQuotes:[
   'Accessible adaptive sports programs',
