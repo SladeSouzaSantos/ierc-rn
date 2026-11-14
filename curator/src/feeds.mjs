@@ -88,7 +88,7 @@ export const SOURCES = Object.freeze([
    country:'Internacional',language:'en',feed:'https://wbu.ngo/feed/',
    hostname:'wbu.ngo',previewOnly:true,readiness:'feed_verified_empty'},
 ]);
-const xml = new XMLParser({ignoreAttributes:false, attributeNamePrefix:'@_',textNodeName:'#text',processEntities:true});
+const xml = new XMLParser({ignoreAttributes:false, attributeNamePrefix:'@_',textNodeName:'#text',processEntities:false});
 const asText=(value)=>typeof value==='string'?value:
   value && typeof value==='object' ? String(value['#text']||''):'';
 export function plain(value,max=1000) {
@@ -116,6 +116,8 @@ function feedLink(value) {
 }
 export function parseFeed(body,source,now=Date.now(),ageDays=45) {
   if(typeof body!=='string'||body.length>700000)throw new Error('Feed too large');
+  // Ignore DTDs entirely: recursive/custom entities can exhaust CPU/RAM.
+  if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(body)) throw new Error('RSS DTD is not allowed');
   const doc=xml.parse(body);
   if(!doc?.rss?.channel && !doc?.feed) throw new Error('Invalid RSS/Atom document');
   const rss=doc?.rss?.channel?.item;
