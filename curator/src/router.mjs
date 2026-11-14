@@ -63,6 +63,7 @@ function editorialFailureReason(error) {
   if(message==='Incomplete model draft')return 'incomplete_draft';
   if(message==='Unsafe draft markup')return 'unsafe_markup';
   if(message==='Invalid editorial payload')return 'invalid_structure';
+  if(message==='Unsupported source-anchored editorial claim')return 'unverified_source_claim';
   // Never expose provider output or text from the copyrighted article.
   // Static diagnostic tokens pinpoint why a free reviewer was rejected.
   if(message==='Invalid AI review'){
