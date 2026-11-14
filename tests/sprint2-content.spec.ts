@@ -33,9 +33,19 @@ test("instituto apresenta missão e finalidade históricas, eixos e cronologia c
   const items = page.locator(".editorial-timeline li");
   await expect(items).toHaveCount(16);
   await expect(items.locator("a[target='_blank']")).toHaveCount(16);
-  // Decades are shown as numeric intervals, not as a specific event year.
-  await expect(items.locator(".timeline-year").nth(1)).toHaveText("1970–79");
-  await expect(items.locator(".timeline-year").nth(4)).toHaveText("1980–89");
+  // Decades use three dedicated lines with an accessible full-range label.
+  for (const [index, start, end] of [[1, "1970", "1979"], [4, "1980", "1989"]] as const) {
+    const year = items.locator(".timeline-year").nth(index);
+    await expect(year).toHaveAttribute("aria-label", `${start} a ${end}`);
+    await expect(year.locator("span")).toHaveText([start, "a", end]);
+    const coordinates = await year.locator("span").evaluateAll(nodes =>
+      nodes.map(node => {
+        const rect = node.getBoundingClientRect();
+        return { top: rect.top, left: rect.left, right: rect.right };
+      }));
+    expect(coordinates[0].top).toBeLessThan(coordinates[1].top);
+    expect(coordinates[1].top).toBeLessThan(coordinates[2].top);
+  }
   for (const year of await items.locator(".timeline-year").allTextContents()) {
     expect(year).not.toMatch(/\bAnos\b/i);
   }
@@ -184,6 +194,12 @@ test("instituto adapta blocos históricos a telas pequenas e mantém fontes leg�
     await expect(page.locator(".institution-purpose-card")).toHaveCount(2);
     await expect(page.locator(".institution-axis")).toHaveCount(4);
     await expect(page.locator(".editorial-timeline li")).toHaveCount(16);
+    for (const index of [1, 4]) {
+      const yearLines = page.locator(".editorial-timeline .timeline-year-range").nth(index === 1 ? 0 : 1).locator("span");
+      const tops = await yearLines.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().top));
+      expect(tops[0]).toBeLessThan(tops[1]);
+      expect(tops[1]).toBeLessThan(tops[2]);
+    }
     await expect(page.locator(".institution-research-card")).toHaveCount(3);
     const overview = page.locator(".institution-history-prose");
     await expect(overview.locator("p")).toHaveCount(2);
