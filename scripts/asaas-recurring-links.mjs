@@ -4,7 +4,7 @@
 // Live payment links must be provisioned by an authorized officer in the
 // IERC's approved Asaas account and then configured server-side.
 const API='https://api-sandbox.asaas.com/v3/paymentLinks';
-const AMOUNTS=[20,50,100];
+const AMOUNTS=[20,50,100,'custom'];
 const METHODS=[
   {id:'pix',billingType:'PIX'},
   {id:'credit',billingType:'CREDIT_CARD'},
@@ -15,9 +15,11 @@ export function plannedLinks(){
     payload:{
       billingType:method.billingType,
       chargeType:'RECURRENT',subscriptionCycle:'MONTHLY',
-      name:'Doação mensal IERC-RN - R$ '+amount.toFixed(2).replace('.',','),
+      name:amount==='custom'
+        ? 'Doação mensal IERC-RN - outro valor'
+        : 'Doação mensal IERC-RN - R$ '+amount.toFixed(2).replace('.',','),
       description:'Contribuição mensal voluntária ao IERC-RN. Para cancelar, entre em contato com o Instituto.',
-      value:amount,notificationEnabled:true,
+      ...(amount==='custom'?{}:{value:amount}),notificationEnabled:true,
       externalReference:'iercrn-donation-'+method.id+'-'+amount,
     },
   })));

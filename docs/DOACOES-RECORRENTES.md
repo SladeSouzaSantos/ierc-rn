@@ -36,7 +36,7 @@ Referências do provedor:
 Página /apoie (Next.js, server-rendered)
   ├─ chave Pix avulsa pública (não cria cobrança)
   ├─ alimentos / limpeza / bazar / contato
-  └─ seletor acessível R$ 20/50/100 × Pix mensal ou cartão de crédito
+  └─ seletor acessível R$ 20/50/100 ou Outro valor × Pix mensal ou cartão de crédito
       ├─ sem configuração/validação do recebedor: botão desabilitado
       └─ com aprovação + URL Asaas HTTPS validada:
             redirect para checkout hospedado pelo Asaas
@@ -48,7 +48,7 @@ Não há formulário de CPF, e-mail, dados de cartão, webhook ou endpoint de cr
 
 ## Sandbox, somente com autorização local
 
-Os valores sugeridos da interface são **R$ 20, R$ 50, R$ 100 por mês**; não representam planos obrigatórios do IERC. Ajustes dependem de consentimento da instituição.
+Os valores sugeridos da interface são **R$ 20, R$ 50, R$ 100 por mês** e **Outro valor**; não representam planos obrigatórios do IERC. Ajustes dependem de consentimento da instituição.
 
 A ferramenta `scripts/asaas-recurring-links.mjs` gera plano offline sem consumir API:
 
@@ -57,7 +57,7 @@ cd /opt/projects/ierc-rn-dev
 node scripts/asaas-recurring-links.mjs --plan
 ```
 
-Com **chave sandbox Asaas própria**, a equipe pode criar seis links de teste (Pix mensal e crédito, três valores cada). Este comando **não aceita produção**:
+Com **chave sandbox Asaas própria**, a equipe pode criar oito links de teste (Pix mensal e crédito, três valores fixos mais um link de valor aberto por método). Nos links abertos, o campo `value` é omitido; o Asaas solicita o valor ao doador na etapa de pagamento. Este comando **não aceita produção**:
 
 ```bash
 # Em terminal privado. Nunca envie token ao chat ou ao GitHub.
@@ -73,7 +73,7 @@ A ferramenta retorna apenas URLs públicas de sandbox; não incorpora credenciai
 ## Ativação de produção — gate institucional, ainda pendente
 
 1. Diretoria confirma **CNPJ, beneficiário bancário, titular da conta Asaas, valores, taxas, política de reembolso, cancelamento e tratamento de dados**. A chave Pix informada **não comprova** que uma conta gateway já está habilitada.
-2. Configurar a conta e gerar em seu **painel Asaas de produção** links reais por valor e meio, com `chargeType=RECURRENT`, `subscriptionCycle=MONTHLY`; Pix `billingType=PIX`, crédito `billingType=CREDIT_CARD`. O preenchimento de cada link deve gerar assinatura no provedor, sem exigir cartão no portal.
+2. Configurar a conta e gerar em seu **painel Asaas de produção** links reais por valor e meio, com `chargeType=RECURRENT`, `subscriptionCycle=MONTHLY`; Pix `billingType=PIX`, crédito `billingType=CREDIT_CARD`. Para `custom`, criar um link específico por método com `value` omitido, mantendo RECURRENT/MONTHLY. O doador confirma a quantia no Asaas. O preenchimento de cada link deve gerar assinatura no provedor, sem exigir cartão no portal.
 3. Conferir visualmente **nome/CPF ou CNPJ recebedor, domínio `www.asaas.com`, valor, periodicidade e custos** em cada link. O provedor alterou gradualmente URLs de `/c/id` para `/000/c/id`; armazenar a URL exata recebida, nunca construí-la a partir de ID.
 4. Inserir exclusivamente no arquivo privado `deploy/.env.portal.dev` ou `deploy/.env.portal.prod` (na pasta e branch correspondente) as variáveis demonstradas em `deploy/donations-recurring.env.example`:
    - `IERCRN_DONATIONS_RECURRING_ENABLED=true`
@@ -81,7 +81,7 @@ A ferramenta retorna apenas URLs públicas de sandbox; não incorpora credenciai
    - `IERCRN_DONATIONS_GATEWAY=asaas`
    - `IERCRN_DONATIONS_RECEIVER_CNPJ=08049504000108`
    - `IERCRN_DONATIONS_HOSTED_LINKS_JSON='{"pix":{"20":"<URL REAL>"},"credit":{"20":"<URL REAL>"}}'` — exemplo com placeholders, **não usar URLs inventadas**
-5. Recriar apenas o serviço portal para recarregar variáveis de ambiente **após autorização**. O código verifica domínio HTTPS e links `/c/` com ou sem prefixo de conta; se a configuração for inválida, bloqueia o checkout inteiro. Nunca usar link sandbox em PROD.
+5. Recriar apenas o serviço portal para recarregar variáveis de ambiente **após autorização**. O código verifica domínio HTTPS e links `/c/` com ou sem prefixo de conta; aceita chaves `20`, `50`, `100` e `custom`; se a configuração for inválida, bloqueia o checkout inteiro. Nunca usar link sandbox em PROD.
 6. Realizar assinatura de teste autorizada **somente no ambiente homologado**, observar estado da cobrança no provedor, cancelamento, tentativa de renovação e comprovante. Validar WCAG, teclado e leitor de tela na página hospedada também.
 7. Definir responsável pela conciliação e prestação de contas. **Não** interpretar um link criado ou redirecionamento como doação efetivamente recebida.
 
@@ -95,3 +95,13 @@ Apenas após o gate 7 o IERC poderá divulgar o checkout como forma ativa de arr
 - **Acessibilidade humana:** NVDA/VoiceOver/TalkBack, reflow 320 CSS px, zoom 200%/400% e conformidade visual do checkout hospedado.
 
 Documentação relacionada: [Issue #4](https://github.com/SladeSouzaSantos/ierc-rn/issues/4), [Issue #9](https://github.com/SladeSouzaSantos/ierc-rn/issues/9), [Aprovações institucionais](CONTEUDO-E-APROVACOES.md).
+
+## Outros valores e ativação de checkout
+
+- **Outro valor** aparece junto de R$ 20/50/100. Entrada válida entre R$ 5,00 e R$ 100.000,00, com até duas casas decimais. Valores inválidos não liberam checkout.
+- **O valor digitado é somente uma prévia local.** O portal não o transmite ao provedor nem altera a URL. A pessoa deve digitar novamente e confirmar o valor e a recorrência mensal no Asaas.
+- A diretoria precisa criar na conta PJ do IERC um link por método (Pix ou crédito), com `chargeType=RECURRENT`, `subscriptionCycle=MONTHLY` e campo `value` **omitido**. Conferir no sandbox e na conta aprovada a efetiva recorrência, beneficiário, tarifas e cancelamento.
+- A documentação do Asaas confirma links de cobrança recorrente com valor aberto: https://docs.asaas.com/reference/criar-um-link-de-pagamentos
+- Para liberar checkout, após validar links oficiais HTTPS, preencher as variáveis privadas do portal como orientado na seção anterior. O JSON de links admite agora a chave `custom` por método, por exemplo: `{"pix":{"custom":"<LINK REAL>","20":"<LINK REAL>"},"credit":{"custom":"<LINK REAL>"}}`. Os placeholders NÃO são links válidos.
+- **Não publicar credenciais ou links de terceiros no repositório.** Não habilitar `IERCRN_DONATIONS_RECEIVER_VERIFIED` antes da confirmação institucional. O merge sozinho não ativa pagamento, e teste de links não equivale à conciliação de recebimento.
+- Se um método não possuir link `custom` homologado, apenas aquela combinação fica indisponível; os valores fixos já homologados continuam funcionais.

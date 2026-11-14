@@ -5,7 +5,20 @@
 export const DONATION_MONTHLY_AMOUNTS = [20, 50, 100] as const;
 export type MonthlyAmount = typeof DONATION_MONTHLY_AMOUNTS[number];
 export type MonthlyMethod = "pix" | "credit";
-export type MonthlyLinks = Record<MonthlyMethod, Partial<Record<MonthlyAmount, string>>>;
+export type MonthlyAmountChoice = MonthlyAmount | "custom";
+export type MonthlyLinks = Record<MonthlyMethod, Partial<Record<MonthlyAmountChoice, string>>>;
+
+/** Only a preview: the donor must confirm their chosen amount in Asaas.
+ * Do not send this free-form text to a payment URL or query parameter.
+ */
+export function parseCustomMonthlyAmount(value: string): number | null {
+  const input = value.trim();
+  if (!/^\d{1,6}(?:[.,]\d{1,2})?$/.test(input)) return null;
+  const amount = Number(input.replace(",", "."));
+  return Number.isFinite(amount) && amount >= 5 && amount <= 100000
+    ? amount
+    : null;
+}
 export type MonthlyDonationConfig = {
   enabled: boolean;
   links: MonthlyLinks;
@@ -69,10 +82,10 @@ export function resolveRecurringDonationConfig(
       }
       const values = group as Record<string, unknown>;
       if (Object.keys(values).some(key =>
-        !DONATION_MONTHLY_AMOUNTS.some(amount => String(amount) === key))) {
+        key !== "custom" && !DONATION_MONTHLY_AMOUNTS.some(amount => String(amount) === key))) {
         return { enabled: false, links: { pix: {}, credit: {} } };
       }
-      for (const amount of DONATION_MONTHLY_AMOUNTS) {
+      for (const amount of [...DONATION_MONTHLY_AMOUNTS, "custom"] as const) {
         if (values[String(amount)] === undefined) continue;
         const link = safeHostedCheckoutUrl(values[String(amount)]);
         if (!link) {
