@@ -299,3 +299,32 @@ test('publication-ready diagnostics identify only a static field and violated ru
   assert.equal(validateDraft(JSON.stringify(legacy)).summary,legacy.summary);
   assert.equal(validatePublicationReadyDraft('{"skip":true}'),null);
 });
+
+
+test('live auto publisher rejects unsourced names before writing a CMS Draft',async()=>{
+  let cmsWrites=0,publisherCalls=0,requests=0,unlocks=0;
+  const invalid={...reviewDraft,
+    body:reviewDraft.body+
+      ' O ministro Leonardo Barchin anunciou uma nova política.'};
+  const router={async complete(){requests++;return {
+    provider:'groq',content:JSON.stringify(invalid),
+  };}};
+  const store={
+    async set(){return 'OK';},async exists(){return 0;},
+    async eval(){unlocks++;return 1;},
+  };
+  const cms={
+    async existing(){return false;},
+    async create(){cmsWrites++;throw Error('no unsourced draft should be written');},
+  };
+  const publisher={async publishApprovedDraft(){publisherCalls++;}};
+  const result=await processArticle(reviewSource,{
+    dryRun:false,autoPublish:true,router,store,cms,publisher,
+    fullArticleEvidence:approvedEvidence,
+  });
+  assert.equal(result.status,'invalid_draft');
+  assert.equal(requests,1);
+  assert.equal(cmsWrites,0);
+  assert.equal(publisherCalls,0);
+  assert.equal(unlocks,1);
+});

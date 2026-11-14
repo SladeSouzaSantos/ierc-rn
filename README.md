@@ -4,7 +4,7 @@ Primeira versão de homologação do portal do **Instituto de Educação e Reabi
 
 O site apresenta as frentes de educação, reabilitação, cultura e esporte, com espaço para goalball, histórias, notícias, eventos, galerias, bazar solidário, visitas e apoio à instituição.
 
-> **Status:** Sprints 1 e 1.1 integradas à `main` pelo PR #5; Sprint 2 (conteúdo e nove perfis esportivos) integrada à `main` pelo PR #11. Sprints 3.1 (CMS) e 3.2.1 (Radar da Inclusão / curadoria IA gratuita) em implementação e homologação na `dev`; a `main` permanece com a baseline da Sprint 2. Este portal ainda não foi homologado para lançamento institucional público: faltam testes manuais com tecnologias assistivas e validação dos conteúdos e acervo. A logo integrada tem baixa resolução e poderá ser substituída por original de maior qualidade.
+> **Status — 14/11/2026:** Portal Next.js, CMS Strapi e Radar/curadoria integrados ao código de `dev` e `main`. O operador confirmou o worker PROD no MiniMac com `schedule_started`, `autoPublish:true`, `writeDrafts:true` e horários 08h/13h/19h (America/Fortaleza); isso comprova a inicialização do agendador, **não** uma publicação automática end-to-end. Uma notícia do Enem foi copiada e publicada **manualmente** no Strapi pelo operador, separada dos históricos de revisões retidas da IA. O portal ainda exige homologação institucional, de mídias e acessibilidade manual (zoom/leitores de tela).
 
 A separação entre CMS DEV existente e PROD futura (Docker, PostgreSQL, volumes e credenciais) está documentada em [CMS: ambientes e diagnóstico](docs/CMS-ENVIRONMENTS.md). **Não é necessário alterar o Docker local para consultar a lentidão do painel.**
 
@@ -12,7 +12,7 @@ A separação entre CMS DEV existente e PROD futura (Docker, PostgreSQL, volumes
 
 O operador aprovou a preparação de geração agendada e publicação automática controlada. A ativação **não acontece por git pull**: é necessário criar um token Custom separado para o publicador, conferir licença da matéria, fazer backup com restauração ensaiada, executar o pré-check e homologar `once` antes de iniciar o worker persistente. O cron DEV roda às **08h, 13h e 19h (America/Fortaleza)**, com uma única candidata por horário e fallback **Groq → Gemini → OpenRouter**. Somente fontes EBC originais autorizadas podem publicar automaticamente; se não houver evidência suficiente, a matéria não será publicada. O curador da MAIN/PROD tem opt-in separado, sem ligação automática com a DEV: sua ativação exige backup/restauração PROD, tokens Custom próprios e pré-check de modelos gratuitos.
 
-Guia DEV: [ativação supervisionada](docs/ATIVACAO-CURADORIA-AUTOMATICA-MINIMAC.md). Guia PROD: [publicação automática com LLMs gratuitas no MiniMac](docs/CURADORIA-AUTOMATICA-PROD-MINIMAC.md). Os dois schedulers, Redis e tokens Strapi são isolados; o monitor RSS somente leitura da DEV permanece independente.
+Guia DEV: [ativação supervisionada](docs/ATIVACAO-CURADORIA-AUTOMATICA-MINIMAC.md). Guia PROD: [publicação automática com LLMs gratuitas no MiniMac](docs/CURADORIA-AUTOMATICA-PROD-MINIMAC.md). Os dois schedulers, Redis e tokens Strapi são isolados; o monitor RSS somente leitura da DEV permanece independente. A [validação geral de qualidade factual](docs/CURADORIA-GATES-FATUAIS.md) detalha o filtro de nomes, números e público-alvo, o limite de correções e a revisão independente.
 
 ### Descoberta RSS ampliada e foco editorial — 11/11/2026
 

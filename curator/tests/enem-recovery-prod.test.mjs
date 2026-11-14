@@ -152,7 +152,7 @@ test('check refuses absent previous markers, used recovery claim and exhausted q
     .canRecover,false);
 });
 
-test('one controlled recovery publishes ONLY on independent factual approval',async()=>{
+test('recovery also refuses AI APPROVE when evidence omits original Enem figures and audience claim',async()=>{
   const f=fixture();
   let calls=0;
   f.args.router={
@@ -164,8 +164,9 @@ test('one controlled recovery publishes ONLY on independent factual approval',as
     },
   };
   const result=await runEnemAiProd(f.args);
-  assert.equal(result.status,'draft_published');
-  assert.equal(f.publishes,1);
+  assert.equal(result.status,'draft_review_pending');
+  assert.equal(result.reason,'source_claims_unverified');
+  assert.equal(f.publishes,0);
   assert.equal(calls,1);
   assert.equal(f.stored.get(keys.previous),'claimed');
   assert.equal(f.stored.get(keys.diagnostic),'claimed');
@@ -174,7 +175,7 @@ test('one controlled recovery publishes ONLY on independent factual approval',as
   const replay=await runEnemAiProd(f.args);
   assert.deepEqual(replay,{status:'already_attempted',reason:'revision_locked'});
   assert.equal(calls,1);
-  assert.equal(f.publishes,1);
+  assert.equal(f.publishes,0);
 });
 
 test('factual HOLD and failed repair never publish or reopen recovery claim',async()=>{

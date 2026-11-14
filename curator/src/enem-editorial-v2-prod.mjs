@@ -171,7 +171,8 @@ export async function runEnemV2({mode,publisher,articleReader,redis,
       // Persist objections/corrected draft from last known stage even when
       // a provider returns invalid output. Never reopen the claimed journal.
       const permitted=new Set(['ai_review_hold','rewrite_unavailable',
-        'review_unavailable','unchanged_draft','insufficient_evidence']);
+        'review_unavailable','unchanged_draft','insufficient_evidence',
+        'source_claims_unverified']);
       await persist(permitted.has(verdict.reason)?
         verdict.reason:'ai_review_hold','terminal');
       logger({event:'enem_v2_editorial_held',

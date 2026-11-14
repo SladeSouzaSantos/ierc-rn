@@ -26,7 +26,8 @@ function normalizedRecord(record){
      record.correctionsDone>2||
      !['in_progress','ai_review_hold','rewrite_unavailable',
        'review_unavailable','unchanged_draft','insufficient_evidence',
-       'approved','publication_failed','published'].includes(record.outcome)||
+       'source_claims_unverified','approved','publication_failed',
+       'published'].includes(record.outcome)||
      !Array.isArray(record.history)||record.history.length>3)
     throw new Error('Invalid private audit state');
   const draft=validateDraft(JSON.stringify(record.draft));
