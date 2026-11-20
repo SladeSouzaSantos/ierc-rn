@@ -1,3 +1,6 @@
+# Atualizacoes rotineiras suspensas durante a consolidacao das branches main/dev.
+# Reativar os limites apos revisar as pendencias em #73.
+# Alertas de seguranca do GitHub devem permanecer habilitados nas configuracoes do repositorio.
 version: 2
 updates:
   - package-ecosystem: "npm"
@@ -6,25 +9,25 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 4
+    open-pull-requests-limit: 0
   - package-ecosystem: "npm"
     directory: "/cms"
     target-branch: "dev"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 4
+    open-pull-requests-limit: 0
   - package-ecosystem: "npm"
     directory: "/curator"
     target-branch: "dev"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 4
+    open-pull-requests-limit: 0
   - package-ecosystem: "github-actions"
     directory: "/"
     target-branch: "dev"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 4
+    open-pull-requests-limit: 0
