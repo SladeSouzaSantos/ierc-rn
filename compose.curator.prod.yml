@@ -5,6 +5,7 @@ name: ierc-rn-curator-prod
 services:
   redis:
     image: redis:7-alpine
+    user: "999:1000"
     restart: unless-stopped
     profiles: [curator]
     command: ["redis-server","--appendonly","yes","--maxmemory-policy","noeviction"]
