@@ -5,6 +5,7 @@ import {
   PersonStanding, ShoppingBag, Sparkles, Trophy, Users, Volleyball
 } from "lucide-react";
 import { HeroArt } from "@/components/hero-art";
+import { EditorialMotif } from "@/components/editorial-motif";
 import { GoalballScene } from "@/components/goalball-scene";
 import { getDisplayActivities } from "@/lib/cms";
 
@@ -17,11 +18,11 @@ export default async function Home() {
   const activities = await getDisplayActivities();
   return (
     <>
-      <section className="hero" aria-labelledby="hero-titulo">
+      <section className="hero premium-cover" aria-labelledby="hero-titulo">
         <div className="container hero-layout">
           <div className="hero-copy">
             <div className="hero-label"><span className="label-dot" /> Educação, reabilitação e inclusão no RN <span className="hero-label-year">Desde 1952</span></div>
-            <h1 id="hero-titulo">O que transforma vidas é <em>abrir possibilidades.</em></h1>
+            <h1 id="hero-titulo"><span className="cover-statement">O que transforma vidas é</span>{" "}<em>abrir possibilidades.</em></h1>
             <p className="hero-lead">No IERC-RN, educação, autonomia, cultura e esporte caminham juntos. Conheça histórias, projetos e formas de fazer parte dessa jornada.</p>
             <div className="hero-actions">
               <Link href="/instituto" className="button button-yellow">Conheça o Instituto <ArrowUpRight size={19} aria-hidden="true" /></Link>
@@ -33,11 +34,27 @@ export default async function Home() {
         </div>
       </section>
 
+      <nav className="chapter-index" aria-label="Explore a página inicial">
+        <div className="container chapter-index-inner">
+          <span className="chapter-index-label">Explore o IERC</span>
+          <a href="#atuacao"><span aria-hidden="true">01</span> Nossa essência <ArrowUpRight size={15} aria-hidden="true"/></a>
+          <a href="#atividades"><span aria-hidden="true">02</span> Atuação <ArrowUpRight size={15} aria-hidden="true"/></a>
+          <a href="#esporte"><span aria-hidden="true">03</span> Esporte <ArrowUpRight size={15} aria-hidden="true"/></a>
+          <a href="#participar"><span aria-hidden="true">04</span> Participação <ArrowUpRight size={15} aria-hidden="true"/></a>
+        </div>
+      </nav>
+
       <section className="intro-section section-pad" id="atuacao">
         <div className="container">
+          <div className="chapter-kicker" aria-hidden="true"><span>01 / Essência</span><span>Educação · Autonomia · Comunidade</span></div>
           <div className="section-heading two-col-heading">
             <div><p className="eyebrow">Nossa essência</p><h2>Mais do que aprender. <span>É poder escolher caminhos.</span></h2></div>
             <div className="heading-aside"><p>O Instituto de Educação e Reabilitação de Cegos do Rio Grande do Norte atua na promoção de habilidades, convivência e participação de pessoas com deficiência visual.</p><Link className="inline-link" href="/instituto">Nossa história <ArrowUpRight size={18} aria-hidden="true" /></Link></div>
+          </div>
+          <div className="heritage-panel">
+            <div className="heritage-year"><span>Desde</span><strong>1952</strong><span>Rio Grande do Norte</span></div>
+            <EditorialMotif variant="instituto" className="heritage-art" animate />
+            <div className="heritage-note"><p>Uma história que atravessa gerações.</p><Link href="/instituto" className="inline-link">Percorra nossa história <ArrowUpRight size={18} aria-hidden="true"/></Link></div>
           </div>
           <div className="principle-grid">
             <article className="principle-card"><span className="principle-number">01 /</span><GraduationCap aria-hidden="true" size={32}/><h3>Educação</h3><p>O conhecimento como ferramenta de autonomia e novas oportunidades.</p></article>
@@ -49,22 +66,25 @@ export default async function Home() {
 
       <section className="activities-section section-pad" id="atividades">
         <div className="container">
+          <div className="chapter-kicker" aria-hidden="true"><span>02 / Atuação</span><span>Aprender de diferentes formas</span></div>
           <div className="section-heading row-heading"><div><p className="eyebrow">O que fazemos</p><h2>Oito atividades.<br/><span>Muitas descobertas.</span></h2></div><Link href="/atividades" className="inline-link">Todas as atividades <ArrowUpRight size={18} aria-hidden="true" /></Link></div>
           <div className="activity-grid">
             {activities.map((activity, index) => {
               const Icon = icons[index] ?? Sparkles;
               return <Link href={"/atividades#" + activity.id} className="activity-card" key={activity.id}>
-                <div className="activity-top"><span className="activity-icon"><Icon size={27} strokeWidth={1.65} aria-hidden="true" /></span><ArrowUpRight size={20} aria-hidden="true" /></div>
-                <p className="activity-type">{activity.category}</p><h3>{activity.title}</h3><p>{activity.description}</p>
+                <div className="activity-top"><span className="activity-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><span className="activity-icon"><Icon size={27} strokeWidth={1.65} aria-hidden="true" /></span></div>
+                <div className="activity-copy"><p className="activity-type">{activity.category}</p><h3>{activity.title}</h3><p>{activity.description}</p></div>
+                <span className="activity-direction" aria-hidden="true"><ArrowUpRight size={21}/></span>
               </Link>;
             })}
           </div>
         </div>
       </section>
 
-      <section className="sport-section" aria-labelledby="goalball-title">
+      <section className="sport-section" id="esporte" aria-labelledby="goalball-title">
         <div className="container sport-layout">
           <div className="sport-copy">
+            <div className="chapter-kicker chapter-kicker-light" aria-hidden="true"><span>03 / Esporte</span></div>
             <p className="eyebrow light">Esporte que faz história</p>
             <h2 id="goalball-title">O som da bola.<br/><em>A força de uma equipe.</em></h2>
             <p>O goalball faz parte da vida esportiva do IERC-RN. A instituição participa de competições, forma atletas e revela talentos que representam o Rio Grande do Norte e o Brasil.</p>
@@ -77,12 +97,19 @@ export default async function Home() {
 
       <section className="stories-section section-pad">
         <div className="container stories-layout">
-          <div className="stories-symbol" aria-hidden="true"><span>“</span><span className="symbol-footnote">Histórias em construção</span></div>
+          <div className="stories-symbol" aria-hidden="true">
+            <EditorialMotif variant="historias" className="stories-art" animate />
+            <span className="symbol-footnote">Trajetórias · IERC-RN</span>
+          </div>
           <div className="stories-copy"><p className="eyebrow">Trajetórias</p><h2>Cada conquista começa com a chance de <em>descobrir seu próprio caminho.</em></h2><p>Conheça trajetórias de atletas cuja passagem pelo IERC-RN está registrada em fontes públicas, da descoberta do esporte às conquistas nacionais e internacionais.</p><Link className="inline-link" href="/historias">Conheça as trajetórias <ArrowUpRight size={18} aria-hidden="true"/></Link></div>
         </div>
       </section>
 
-      <section className="community-section section-pad">
+      <section className="community-section section-pad" id="participar">
+        <div className="container">
+          <div className="chapter-kicker" aria-hidden="true"><span>04 / Participação</span><span>Faça parte dessa história</span></div>
+          <div className="community-heading"><p className="eyebrow">Juntos, ampliamos possibilidades</p><h2>Há muitas maneiras de <em>fazer parte.</em></h2></div>
+        </div>
         <div className="container community-layout">
           <div className="bazar-card">
             <div className="bazar-icon" aria-hidden="true"><ShoppingBag size={35} strokeWidth={1.5}/></div>
@@ -103,6 +130,7 @@ export default async function Home() {
             <Link className="update-card" href="/eventos"><span className="update-glyph"><CalendarDays size={36} aria-hidden="true"/></span><span className="update-category">Agenda</span><h3>Encontros, apresentações e eventos</h3><p>A programação oficial poderá ser consultada aqui quando for disponibilizada.</p><ArrowUpRight className="update-arrow" size={21} aria-hidden="true"/></Link>
             <Link className="update-card" href="/galeria"><span className="update-glyph"><CircleHelp size={36} aria-hidden="true"/></span><span className="update-category">Galeria</span><h3>Registros de quem faz o IERC</h3><p>Fotos e vídeos com descrições acessíveis e uso autorizado.</p><ArrowUpRight className="update-arrow" size={21} aria-hidden="true"/></Link>
           </div>
+          <Link className="radar-home-link" href="/radar-da-inclusao"><div><span className="eyebrow">Brasil e mundo</span><strong>Radar da Inclusão</strong><span>Conheça iniciativas, acessibilidade e experiências de outras organizações.</span></div><ArrowUpRight size={28} aria-hidden="true"/></Link>
         </div>
       </section>
 
