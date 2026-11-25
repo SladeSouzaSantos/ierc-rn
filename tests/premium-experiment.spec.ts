@@ -115,3 +115,17 @@ test("discovery: capa de página inteira, cena decorativa e redução de movimen
   await expect(art).toHaveAttribute("data-scene-motion", "static");
   await expect(art.locator(".cover-paths")).toHaveCSS("transform", "none");
 });
+
+test("discovery: gate de composição nas larguras de referência 1440, 768 e 390", async ({ page, isMobile }, testInfo) => {
+  test.skip(isMobile, "O projeto desktop reproduz as três larguras no mesmo navegador.");
+  test.setTimeout(60_000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const width of [1440, 768, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    await expect(page.locator(".cover-headline h1")).toBeVisible();
+    await expect(page.locator(".hero-art-illustration")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: testInfo.outputPath(`discovery-cover-${width}.png`), animations: "disabled" });
+  }
+});

@@ -182,3 +182,8 @@ html:not([data-high-contrast="true"]) [data-editorial-variant="atividades"] .int
   .discovery-history .heritage-year strong { font-size:4.7rem; }
 }
 @media print { .discovery-art,.cover-paths { display:none!important; } }
+
+/* Explicitly preserve the institution's high-contrast mode on the new dark panels. */
+html[data-high-contrast="true"] .discovery-history .heritage-note p { color:#fff; }
+html[data-high-contrast="true"] .discovery-history .heritage-art { display:none; }
+html[data-high-contrast="true"] .discovery-history .heritage-note { border-color:#fff; }
