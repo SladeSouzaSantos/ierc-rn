@@ -27,12 +27,12 @@ html[data-high-contrast="true"] .hero-art::before, html[data-high-contrast="true
 .hero-copy h1 { letter-spacing: -.058em; }
 .hero-label-year { border-color: #c8d7ed80; }
 .hero-mini { border-top: 1px solid #d1e4fa38; padding-top: 16px; max-width: 530px; }
-@keyframes premium-relief-in {
-  from { opacity: .25; transform: scale(.96); }
-  to { opacity: .65; transform: scale(1); }
+@keyframes premium-art-in {
+  from { opacity: .72; }
+  to { opacity: 1; }
 }
 @media (prefers-reduced-motion:no-preference) {
-  html:not([data-reduce-motion="true"]):not([data-high-contrast="true"]) .hero-art::before { animation: premium-relief-in 650ms var(--premium-ease-out) both; }
+  html:not([data-reduce-motion="true"]):not([data-high-contrast="true"]) .hero-art-visual { animation: premium-art-in 650ms var(--premium-ease-out) both; }
 }
 /* A deliberate rhythm: editorial dividers, asymmetric activity cards, distinct sections. */
 html:not([data-high-contrast="true"]) .intro-section { background: #fbfaf7; }
@@ -113,8 +113,8 @@ html:not([data-high-contrast="true"]) .location-map { border-radius: 12px; }
 .activity-card:hover,.update-card:hover { transform: none; box-shadow: none; }
 @media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
   html:not([data-reduce-motion="true"]) .button:not(:disabled):active:not(:focus-visible) { transform: scale(.97); }
-  html:not([data-reduce-motion="true"]) :is(.text-action,.inline-link,.button,.activity-card,.update-card) svg:last-child { transition: transform 160ms var(--premium-ease-out); }
-  html:not([data-reduce-motion="true"]) :is(.text-action,.inline-link,.button,.activity-card,.update-card):hover:not(:focus-visible) svg:last-child { transform: translate(3px,-2px); }
+  html:not([data-reduce-motion="true"]) :is(.text-action,.inline-link,.button) > svg:last-child, html:not([data-reduce-motion="true"]) .activity-top > svg:last-child, html:not([data-reduce-motion="true"]) .update-arrow { transition: transform 160ms var(--premium-ease-out); }
+  html:not([data-reduce-motion="true"]) :is(.text-action,.inline-link,.button):hover:not(:focus-visible) > svg:last-child, html:not([data-reduce-motion="true"]) .activity-card:hover:not(:focus-visible) .activity-top > svg:last-child, html:not([data-reduce-motion="true"]) .update-card:hover:not(:focus-visible) .update-arrow { transform: translate(3px,-2px); }
 }
 @media (max-width:760px) {
   html:not([data-high-contrast="true"]) .principle-card + .principle-card { border-left: 0; border-top: 1px solid var(--premium-line); }
@@ -129,10 +129,10 @@ html:not([data-high-contrast="true"]) .location-map { border-radius: 12px; }
   .interior-hero h1 { overflow-wrap: anywhere; }
 }
 @media (prefers-reduced-motion:reduce) {
-  .hero-art::before { animation: none !important; }
+  .hero-art-visual { animation: none !important; }
   .button:active,.button:hover,.activity-card:hover,.update-card:hover { transform: none !important; }
 }
-html[data-reduce-motion="true"] .hero-art::before { animation: none !important; }
+html[data-reduce-motion="true"] .hero-art-visual { animation: none !important; }
 html[data-reduce-motion="true"] :is(.button,.activity-card,.update-card):hover,
 html[data-reduce-motion="true"] .button:active { transform: none !important; }
 @media print { .hero-art::before,.hero-art::after { display: none; } }
