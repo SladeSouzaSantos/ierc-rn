@@ -17,6 +17,7 @@ export default async function RadarDaInclusaoPage() {
   const articles = await getCmsRadarNews();
   return <>
     <PageHero
+      variant="radar"
       eyebrow="Acessibilidade · conhecimento · participação"
       title="Radar da Inclusão"
       description="Notícias e experiências de outras organizações, apresentadas em português com identificação da fonte original."

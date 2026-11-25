@@ -63,7 +63,7 @@ export default async function ContentPage({ params }: RouteProps) {
 
   return (
     <>
-      <PageHero {...entry} />
+      <PageHero {...entry} variant={slug} />
       <div className="container interior-body">
         {slug === "instituto" && <InstitutionStory />}
 

@@ -90,7 +90,7 @@ export default async function Home() {
           </div>
           <div className="visit-card">
             <div className="visit-icon" aria-hidden="true"><Users size={35} strokeWidth={1.5}/></div>
-            <p className="eyebrow">Portas abertas</p><h2>Venha conhecer <em>de perto.</em></h2><p>Escolas, universidades e grupos poderão consultar informações sobre excursões e visitas ao Instituto. O agendamento oficial será integrado em breve.</p><Link className="inline-link" href="/visitas">Sobre as visitas <ArrowUpRight size={18} aria-hidden="true" /></Link><span className="visit-shape" aria-hidden="true" />
+            <p className="eyebrow">Portas abertas</p><h2>Venha conhecer <em>de perto.</em></h2><p>Escolas, universidades e grupos podem consultar orientações e solicitar uma visita pelo formulário oficial do Instituto.</p><Link className="inline-link" href="/visitas">Sobre as visitas <ArrowUpRight size={18} aria-hidden="true" /></Link><span className="visit-shape" aria-hidden="true" />
           </div>
         </div>
       </section>

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-export function PageHero({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
+export function PageHero({ eyebrow, title, description, variant = "editorial" }: { eyebrow: string; title: string; description: string; variant?: string }) {
   return (
-    <section className="interior-hero">
+    <section className="interior-hero" data-editorial-variant={variant}>
       <div className="container">
         <Link className="back-link" href="/"><ArrowLeft size={17} aria-hidden="true" /> Voltar ao início</Link>
         <p className="eyebrow light">{eyebrow}</p>
