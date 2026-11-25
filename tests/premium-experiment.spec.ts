@@ -73,3 +73,22 @@ test("premium: página de erro mantém recuperação acessível", async ({ page 
   await expect(page.getByRole("link", { name: "Voltar ao início" })).toHaveAttribute("href", "/");
   await page.screenshot({ path: testInfo.outputPath("premium-404.png"), fullPage: true, animations: "disabled" });
 });
+
+test("premium v2: capítulos, índice editorial, arte por contexto e motion opt-in", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-ui-experiment", "editorial-v2");
+  await expect(page.getByRole("navigation", { name: "Explore a página inicial" }).getByRole("link")).toHaveCount(4);
+  await expect(page.locator(".heritage-year strong")).toHaveText("1952");
+  await expect(page.locator(".activity-card .activity-index")).toHaveCount(8);
+  const motif = page.locator(".heritage-art");
+  await motif.scrollIntoViewIfNeeded();
+  await expect(motif).toHaveAttribute("data-motif-motion", "entered");
+  await page.getByRole("button", { name: "Acessibilidade", exact: true }).click();
+  await page.getByRole("checkbox", { name: "Reduzir animações" }).check();
+  await expect(motif.locator(".motif-gesture")).toHaveCSS("animation-name", "none");
+  await page.goto("/radar-da-inclusao");
+  await expect(page.locator(".interior-cover-art")).toHaveAttribute("data-motif", "signal");
+  await page.goto("/atividades");
+  await expect(page.locator(".interior-cover-art")).toHaveAttribute("data-motif", "grid");
+});

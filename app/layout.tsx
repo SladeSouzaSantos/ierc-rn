@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" data-ui-experiment="editorial-v2">
       {/* Extensões como ColorZilla podem injetar atributos no body antes da hidratação.
           Suprimimos apenas diferenças de atributos nesse elemento raiz, sem ocultar
           problemas de hidratação nos componentes internos. */}

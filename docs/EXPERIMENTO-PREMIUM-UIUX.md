@@ -46,3 +46,14 @@ Curvas de referência: ease-out cubic-bezier(0.23,1,0.32,1); ease-in-out cubic-b
 - Manter suite original, acrescentar smoke de todas as rotas, reflow 320px, reduced motion (sistema e painel), contraste, foco e capturas desktop/mobile.
 - Verificar pessoalmente aparência com CMS real, leitores de tela, zoom e pessoas usuárias antes de qualquer proposta de merge.
 - Não declarar avaliação Awwwards, conformidade WCAG completa, performance medida ou homologação humana com base apenas em CSS e CI.
+
+## Iteração 02 — transformação estrutural
+
+A primeira iteração foi avaliada pelo operador como visualmente discreta, apesar da importação CSS confirmada no navegador e da CI aprovada. Esta segunda iteração substitui padrões repetitivos, em vez de acrescentar somente uma camada cosmética.
+
+- Capa editorial: título em dois planos, imagem institucional existente, luz cromática e relevo abstrato.
+- Índice de capítulos navegável por âncoras, manifesto histórico de 1952, catálogo numerado de atividades (preserva links e ordem DOM), painel de trajetórias com arte vetorial original e acesso direto ao Radar.
+- Cinco famílias de grafismos abstratos — patrimônio, órbita, grade, sinal e conexão — nos cabeçalhos internos. Não representam Braille nem fotografias do instituto.
+- Uma entrada decorativa por elemento em viewport, com IntersectionObserver, CSS transform/opacity (1,05 s), sem esconder texto ou conteúdo com JS desligado, sem repetir ao rolar. Preferências local/sistema cancelam o movimento; alto contraste suprime grafismos. Capa tem entrada finita de opacidade (900 ms); cena explicativa goalball preservada.
+- Marcador verificável `data-ui-experiment="editorial-v2"` no HTML; sem alterações de infraestrutura, tokens, CMS, fontes de dados ou dependências.
+- Validar desktop, mobile, largura 320 px, axe, preferências e revisão humana de aparência. Não há merge nem deploy.
