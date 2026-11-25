@@ -58,3 +58,6 @@ tmp/
 .vscode/.history/
 *.swp
 *.swo
+
+# Local licensed experimental photos (download explicitly; never during runtime)
+/public/experiment-photos/

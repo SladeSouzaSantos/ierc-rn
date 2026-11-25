@@ -1,0 +1,57 @@
+[
+  {
+    "id": "braille",
+    "file": "braille.jpg",
+    "title": "Reading Braille",
+    "author": "Stefan Malmesjö",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Reading_Braille.jpg",
+    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c6/Reading_Braille.jpg/1280px-Reading_Braille.jpg",
+    "alt": "Dedo tocando os pontos em relevo de uma página em Braille."
+  },
+  {
+    "id": "touch",
+    "file": "touch.jpg",
+    "title": "A person reading a braille book",
+    "author": "antonioxalonso",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:A_person_reading_a_braille_book.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/6/66/A_person_reading_a_braille_book.jpg",
+    "alt": "Duas pontas de dedos sobre uma folha com escrita em Braille."
+  },
+  {
+    "id": "music",
+    "file": "music.jpg",
+    "title": "Fingers on the piano keys (Unsplash)",
+    "author": "Gabriel Barletta",
+    "license": "CC0 1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Fingers_on_the_piano_keys_(Unsplash).jpg",
+    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/85/Fingers_on_the_piano_keys_(Unsplash).jpg/1280px-Fingers_on_the_piano_keys_(Unsplash).jpg",
+    "alt": "Mãos tocando as teclas de um piano."
+  },
+  {
+    "id": "mobility",
+    "file": "mobility.jpg",
+    "title": "Percorso tattile per non vedenti e ipovedenti",
+    "author": "Marica Massaro",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Percorso_tattile_per_non_vedenti_e_ipovedenti.jpg",
+    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/be/Percorso_tattile_per_non_vedenti_e_ipovedenti.jpg/960px-Percorso_tattile_per_non_vedenti_e_ipovedenti.jpg",
+    "alt": "Piso direcional tátil em uma calçada de Avezzano, Itália."
+  },
+  {
+    "id": "goalball",
+    "file": "goalball.jpg",
+    "title": "GoalBall",
+    "author": "Rubens Chaves",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:GoalBall.jpg",
+    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/GoalBall.jpg/1280px-GoalBall.jpg",
+    "alt": "Atletas de goalball junto à rede na competição feminina dos Jogos Paralímpicos Rio 2016."
+  }
+]
