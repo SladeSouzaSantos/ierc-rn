@@ -33,99 +33,68 @@ for (const [route, variant] of routes) {
   });
 }
 
-test("premium: arte hero tem entrada finita; preferência local desativa animação", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
+test("beyond: cinco capítulos, créditos e conteúdo essencial disponível", async ({ page }) => {
   await page.goto("/");
-  const art = page.locator(".hero-art-visual");
-  await expect(art).toHaveCSS("animation-iteration-count", "1");
-  await expect(art).toHaveCSS("animation-name", "discovery-art-in");
-  await page.getByRole("button", { name: "Acessibilidade", exact: true }).click();
-  await page.getByRole("checkbox", { name: "Reduzir animações" }).check();
-  await expect(art).toHaveCSS("animation-name", "none");
-  await page.getByRole("checkbox", { name: "Alto contraste" }).check();
-  await expect(page.locator("html")).toHaveAttribute("data-high-contrast", "true");
-  await expect(page.locator(".hero")).toHaveCSS("background-color", "rgb(0, 0, 0)");
-});
-
-test("premium: preferências do sistema não ocultam conteúdo sem JavaScript", async ({ browser }, testInfo) => {
-  const context = await browser.newContext({
-    baseURL: "http://127.0.0.1:3000",
-    javaScriptEnabled: false,
-    reducedMotion: "reduce",
-    viewport: { width: testInfo.project.name.includes("mobile") ? 390 : 1440, height: 900 },
-  });
-  try {
-    const page = await context.newPage();
-    await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.locator(".hero-art-visual")).toHaveCSS("animation-name", "none");
-    await expect(page.getByRole("link", { name: "Conheça o Instituto" }).first()).toBeVisible();
-  } finally {
-    await context.close();
-  }
-});
-
-test("premium: página de erro mantém recuperação acessível", async ({ page }, testInfo) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  const response = await page.goto("/noticias/rascunho-nao-aprovado");
-  expect(response?.status()).toBe(404);
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Voltar ao início" })).toHaveAttribute("href", "/");
-  await page.screenshot({ path: testInfo.outputPath("premium-404.png"), fullPage: true, animations: "disabled" });
-});
-
-test("premium v3: capítulos, índice editorial, arte por contexto e motion opt-in", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/");
-  await expect(page.locator("html")).toHaveAttribute("data-ui-experiment", "discovery-v3");
-  await expect(page.getByRole("navigation", { name: "Explore a página inicial" }).getByRole("link")).toHaveCount(4);
+  await expect(page.locator("html")).toHaveAttribute("data-ui-experiment","beyond-v4");
+  await expect(page.getByRole("heading",{level:1,name:"Além do olhar."})).toBeVisible();
+  await expect(page.locator(".beyond-act")).toHaveCount(5);
+  await expect(page.getByRole("navigation",{name:"Explore a página inicial"}).getByRole("link")).toHaveCount(4);
+  await expect(page.locator(".beyond-collage [data-beyond-layer]")).toHaveCount(3);
   await expect(page.locator(".heritage-year strong")).toHaveText("1952");
-  await expect(page.locator(".activity-card .activity-index")).toHaveCount(8);
-  const motif = page.locator(".heritage-art");
-  await motif.scrollIntoViewIfNeeded();
-  await expect(motif).toHaveAttribute("data-motif-motion", "entered");
-  await page.getByRole("button", { name: "Acessibilidade", exact: true }).click();
-  await page.getByRole("checkbox", { name: "Reduzir animações" }).check();
-  await expect(motif.locator(".motif-gesture")).toHaveCSS("animation-name", "none");
-  await page.goto("/radar-da-inclusao");
-  await expect(page.locator(".interior-cover-art")).toHaveAttribute("data-motif", "signal");
-  await page.goto("/atividades");
-  await expect(page.locator(".interior-cover-art")).toHaveAttribute("data-motif", "grid");
-});
-
-test("discovery: capa de página inteira, cena decorativa e redução de movimento", async ({ page, isMobile }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/");
-  const title = page.locator(".cover-headline");
-  const art = page.locator(".discovery-art");
-  await expect(title).toBeVisible();
-  await expect(art).toHaveAttribute("aria-hidden", "true");
-  if (!isMobile) {
-    await expect(art).toHaveAttribute("data-scene-motion", "active");
-    const paths = art.locator(".cover-paths");
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(600);
-    const before = await paths.evaluate(el => getComputedStyle(el).transform);
-    await art.scrollIntoViewIfNeeded();
-    await page.evaluate(() => window.scrollBy(0, 230));
-    await expect.poll(() => paths.evaluate(el => getComputedStyle(el).transform)).not.toBe(before);
+  await expect(page.locator(".activity-card")).toHaveCount(8);
+  await expect(page.locator(".beyond-credits li")).toHaveCount(5);
+  await expect(page.getByText(/Fotografias ilustrativas externas, não registros do IERC-RN/)).toBeVisible();
+  for(const image of await page.locator(".beyond-photo img").all()){
+    await image.scrollIntoViewIfNeeded();
+    await expect.poll(()=>image.evaluate(el=>(el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   }
-  await page.getByRole("button", {name:"Acessibilidade",exact:true}).click();
-  await page.getByRole("checkbox", {name:"Reduzir animações"}).check();
-  await expect(art).toHaveAttribute("data-scene-motion", "static");
-  await expect(art.locator(".cover-paths")).toHaveCSS("transform", "none");
 });
 
-test("discovery: gate de composição nas larguras de referência 1440, 768 e 390", async ({ page, isMobile }, testInfo) => {
-  test.skip(isMobile, "O projeto desktop reproduz as três larguras no mesmo navegador.");
-  test.setTimeout(60_000);
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  for (const width of [1440, 768, 390]) {
-    await page.setViewportSize({ width, height: 900 });
+test("beyond: cena fotográfica acompanha scroll e retorna ao estático", async ({page,isMobile})=>{
+  await page.emulateMedia({reducedMotion:"no-preference"});
+  await page.goto("/");
+  const root=page.locator(".beyond-home");
+  const center=page.locator('[data-beyond-layer="center"]');
+  if(!isMobile && (page.viewportSize()?.width??0)>=1024 && (page.viewportSize()?.height??0)>=640){
+    await expect(root).toHaveAttribute("data-story-motion","active");
+    const before=await center.evaluate(el=>getComputedStyle(el).transform);
+    await page.evaluate(()=>window.scrollTo(0,500));
+    await expect.poll(()=>center.evaluate(el=>getComputedStyle(el).transform)).not.toBe(before);
+  }
+  await page.getByRole("button",{name:"Acessibilidade",exact:true}).click();
+  await page.getByRole("checkbox",{name:"Reduzir animações"}).check();
+  await expect(root).toHaveAttribute("data-story-motion","static");
+  await expect(center).toHaveCSS("transform","none");
+  await page.getByRole("checkbox",{name:"Alto contraste"}).check();
+  await expect(page.locator(".beyond-cover")).toHaveCSS("background-color","rgb(0, 0, 0)");
+});
+
+test("beyond: conteúdo essencial sem JavaScript e com movimento reduzido",async({browser})=>{
+  const context=await browser.newContext({baseURL:"http://127.0.0.1:3000",javaScriptEnabled:false,reducedMotion:"reduce",viewport:{width:390,height:900}});
+  try{
+    const page=await context.newPage();
     await page.goto("/");
-    await expect(page.locator(".cover-headline h1")).toBeVisible();
-    await expect(page.locator(".hero-art-illustration")).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-    await page.screenshot({ path: testInfo.outputPath(`discovery-cover-${width}.png`), animations: "disabled" });
+    await expect(page.getByRole("heading",{level:1})).toBeVisible();
+    await expect(page.getByRole("link",{name:"Conheça o Instituto"}).first()).toBeVisible();
+    await expect(page.getByRole("link",{name:"Conheça o bazar"})).toHaveAttribute("href","/apoie");
+  }finally{await context.close();}
+});
+
+test("premium: página de erro mantém recuperação acessível", async ({page})=>{
+  const response=await page.goto("/noticias/rascunho-nao-aprovado");
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole("heading",{level:1})).toBeVisible();
+  await expect(page.getByRole("link",{name:"Voltar ao início"})).toHaveAttribute("href","/");
+});
+
+test("beyond: capturas desktop, tablet e celular",async({page,isMobile},testInfo)=>{
+  test.skip(isMobile,"Projeto desktop reproduz as três larguras.");
+  test.setTimeout(60_000);
+  await page.emulateMedia({reducedMotion:"reduce"});
+  for(const width of [1440,768,390]){
+    await page.setViewportSize({width,height:900});
+    await page.goto("/");
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:testInfo.outputPath(`beyond-cover-${width}.png`),animations:"disabled"});
   }
 });

@@ -1,19 +1,16 @@
 import { expect, test } from "@playwright/test";
 
-test("capa editorial ocupa toda a largura e arte não cobre o conteúdo", async ({ page, isMobile }) => {
-  test.skip(isMobile, "Proporções da composição em duas colunas");
-  await page.setViewportSize({ width: 1440, height: 900 });
+test("capa editorial: composição em três camadas sem sobrepor o título",async({page,isMobile})=>{
+  test.skip(isMobile,"Composição desktop");
+  await page.setViewportSize({width:1440,height:900});
+  await page.emulateMedia({reducedMotion:"reduce"});
   await page.goto("/");
-  const layout = await page.locator(".hero-layout").boundingBox();
-  const copy = await page.locator(".hero-copy").boundingBox();
-  const art = await page.locator(".hero-art").boundingBox();
-  if (!layout || !copy || !art) throw new Error("Hero não renderizado");
-  const headline = await page.locator(".cover-headline").boundingBox();
-  if (!headline) throw new Error("Título não renderizado");
-  expect(headline.width / layout.width).toBeGreaterThan(0.95);
-  expect(art.width / layout.width).toBeGreaterThan(0.5);
-  expect(copy.x + copy.width).toBeLessThanOrEqual(art.x + 1);
-  expect(headline.y + headline.height).toBeLessThanOrEqual(art.y + 1);
+  const title=await page.locator(".beyond-title").boundingBox();
+  const collage=await page.locator(".beyond-collage").boundingBox();
+  if(!title||!collage)throw new Error("Capa não renderizada");
+  expect(collage.y).toBeGreaterThanOrEqual(title.y+title.height-1);
+  expect(collage.width).toBeGreaterThan(1000);
+  await expect(page.locator(".beyond-collage [data-beyond-layer]")).toHaveCount(3);
 });
 
 test("títulos do hero e rodapé não partem palavras nem transbordam em diferentes larguras", async ({ page }) => {

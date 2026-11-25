@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 test("página inicial tem conteúdo principal e links úteis", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("abrir possibilidades");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Além do olhar.");
   await expect(page.getByRole("main")).toBeVisible();
   await expect(page.getByRole("link", { name: /Conheça o Instituto/i }).first()).toHaveAttribute("href", "/instituto");
   await expect(page.getByRole("link", { name: /Conheça o bazar/i })).toHaveAttribute("href", "/apoie");

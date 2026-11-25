@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 test("portal continua funcional sem configurar ou executar o CMS", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /O que transforma vidas/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Além do olhar/ })).toBeVisible();
   await expect(page.locator(".activity-card")).toHaveCount(8);
 });
 
