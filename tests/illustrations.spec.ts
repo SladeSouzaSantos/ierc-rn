@@ -46,7 +46,7 @@ test("artes mantêm layout sem rolagem horizontal em tela estreita", async ({ pa
   expect(overflow).toBeLessThanOrEqual(1);
 });
 
-test("hero empilhado mantém a ilustração encostada ao limite inferior da faixa azul", async ({ page }) => {
+test("hero empilhado mantém a arte encostada ao limite inferior da capa", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   for (const width of [320, 375, 600, 760]) {
     await page.setViewportSize({ width, height: 900 });

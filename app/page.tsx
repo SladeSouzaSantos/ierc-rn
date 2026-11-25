@@ -18,17 +18,19 @@ export default async function Home() {
   const activities = await getDisplayActivities();
   return (
     <>
-      <section className="hero premium-cover" aria-labelledby="hero-titulo">
+      <section className="hero premium-cover discovery-cover" aria-labelledby="hero-titulo">
         <div className="container hero-layout">
-          <div className="hero-copy">
-            <div className="hero-label"><span className="label-dot" /> Educação, reabilitação e inclusão no RN <span className="hero-label-year">Desde 1952</span></div>
+          <div className="cover-headline">
+            <div className="hero-label"><span>Educação, reabilitação e inclusão</span><span className="hero-label-year">Natal · RN · Desde 1952</span></div>
             <h1 id="hero-titulo"><span className="cover-statement">O que transforma vidas é</span>{" "}<em>abrir possibilidades.</em></h1>
+          </div>
+          <div className="hero-copy">
             <p className="hero-lead">No IERC-RN, educação, autonomia, cultura e esporte caminham juntos. Conheça histórias, projetos e formas de fazer parte dessa jornada.</p>
             <div className="hero-actions">
               <Link href="/instituto" className="button button-yellow">Conheça o Instituto <ArrowUpRight size={19} aria-hidden="true" /></Link>
               <Link href="/apoie" className="text-action">Quero apoiar <ArrowRight size={19} aria-hidden="true" /></Link>
             </div>
-            <div className="hero-mini"><span className="hero-mini-mark" aria-hidden="true">✳</span><span>Há mais de sete décadas criando caminhos para a autonomia.</span></div>
+            <p className="cover-caption"><span aria-hidden="true" className="cover-caption-mark">✳</span> Há mais de sete décadas criando caminhos para a autonomia.</p>
           </div>
           <HeroArt />
         </div>
@@ -51,7 +53,7 @@ export default async function Home() {
             <div><p className="eyebrow">Nossa essência</p><h2>Mais do que aprender. <span>É poder escolher caminhos.</span></h2></div>
             <div className="heading-aside"><p>O Instituto de Educação e Reabilitação de Cegos do Rio Grande do Norte atua na promoção de habilidades, convivência e participação de pessoas com deficiência visual.</p><Link className="inline-link" href="/instituto">Nossa história <ArrowUpRight size={18} aria-hidden="true" /></Link></div>
           </div>
-          <div className="heritage-panel">
+          <div className="heritage-panel discovery-history">
             <div className="heritage-year"><span>Desde</span><strong>1952</strong><span>Rio Grande do Norte</span></div>
             <EditorialMotif variant="instituto" className="heritage-art" animate />
             <div className="heritage-note"><p>Uma história que atravessa gerações.</p><Link href="/instituto" className="inline-link">Percorra nossa história <ArrowUpRight size={18} aria-hidden="true"/></Link></div>
@@ -68,7 +70,7 @@ export default async function Home() {
         <div className="container">
           <div className="chapter-kicker" aria-hidden="true"><span>02 / Atuação</span><span>Aprender de diferentes formas</span></div>
           <div className="section-heading row-heading"><div><p className="eyebrow">O que fazemos</p><h2>Oito atividades.<br/><span>Muitas descobertas.</span></h2></div><Link href="/atividades" className="inline-link">Todas as atividades <ArrowUpRight size={18} aria-hidden="true" /></Link></div>
-          <div className="activity-grid">
+          <div className="activity-grid discovery-catalogue">
             {activities.map((activity, index) => {
               const Icon = icons[index] ?? Sparkles;
               return <Link href={"/atividades#" + activity.id} className="activity-card" key={activity.id}>
@@ -82,7 +84,7 @@ export default async function Home() {
       </section>
 
       <section className="sport-section" id="esporte" aria-labelledby="goalball-title">
-        <div className="container sport-layout">
+        <div className="container sport-layout discovery-sport">
           <div className="sport-copy">
             <div className="chapter-kicker chapter-kicker-light" aria-hidden="true"><span>03 / Esporte</span></div>
             <p className="eyebrow light">Esporte que faz história</p>
@@ -97,7 +99,7 @@ export default async function Home() {
 
       <section className="stories-section section-pad">
         <div className="container stories-layout">
-          <div className="stories-symbol" aria-hidden="true">
+          <div className="stories-symbol discovery-portrait" aria-hidden="true">
             <EditorialMotif variant="historias" className="stories-art" animate />
             <span className="symbol-footnote">Trajetórias · IERC-RN</span>
           </div>

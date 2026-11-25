@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./premium-experiment.css";
+import "./discovery.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AccessibilityPanel } from "@/components/accessibility-panel";
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" data-ui-experiment="editorial-v2">
+    <html lang="pt-BR" data-ui-experiment="discovery-v3">
       {/* Extensões como ColorZilla podem injetar atributos no body antes da hidratação.
           Suprimimos apenas diferenças de atributos nesse elemento raiz, sem ocultar
           problemas de hidratação nos componentes internos. */}

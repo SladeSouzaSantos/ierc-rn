@@ -38,7 +38,7 @@ test("premium: arte hero tem entrada finita; preferência local desativa animaç
   await page.goto("/");
   const art = page.locator(".hero-art-visual");
   await expect(art).toHaveCSS("animation-iteration-count", "1");
-  await expect(art).toHaveCSS("animation-name", "premium-art-in");
+  await expect(art).toHaveCSS("animation-name", "discovery-art-in");
   await page.getByRole("button", { name: "Acessibilidade", exact: true }).click();
   await page.getByRole("checkbox", { name: "Reduzir animações" }).check();
   await expect(art).toHaveCSS("animation-name", "none");
@@ -74,10 +74,10 @@ test("premium: página de erro mantém recuperação acessível", async ({ page 
   await page.screenshot({ path: testInfo.outputPath("premium-404.png"), fullPage: true, animations: "disabled" });
 });
 
-test("premium v2: capítulos, índice editorial, arte por contexto e motion opt-in", async ({ page }) => {
+test("premium v3: capítulos, índice editorial, arte por contexto e motion opt-in", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
-  await expect(page.locator("html")).toHaveAttribute("data-ui-experiment", "editorial-v2");
+  await expect(page.locator("html")).toHaveAttribute("data-ui-experiment", "discovery-v3");
   await expect(page.getByRole("navigation", { name: "Explore a página inicial" }).getByRole("link")).toHaveCount(4);
   await expect(page.locator(".heritage-year strong")).toHaveText("1952");
   await expect(page.locator(".activity-card .activity-index")).toHaveCount(8);
@@ -91,4 +91,27 @@ test("premium v2: capítulos, índice editorial, arte por contexto e motion opt-
   await expect(page.locator(".interior-cover-art")).toHaveAttribute("data-motif", "signal");
   await page.goto("/atividades");
   await expect(page.locator(".interior-cover-art")).toHaveAttribute("data-motif", "grid");
+});
+
+test("discovery: capa de página inteira, cena decorativa e redução de movimento", async ({ page, isMobile }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  const title = page.locator(".cover-headline");
+  const art = page.locator(".discovery-art");
+  await expect(title).toBeVisible();
+  await expect(art).toHaveAttribute("aria-hidden", "true");
+  if (!isMobile) {
+    await expect(art).toHaveAttribute("data-scene-motion", "active");
+    const paths = art.locator(".cover-paths");
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(600);
+    const before = await paths.evaluate(el => getComputedStyle(el).transform);
+    await art.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, 230));
+    await expect.poll(() => paths.evaluate(el => getComputedStyle(el).transform)).not.toBe(before);
+  }
+  await page.getByRole("button", {name:"Acessibilidade",exact:true}).click();
+  await page.getByRole("checkbox", {name:"Reduzir animações"}).check();
+  await expect(art).toHaveAttribute("data-scene-motion", "static");
+  await expect(art.locator(".cover-paths")).toHaveCSS("transform", "none");
 });

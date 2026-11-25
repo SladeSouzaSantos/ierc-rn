@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("hero ocupa mais da metade do conteúdo no desktop sem reduzir demais a ilustração", async ({ page, isMobile }) => {
+test("capa editorial ocupa toda a largura e arte não cobre o conteúdo", async ({ page, isMobile }) => {
   test.skip(isMobile, "Proporções da composição em duas colunas");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
@@ -8,8 +8,12 @@ test("hero ocupa mais da metade do conteúdo no desktop sem reduzir demais a ilu
   const copy = await page.locator(".hero-copy").boundingBox();
   const art = await page.locator(".hero-art").boundingBox();
   if (!layout || !copy || !art) throw new Error("Hero não renderizado");
-  expect(copy.width / layout.width).toBeGreaterThan(0.55);
-  expect(art.width / layout.width).toBeGreaterThan(0.38);
+  const headline = await page.locator(".cover-headline").boundingBox();
+  if (!headline) throw new Error("Título não renderizado");
+  expect(headline.width / layout.width).toBeGreaterThan(0.95);
+  expect(art.width / layout.width).toBeGreaterThan(0.5);
+  expect(copy.x + copy.width).toBeLessThanOrEqual(art.x + 1);
+  expect(headline.y + headline.height).toBeLessThanOrEqual(art.y + 1);
 });
 
 test("títulos do hero e rodapé não partem palavras nem transbordam em diferentes larguras", async ({ page }) => {
